@@ -39,7 +39,6 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -51,18 +50,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.management.MemoryUsage;
-import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.CodeSource;
 import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -83,15 +80,13 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import jsoninterface.View;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.context.web.SpringBootServletInitializer;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -99,9 +94,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
-import org.springframework.mock.web.MockMultipartFile;
 import solutions.FindSolutions;
 import solutions.SolutionHeader;
 import solutions.SolutionStatistics;
@@ -110,7 +105,6 @@ import solutions.Solutions;
 import solutions.SolutionsArrayList;
 import statistics.ColumnsNamesAndTypes;
 import statistics.HierarchiesAndLevels;
-import statistics.Queries;
 import statistics.Queries;
 import statistics.Results;
 import statistics.ResultsToJson;
@@ -136,39 +130,32 @@ import zenodo.ZenodoFilesToJson;
 
 */
 
+@SpringBootApplication
+public class AppCon extends SpringBootServletInitializer {
 
-//"http://localhost:8181/action/upload"
-//action/upload
+    public static void main(String[] args) {
+        SpringApplication.run(applicationClass, args);
+    }
 
-@Controller
+    @Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+        return application.sources(applicationClass);
+    }
+
+    private static Class<AppCon> applicationClass = AppCon.class;
+}
+
+
+
+@RestController
 //@RequestMapping("/greeting")
-public class AppCon {
+class AppController {
 
     
-    @RequestMapping(value = "/")
+    @RequestMapping(value = "/", method = RequestMethod.POST)
     public String welcome(HttpSession session) {
         return "/index.html";
     }
-    
-    
-    
-    /*@RequestMapping(value = "/action/getsessionid")
-    public String getSessionId(HttpSession session) {
-        return session.getId();
-    }*/
-    
-    /*@RequestMapping(value = "/action/hello")
-    public String hello(HttpSession session) {
-        return "xaxaxaxa";
-    }*/
-    
-    //@RequestMapping(value="/hello")
-    /*@RequestMapping(value="/action/greeting")//http://localhost:8084/mavenproject1/greeting?name=fd
-    public @ResponseBody Test greeting(@RequestParam(value="name", defaultValue="World") String name) {
-        Test t = new Test();
-        t.setStr(name);
-        return t;
-    }*/
     
     
     // ean to kanw kai gia hierarchies tha prepei na allaksw ta paths
@@ -185,10 +172,14 @@ public class AppCon {
             String input = (String)session.getAttribute("inputpath");
             if (input == null){
 
-               //String rootPath = System.getProperty("catalina.home");
-               //String rootPath = "/usr/local/apache-tomcat-8.0.15";
-                String rootPath = "/var/lib/tomcat8";
-                dir = new File(rootPath + File.separator + "amnesia"+ File.separator + session.getId());  
+               //String rootPath = System.getProperty("user.home");//windows
+                   
+                ////////////////////linux///////////////////////////////////////
+                File f = new File(System.getProperty("java.class.path"));//linux
+                File dir1 = f.getAbsoluteFile().getParentFile();
+                String rootPath = dir1.toString();
+                //////////////////////////////////////////////////////////////
+                dir = new File(rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId());  
                 if (!dir.exists()){
                     dir.mkdirs();
                 }
@@ -206,9 +197,6 @@ public class AppCon {
                 mimeType = file.getContentType();
                 filename = file.getOriginalFilename();
                 bytes = file.getBytes();
-
-                System.out.println("uploadedFile = " + uploadedFile +"\tfile =" + file +"\t mimeType =" + mimeType + "\tilename = "+ filename +"\tbytes = " + bytes);
-
             }
             
             session.setAttribute("inputpath",dir.toString());
@@ -262,98 +250,23 @@ public class AppCon {
         ErrorMessage errMes = new ErrorMessage();
         //boolean fileCreate = false;
         boolean problem = false;
-                
-        /*
-        // Get name of uploaded file.
-        String fileName = file.getOriginalFilename();
-
-        System.out.println("filename = " + fileName);
         
-        // Path where the uploaded file will be stored.
-        String path = "/media/disk/mavenproject1/src/main/webapp/inputs/" + fileName;
-
-        // This buffer will store the data read from 'uploadedFileRef'
-        byte[] buffer = new byte[1000];
-
-        // Now create the output file on the server.
-        File outputFile = new File(path);
-
-        FileInputStream reader = null;
-        FileOutputStream writer = null;
-        int totalBytes = 0;
-        try {
-            fileCreate = outputFile.createNewFile();
-            if (fileCreate == false){
-                errMes.setSuccess(false);
-                errMes.setProblem("file name exists. Change the name of the file.");
-                problem = true;
-            }           
-            else{
-                // Create the input stream to uploaded file to read data from it.
-                reader = (FileInputStream) file.getInputStream();
-
-                // Create writer for 'outputFile' to write data read from
-                // 'uploadedFileRef'
-                writer = new FileOutputStream(outputFile);
-
-                // Iteratively read data from 'uploadedFileRef' and write to
-                // 'outputFile';            
-                int bytesRead = 0;
-                while ((bytesRead = reader.read(buffer)) != -1) {
-                    writer.write(buffer);
-                    totalBytes += bytesRead;
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }finally{
-            try {
-                if (reader != null){
-                    reader.close();
-                }
-                if (writer != null){
-                    writer.close();
-                }
-              
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        
-        if ( problem != true ){
-            errMes.setSuccess(true);
-            errMes.setProblem(null);
-        }*/
-        
-        DecimalFormat decFormat = new DecimalFormat();
-        DecimalFormatSymbols decSymbols = decFormat.getDecimalFormatSymbols();           
-        System.out.println("Decimal separator is : " + decSymbols.getDecimalSeparator());
-        System.out.println("Thousands separator is : " + decSymbols.getGroupingSeparator());
         
         if (!file.isEmpty()) {
             try {
                 // Creating the directory to store file
                 File dir = null;
                 String input = (String)session.getAttribute("inputpath");
-                System.out.println(" i am here");
-                System.out.println("session id  = " + session.getId());
-                System.out.println("input = " + input);
                 if (input == null){
-                    //Desktop
-//                    File f = new File(System.getProperty("java.class.path"));
-//                    File dir1 = f.getAbsoluteFile().getParentFile();
-//                    String rootPath = dir1.toString();
-//                    dir = new File(rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId());  
-//                    if (!dir.exists()){
-//                        dir.mkdirs();
-//                    }
                     
-                    //String rootPath = "/usr/local/apache-tomcat-8.0.15";
-                    //System.out.println("session id  = " + session.getId());
-                    //String rootPath = System.getProperty("catalina.home");
-                    String rootPath = "/var/lib/tomcat8";
-                    dir = new File(rootPath + File.separator + "amnesia"+ File.separator + session.getId());  
-                    System.out.println("dir name = " + dir.getAbsolutePath() + "\t root path = " + rootPath);
+                    //String rootPath = System.getProperty("user.home");//windows
+                   
+                    ////////////////////linux///////////////////////////////////////
+                    File f = new File(System.getProperty("java.class.path"));//linux
+                    File dir1 = f.getAbsoluteFile().getParentFile();
+                    String rootPath = dir1.toString();
+                    //////////////////////////////////////////////////////////////
+                    dir = new File(rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId());  
                     if (!dir.exists()){
                         dir.mkdirs();
                     }
@@ -372,12 +285,6 @@ public class AppCon {
                     }
                     dir = new File(input);
                 }
-                
-                
-                /*String input = (String)session.getAttribute("inputpath");
-                if (input == null){
-                    session.setAttribute("inputpath",dir.toString());
-                }*/
                 
                     
                 byte[] bytes = file.getBytes();
@@ -418,7 +325,7 @@ public class AppCon {
     
 
 
-    @JsonView(View.SmallDataSet.class)
+ @JsonView(View.SmallDataSet.class)
     @RequestMapping(value="/action/getsmalldataset", method = RequestMethod.POST)//, method = RequestMethod.POST)
     public @ResponseBody Data getSmallDataSet ( @RequestParam("del") String del, @RequestParam("datatype") String datatype ,HttpSession session) throws FileNotFoundException, IOException {
 
