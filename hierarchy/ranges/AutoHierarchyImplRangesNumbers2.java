@@ -165,12 +165,22 @@ public class AutoHierarchyImplRangesNumbers2 extends HierarchyImplRangesNumbers{
         
         height = numbersMap.size();
         
-        root = new RangeDouble(start,end);
-        root.nodesType = nodesType;
+        RangeDouble tempRoot = new RangeDouble();
+        tempRoot.setLowerBound(start);
+        tempRoot.setUpperBound(end);
         ArrayList<RangeDouble> allP = new ArrayList<RangeDouble>();
-        allP.add(root);
+        allP.add(tempRoot);
         allParents.put(0, allP);
-        stats.put(root, new NodeStats(0));
+        stats.put(tempRoot, new NodeStats(0));
+        root = tempRoot;
+        root.nodesType = nodesType;
+        
+//        root = new RangeDouble(start,end);
+//        root.nodesType = nodesType;
+//        ArrayList<RangeDouble> allP = new ArrayList<RangeDouble>();
+//        allP.add(root);
+//        allParents.put(0, allP);
+//        stats.put(root, new NodeStats(0));
         
         //System.out.println("rootttttttttt = " + root);
         //System.out.println("all parents =  " + allParents.get(0));
@@ -230,29 +240,29 @@ public class AutoHierarchyImplRangesNumbers2 extends HierarchyImplRangesNumbers{
         ///////////////////////////////////////////// 
         
         
-        /*System.out.println("all Parents");
-        for (Map.Entry<Integer,ArrayList<RangeDouble>> entry : allParents.entrySet()) {
-            System.out.println(entry.getKey()+" : "+entry.getValue());
-        }
-        System.out.println("/////////////////////////////////////");
-        
+//        System.out.println("all Parents");
+//        for (Map.Entry<Integer,ArrayList<RangeDouble>> entry : allParents.entrySet()) {
+//            System.out.println(entry.getKey()+" : "+entry.getValue());
+//        }
+//        System.out.println("/////////////////////////////////////");
+//        
         System.out.println("Stats");
         for (Map.Entry<RangeDouble, NodeStats> entry : stats.entrySet()) {
             System.out.println(entry.getKey()+" : "+entry.getValue());
         }
-        System.out.println("/////////////////////////////////////");
-        
-        System.out.println("parents");
-        for (Map.Entry<RangeDouble, RangeDouble> entry : parents.entrySet()) {
-            System.out.println(entry.getKey()+" : "+entry.getValue());
-        }
-        System.out.println("/////////////////////////////////////");
-        
-        System.out.println("children");
-        for (Map.Entry<RangeDouble, List<RangeDouble>> entry : children.entrySet()) {
-            System.out.println(entry.getKey()+" : "+entry.getValue());
-        }
-        System.out.println("/////////////////////////////////////");*/
+//        System.out.println("/////////////////////////////////////");
+//        
+//        System.out.println("parents");
+//        for (Map.Entry<RangeDouble, RangeDouble> entry : parents.entrySet()) {
+//            System.out.println(entry.getKey()+" : "+entry.getValue());
+//        }
+//        System.out.println("/////////////////////////////////////");
+//        
+//        System.out.println("children");
+//        for (Map.Entry<RangeDouble, List<RangeDouble>> entry : children.entrySet()) {
+//            System.out.println(entry.getKey()+" : "+entry.getValue());
+//        }
+//        System.out.println("/////////////////////////////////////");
         
     }
 

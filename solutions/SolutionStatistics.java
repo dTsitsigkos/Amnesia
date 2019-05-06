@@ -202,7 +202,7 @@ public class SolutionStatistics {
             
             for (Map.Entry<SolutionAnonValues, Integer> entry : details.entrySet()) {
 
-                
+                System.out.println(entry.getKey() + ":" + entry.getValue());
                 
                 //if ( startCounter >= pageCounter && endCounter > startCounter){
                     if ( entry.getValue() < k ){

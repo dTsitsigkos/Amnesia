@@ -110,7 +110,8 @@ public class FindSolutions {
         int length = dataSet.length;
         Map <Integer,String> colNamesType = null;
         Map <Integer,String> colNamesPosition = null;
-        Map <Integer,DictionaryString> dictionaries = null;
+//        Map <Integer,DictionaryString> dictionaries = null;
+        DictionaryString dictionary = null;
         String columnName = null;
         SolutionHeader header;
         SolutionStatistics statistics;
@@ -118,7 +119,8 @@ public class FindSolutions {
         
         colNamesType = dataset.getColNamesType();
         colNamesPosition = dataset.getColNamesPosition();
-        dictionaries = dataset.getDictionary();
+//        dictionaries = dataset.getDictionary();
+        dictionary = dataset.getDictionary();
         
         //System.out.println("whichQiddddddddddddddddddddd = " + whichQid);
         
@@ -176,11 +178,18 @@ public class FindSolutions {
                     j++;
                 }
                 else{
-                    DictionaryString dictionary = dictionaries.get(column);
+
                     
-                    data[j] = dictionary.getIdToString((int)dataSet[line][column]);
+                    //data[j] = dictionary.getIdToString((int)dataSet[line][column]);
+                    
                     if(anonymizeColumn && level > 0){
-                        data[j] = anonymizeValue(data[j], hierarchy, level);
+                        if(colNamesType.get(column).contains("date")){
+                            data[j] = anonymizeValue(dictionary.getIdToString((int)dataSet[line][column]), hierarchy, level);
+                        }
+                        else{
+                            data[j] = (double)dataSet[line][column];
+                            data[j] = anonymizeValue(data[j], hierarchy, level);
+                        }
                     }
                     j++;
                 }
@@ -214,7 +223,8 @@ public class FindSolutions {
         int length = dataSet.length;
         Map <Integer,String> colNamesType = null;
         Map <Integer,String> colNamesPosition = null;
-        Map <Integer,DictionaryString> dictionaries = null;
+//        Map <Integer,DictionaryString> dictionaries = null;
+        DictionaryString dictionary = null;
         String columnName = null;
         SolutionHeader header;
         SolutionStatistics statistics;
@@ -222,7 +232,8 @@ public class FindSolutions {
         
         colNamesType = dataset.getColNamesType();
         colNamesPosition = dataset.getColNamesPosition();
-        dictionaries = dataset.getDictionary();
+//        dictionaries = dataset.getDictionary();
+        dictionary = dataset.getDictionary();
         
         //System.out.println("whichQiddddddddddddddddddddd = " + whichQid);
         
@@ -280,11 +291,19 @@ public class FindSolutions {
                     j++;
                 }
                 else{
-                    DictionaryString dictionary = dictionaries.get(column);
+//                    DictionaryString dictionary = dictionaries.get(column);
                     
-                    data[j] = dictionary.getIdToString((int)dataSet[line][column]);
+                    //data[j] = dictionary.getIdToString((int)dataSet[line][column]);
+                   
                     if(anonymizeColumn && level > 0){
-                        data[j] = anonymizeValue(data[j], hierarchy, level);
+                        if(colNamesType.get(column).contains("date")){
+                            data[j] = anonymizeValue(dictionary.getIdToString((int)dataSet[line][column]), hierarchy, level);
+                        }
+                        else{
+                            data[j] = (double)dataSet[line][column];
+                            data[j] = anonymizeValue(data[j], hierarchy, level);
+                        }
+                        
                     }
                     j++;
                 }
@@ -426,7 +445,7 @@ public class FindSolutions {
                 }
                 else if (value instanceof String){
                     if ( level == 0 ){
-                        if ( ((String)value).equals("NaN")){
+                        if ( (double) value == 2147483646.0 ||  value.equals(Double.NaN)){
                             return "(null)";
                         }
                         else{
@@ -436,6 +455,17 @@ public class FindSolutions {
                     else{
                         anonymizedValue = h.getParent(anonymizedValue);
                     }
+                    /*if ( level == 0 ){
+                        if ( ((String)value).equals("NaN")){
+                            return "(null)";
+                        }
+                        else{
+                            anonymizedValue = h.getParent(anonymizedValue);
+                        }
+                    }
+                    else{
+                        anonymizedValue = h.getParent(anonymizedValue);
+                    }*/
                 }
                 
             }

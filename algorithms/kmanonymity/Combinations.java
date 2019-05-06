@@ -119,6 +119,66 @@ public class Combinations {
         return distinct;
     }
     
+    public static Set<double[]> getSimpleCombinations(Set<Double> domain,int size){
+        ArrayList<Integer> index = null;
+        int limit = -1;
+        Set <double[]> distinct;
+        
+        //System.out.println("size = " + size);
+        if ( size > domain.size() ){
+            return null;
+        }
+        
+        index = new ArrayList<Integer>();
+        distinct = new HashSet<double[]>();
+        limit = domain.size() - size;
+        
+        for ( int i = 0 ; i < limit ; i ++){
+            index.add(0);
+        }
+        for ( int i = limit ; i < domain.size() ; i++ ){
+            index.add(1);
+        }
+        
+        double[] temp ;//= new Double[];
+        boolean overlaps = false;
+        
+        int ii = 0;
+        
+        for (List<Integer> perm : orderedPermutations(index)) {
+            temp = new double[size];
+            int countTemp = 0;
+            ii = 0;
+            //System.out.println(perm.toString());
+            for (double d : domain){
+                //System.out.println("ii = " + ii);
+                if ( perm.get(ii).equals(1)){
+                    //System.out.println("i am here");
+                    overlaps = false;
+                    for (int j = 0 ; j < countTemp ; j ++ ){
+                        if (d==temp[j]){
+                            overlaps = true;
+                            break;
+                        }
+                    }
+                    if (!overlaps){
+                        temp[countTemp] = (int)d;
+                        countTemp ++;
+                    }
+                    else{
+                        break;
+                    }
+                }
+                ii++;
+            }
+            if ( !overlaps ){
+                distinct.add(temp);
+            }
+        }
+        
+        return distinct;
+    }
+    
     private static boolean sameBranch(double first, double second, Hierarchy h){
         if(first == second)
             return true;

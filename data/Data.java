@@ -36,19 +36,21 @@ public interface Data {
     public double[][] getDataSet();
     public void setData(double[][] _data);
     public int getDataLenght();
+    public int getDataColumns();
     public void print();
+    public void exportOriginalData();
     public String save(boolean[] checkColumns);
     public void preprocessing();
     public String readDataset(String[] columnTypes, boolean [] checkColumns);
     public void export(String file, Object[][] initialTable, Object[][] anonymizedTable, int[] qids, Map<Integer, Hierarchy> hierarchies, Map<Integer, Set<String>> suppressedValues);
     public Map <Integer,String> getColNamesPosition();
-    public Map <Integer,DictionaryString> getDictionary();
+//    public Map <Integer,DictionaryString> getDictionary();
 
-    public DictionaryString getDictionary(Integer column);
-    public void setDictionary(Integer column, DictionaryString dict);
+    public DictionaryString getDictionary();
+//    public void setDictionary(Integer column, DictionaryString dict);
     public int getColumnByName(String column);
     public String getColumnByPosition(Integer columnIndex);
-    public void replaceColumnDictionary(Integer column, DictionaryString dict);
+//    public void replaceColumnDictionary(Integer column, DictionaryString dict);
     public void SaveClmnsAndTypeOfVar(String[] columnTypes,boolean[] checkColumns);
     public String findColumnTypes();
     public String[][] getSmallDataSet();

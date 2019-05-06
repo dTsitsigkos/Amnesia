@@ -34,6 +34,7 @@ import java.util.logging.Logger;
 import javax.swing.JTable;
 import javax.swing.table.TableModel;
 import data.Data;
+import data.RelSetData;
 import dictionary.DictionaryString;
 import hierarchy.Hierarchy;
 import hierarchy.ranges.RangeDate;
@@ -81,18 +82,20 @@ public class AnonymizationRules {
             }
         }
         while ((line = br.readLine()) != null) {
-            columnName = line;
-            rules = new HashMap<>();
-            while ((line = br.readLine()) != null) {
-                if ( !line.equals("")){
-                    temp = line.split(del);
-                    rules.put(temp[0], temp[1]);
+            if(!line.equals("")){
+                columnName = line;
+                rules = new HashMap<>();
+                while ((line = br.readLine()) != null) {
+                    if ( !line.equals("")){
+                        temp = line.split(del);
+                        rules.put(temp[0], temp[1]);
+                    }
+                    else{
+                        break;
+                    }
                 }
-                else{
-                    break;
-                }
+                anonymizedRules.put(columnName, rules);
             }
-            anonymizedRules.put(columnName, rules);
         }
         
         br.close();
@@ -113,7 +116,8 @@ public class AnonymizationRules {
         Object[] qidsRow = new Object[qids.length];
         Map <Integer,String> colNamesType = null;
         Map <Integer,String> colNamesPosition = null;
-        Map <Integer,DictionaryString> dictionaries = null;
+//        Map <Integer,DictionaryString> dictionaries = null;
+        DictionaryString dictionary = null;
         int []hierarchyLevel = null;
         double [][]dataset = data.getDataSet();
         Object columnName = null;
@@ -123,7 +127,8 @@ public class AnonymizationRules {
         Object tempData = null;
         colNamesType = data.getColNamesType();
         colNamesPosition = data.getColNamesPosition();
-        dictionaries = data.getDictionary();
+//        dictionaries = data.getDictionary();
+        dictionary = data.getDictionary();
 
         hierarchyLevel = new int[dataset[0].length];
         for (int i = 0 ; i < hierarchyLevel.length ; i++){
@@ -181,14 +186,14 @@ public class AnonymizationRules {
             }
         }
         else{
-            DictionaryString dictionary = dictionaries.get(column);
+//            DictionaryString dictionary = dictionaries.get(column);
             for(int line=0; line<dataset.length; line++){
                 nonAnonymizedData = new Object(); 
                 anonymizedData = new Object();
                 tempData = new Object();
                 tempData = dataset[line][column];
                 Double d = (Double)dataset[line][column];
-                nonAnonymizedData = dictionary.getIdToString(d.intValue());
+                nonAnonymizedData = data.getDictionary().getIdToString(d.intValue());
                 
                 
                 //System.out.println("pipaaaaaaaaaaaaaaaaaaaaaaaaaaa = " + nonAnonymizedData.toString());
@@ -197,7 +202,7 @@ public class AnonymizationRules {
                     tempData = "NaN";
                 }
                 else{
-                    tempData = nonAnonymizedData;
+                    tempData = dataset[line][column];
                 }
                 
                 Map<Integer, ArrayList<String>> allParents =  hierarchy.getAllParents();
@@ -208,10 +213,37 @@ public class AnonymizationRules {
                 
                 //System.out.println("tempData = " + tempData);
                 
+                //anonymizedData = (Double)dataset[line][column];
                 
-                anonymizedData = anonymizeValue(tempData, hierarchy, level);
-               
+                //System.out.println("temp data = " + tempData + "\t level = " + level);
+                if ( level != 0 ){
+                    if(colNamesType.get(column).contains("date")){
+                        if(tempData instanceof String){
+                            anonymizedData = anonymizeValue(tempData, hierarchy, level);
+                        }
+                        else{
+                            anonymizedData = anonymizeValue(data.getDictionary().getIdToString(((Double)tempData).intValue()), hierarchy, level);
+                        }
+                    }
+                    else{
+                        if(tempData instanceof String){
+                            anonymizedData = anonymizeValue(data.getDictionary().getStringToId((String)tempData).doubleValue(), hierarchy, level);
+                        }
+                        else{
+                            anonymizedData = anonymizeValue(tempData, hierarchy, level);
+                        }
+                        Double anon = (double)anonymizedData;
+                        anonymizedData = hierarchy.getDictionary().getIdToString().get(anon.intValue());
+                    }
+                }
+                else{
+                    Double anon = (double)tempData;
+                    anonymizedData = data.getDictionary().getIdToString().get(anon.intValue());
+                }
+                //System.out.println("anonymized Data = " + anonymizedData);
                 
+                //Double anon = (double)anonymizedData;
+                //anonymizedData = hierarchy.getDictionary().getIdToString().get(anon.intValue());
                 
                 
                 map.put(nonAnonymizedData.toString(), anonymizedData.toString());
@@ -348,22 +380,101 @@ public class AnonymizationRules {
         try {
             try (PrintWriter writer = new PrintWriter(file, "UTF-8")) {
                 writer.println("Anonymization rules:");
-                DictionaryString dict = qis.get(0).getDictionary();
+//                DictionaryString dict = qis.get(0).getDictionary();
+                DictionaryString dictionary = dataset.getDictionary();
                 String columnName = dataset.getColumnByPosition(0);
                 writer.println(columnName);
                 
                 String del = "->";
                 int counter = 1;
+                /*for(Entry<Double, Double> entry : rules.entrySet()){
+                    writer.println(dictionary.getIdToString(entry.getKey().intValue()) +
+                    del + dictionary.getIdToString(entry.getValue().intValue()));
+                    counter ++;
+                }*/
+                
                 for(Entry<Double, Double> entry : rules.entrySet()){
-                    writer.println(dict.getIdToString(entry.getKey().intValue()) +
-                    del + dict.getIdToString(entry.getValue().intValue()));
+                    if(dictionary.getIdToString(entry.getKey().intValue())!=null){
+                        writer.println(dictionary.getIdToString(entry.getKey().intValue()) +
+                        del + qis.get(0).getDictionary().getIdToString(entry.getValue().intValue()));
+                    }
                     counter ++;
                 }
+                
                 writer.close();
                 
             }
         } catch (FileNotFoundException | UnsupportedEncodingException ex) {
             //Logger.getLogger(AnonymizedDatasetPanel.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public void exportRelSet(String file,Data dataset, Map<Integer, Map<Object,Object>> rules, Map<Integer, Hierarchy> qis){
+        RelSetData data = (RelSetData) dataset;
+        Map <Integer,String> colNamesType = dataset.getColNamesType();
+        DictionaryString dictionary = dataset.getDictionary();
+        
+        try (PrintWriter writer = new PrintWriter(file, "UTF-8")) {
+            writer.println("Anonymization rules:");
+            for(Entry<Integer,Map<Object,Object>> entry : rules.entrySet()){
+                String columnName = dataset.getColumnByPosition(entry.getKey());
+                writer.println();
+                writer.println(columnName);
+                
+                String del = "->";
+                
+                for(Entry<Object, Object> entryRules : entry.getValue().entrySet()){
+                    if(colNamesType.get(entry.getKey()).equals("set")){
+                        if(dictionary.getIdToString(((Double)entryRules.getKey()).intValue())!=null){
+                            writer.println(dictionary.getIdToString(((Double)entryRules.getKey()).intValue()) +
+                            del + qis.get(entry.getKey()).getDictionary().getIdToString(((Double)entryRules.getValue()).intValue()));
+                        }
+                    }
+                    else if(colNamesType.get(entry.getKey()).equals("int")){
+                        System.out.println("key "+entryRules.getKey()+" value "+entryRules.getValue());
+                        if(entryRules.getKey()!=null){
+                            if(qis.get(entry.getKey()).getHierarchyType().equals("range")){
+                                writer.println(((Double)entryRules.getKey()).intValue() +
+                                del + ((RangeDouble)entryRules.getValue()).toString());
+                            }
+                            else{
+                                writer.println(((Double)entryRules.getKey()).intValue() +
+                                del + ((Double)entryRules.getValue()).intValue());
+                            }
+                        }
+                    }
+                    else if(colNamesType.get(entry.getKey()).equals("double")){
+                        if(qis.get(entry.getKey()).getHierarchyType().equals("range")){
+                            writer.println(entryRules.getKey() +
+                                del + ((RangeDouble)entryRules.getValue()).toString());
+                        }
+                        else{
+                          writer.println(entryRules.getKey() +
+                            del + entryRules.getValue());  
+                        }
+                        
+                    }
+                    else{
+                        if(dictionary.getIdToString(((Double)entryRules.getKey()).intValue())!=null){
+                            if(qis.get(entry.getKey()).getHierarchyType().equals("range")){
+                                RangeDate rd = (RangeDate) entryRules.getValue();
+                                writer.println(dictionary.getIdToString(((Double)entryRules.getKey()).intValue()) +
+                                    del + rd.dateToString(qis.get(entry.getKey()).translateDateViaLevel(qis.get(entry.getKey()).getHeight() - qis.get(entry.getKey()).getLevel(rd))));  
+                            }
+                            else{
+                                writer.println(dictionary.getIdToString(((Double)entryRules.getKey()).intValue()) +
+                                    del + qis.get(entry.getKey()).getDictionary().getIdToString(((Double)entryRules.getValue()).intValue()));
+                            }
+                        }
+                    }
+                }
+                writer.flush();
+            }
+            writer.flush();
+            writer.close();
+            
+        }catch(Exception e){
+            System.out.println("Rules export exception "+e.getMessage());
         }
     }
     
@@ -469,6 +580,7 @@ public class AnonymizationRules {
                         return "(null)";
                     }
                     else{
+//                        System.out.println("anonymizedValueeeeeeeDouble = " + anonymizedValue + ", value = " + value+" level="+level);
                         anonymizedValue = h.getParent(anonymizedValue);
                     }
                 }
@@ -480,7 +592,8 @@ public class AnonymizationRules {
                     }
                     else{
                         //System.out.println("22222222222222222");
-                       // System.out.println("anonymizedValueeeeeee = " + anonymizedValue + ", value = " + value);
+                        System.out.println("anonymizedValueeeeeee = " + anonymizedValue + ", value = " + value+" level="+level);
+                        
                         anonymizedValue = h.getParent(anonymizedValue);
                         //System.out.println("anonymizedValue = " + anonymizedValue);
                     }

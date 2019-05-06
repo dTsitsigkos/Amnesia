@@ -60,6 +60,14 @@ public class Apriori implements Algorithm {
         this.data = this.dataset.getDataSet();
     }
     
+    public void setData(double [][] data){
+        this.data = data;
+    }
+    
+    public void setHier(Hierarchy h){
+        this.hierarchy = h;
+    }
+    
     @Override
     public void setHierarchies(Map<Integer, Hierarchy> hierarchies) {
         this.hierarchies = hierarchies;
@@ -96,13 +104,28 @@ public class Apriori implements Algorithm {
         }*/
         
         while((transaction = getNextTransaction()) != null){
-            /*System.out.println("transaction = ");
-            for (int i = 0 ; i < transaction.length ; i ++ ){
-                System.out.println(transaction[i]+",");
-            }*/
+//            System.out.println("transaction = ");
+//            for (int i = 0 ; i < transaction.length ; i ++ ){
+//                System.out.println(transaction[i]+",");
+//            }
             
             //expand transaction
+            //System.out.println("transaction = ");
+            //for( int i = 0 ; i < transaction.length ; i ++){
+             //   System.out.print( transaction[i] + ",");
+            //}
+            //System.out.println();
             Set<Double> expandedTransaction = expandTransaction(transaction);
+//            System.out.println("expanded transaction = ");
+//            System.out.println(expandedTransaction+",");
+           
+            
+            
+            //System.out.println("expandedTransaction = ");
+            //for( Double s : expandedTransaction){
+            //    System.out.print(s + ",");
+            //}
+           // System.out.println();
             
             //generate combinations
             combinations = Combinations.getCombinations(expandedTransaction, size, hierarchy);
@@ -138,23 +161,15 @@ public class Apriori implements Algorithm {
         }
         
         double[] originalTransaction = data[nextIndex];
+
+        
+        
         double[] anonTransaction = new double[originalTransaction.length];
         for(int i=0; i<originalTransaction.length; i++){
             anonTransaction[i] = getTranslation(originalTransaction[i]);
         }
         nextIndex++;
-        
-        //System.out.println("originalTransaction = ");
-        /*for (int i = 0 ; i < originalTransaction.length ; i ++ ){
-            System.out.println(originalTransaction[i]+",");
-        }
-        
-        //System.out.println("anonTransaction = ");
-        for (int i = 0 ; i < anonTransaction.length ; i ++ ){
-            System.out.println(anonTransaction[i]+",");
-        }*/
-        
-        
+       
         return anonTransaction;
     }
     
@@ -312,6 +327,7 @@ public class Apriori implements Algorithm {
                 for(int i=0; i<anonPath.length; i++){
                     double anonItem = anonPath[i];
                     if((anonItem != -1) && (anonItem != prefix.get(i))){
+                        System.out.println("General anon : "+this.hierarchy.getDictionary().getIdToString((int)anonItem)+" prefix "+this.hierarchy.getDictionary().getIdToString(prefix.get(i).intValue()));
                         generalize(anonItem);
                     }
                 }
@@ -324,7 +340,7 @@ public class Apriori implements Algorithm {
         int l = getLevel(generalized);
         if(l == 0)
             return;
-        
+
         Set<Double> children = this.hierarchy.getChildrenIds(generalized);
         if(children != null){
             if(l == 1){
@@ -391,6 +407,8 @@ public class Apriori implements Algorithm {
         List<Integer> nodeIds = this.hierarchy.getNodeIdsInLevel(0);
         domainSize = nodeIds.size();
         
+        System.out.println("Domain size : "+domainSize);
+        
         //allocate and init testgens
         this.testGens = new int[domainSize];
         for (int i=0;i<domainSize;i++) {
@@ -398,16 +416,22 @@ public class Apriori implements Algorithm {
         }
         
         //get root id
-        String strValue = (String)this.hierarchy.getRoot();
-        int maxId = this.hierarchy.getDictionary().getStringToId(strValue);
+        //String strValue = (String)this.hierarchy.getRoot();
+        //int maxId = this.hierarchy.getDictionary().getStringToId(strValue);
+        Double num = (Double)this.hierarchy.getRoot();
+        int maxId = num.intValue();
+       
+        System.out.println("Root num = " + num);
         
         //allocate and init pointMap
         pointMap = new int[maxId + 1][];
         costs = new double[maxId + 1];
-        
+        hierarchy.computeWeights(dataset, dataset.getColumnByPosition(0));
         for(int height=0; height<this.hierarchy.getHeight(); height++){
+            System.out.println("height = " + height);
             List<Integer> nodeIdsInLevel = this.hierarchy.getNodeIdsInLevel(height);
             for(Integer nodeId : nodeIdsInLevel){
+                
                 pointMap[nodeId] = new int[3];
                 pointMap[nodeId][0] = nodeId;       //original value
                 pointMap[nodeId][1] = nodeId;       //generalized value
@@ -429,6 +453,12 @@ public class Apriori implements Algorithm {
                 }
             }
         }
+        
+        /*System.out.println("Pointttttt Mapppp");
+        for ( int i = 0 ; i < pointMap.length; i ++){
+            System.out.println("Original : " + pointMap[i][0] + ", Generalize : " + pointMap[i][1] + ", height = " + pointMap[i][2]);
+        }*/
+        
     }
     
     public double getAddedCost(double[] comb, List<Double> base){
@@ -447,21 +477,23 @@ public class Apriori implements Algorithm {
         existingCost = getTotalCost();
         newCost = getTestCost();
         
+        System.out.println("exist cost "+existingCost+" test Cost "+newCost);
         return (newCost - existingCost);
     }
     
     private void resetTestGens(){
         for(int i=0; i<domainSize; i++){
+//            System.out.println("i="+i);
             testGens[i] = pointMap[i][1];
         }
     }
     
     private void generalizeTest(double generalized) {
         int l = getLevel(generalized);
-        
-        if(l == 0)
+        if(l == 0){
             return;
-        
+        }
+                
         Set<Double> children = this.hierarchy.getChildrenIds(generalized);
         if(children != null){
             if (l == 1){
@@ -474,11 +506,12 @@ public class Apriori implements Algorithm {
                     genTest(child, generalized);
                 }
             }
-        }
+        } 
         
     }
     
     private void genTest(double o, double g){
+        
         if(getLevel(o) == 0){
             testGens[(int)o] = (int)g;
         }

@@ -25,6 +25,13 @@ public class CheckDatasetForKAnomymous {
         int k = -1;
         Map<String,Integer> freq = new HashMap<String,Integer>();
         double [][] data = null;
+        double[][] setData = null;
+        String setDelimeter="";
+        
+        if(dataset instanceof RelSetData){
+            setData = ((RelSetData)dataset).getSet();
+            setDelimeter = ((RelSetData)dataset).getSetDelimeter();
+        }
         
         data = dataset.getDataSet();
         for (int i = 0 ; i < data.length; i++ ){
@@ -32,12 +39,31 @@ public class CheckDatasetForKAnomymous {
             boolean FLAG = false;
             for ( int j = 0 ; j < data[i].length ; j ++ ){
                 if (sQids.contains(j)){
-                    if ( FLAG == false){
-                        row = data[i][j] + "";
-                        FLAG = true;
+                    if(data[i][j]==-1){
+                        String setRow = "";
+                        for(int n=0; n< setData[i].length; n++){
+                            setRow += setData[i][n];
+                            if(n!=setData[i].length-1){
+                                setRow += setDelimeter;
+                            }
+                        }
+                        
+                        if(FLAG == false){
+                            row = setRow + "";
+                            FLAG = true;
+                        }
+                        else{
+                            row = row + "," + setRow;
+                        }
                     }
                     else{
-                        row = row + "," + data[i][j];
+                        if ( FLAG == false){
+                            row = data[i][j] + "";
+                            FLAG = true;
+                        }
+                        else{
+                            row = row + "," + data[i][j];
+                        }
                     }
                 }
             }

@@ -35,6 +35,7 @@ import java.util.Date;
 public interface Hierarchy <T> {
     public int[][] getHierarchy();
     public void setHierarchy();
+    public void setDictionaryData(DictionaryString dict);
     public int getHierarchyLength();
     public void print();
     
@@ -73,6 +74,7 @@ public interface Hierarchy <T> {
     
     public T checkColumn(int column, Data dataset);
     public DictionaryString getDictionary();
+    public DictionaryString getDictionaryData();
     
     public boolean validCheck(String parsePoint);
     public void transformParents();
@@ -83,6 +85,7 @@ public interface Hierarchy <T> {
     public Set<Double> getChildrenIds(double d);
     public void buildDictionary(DictionaryString dictionary);
     public List<Integer> getNodeIdsInLevel(int level);
+    public List<T> getNodesInLevel(int level);
     public void setNodesType(String nodesType);
     public int findAllChildren(T node, int sum);
     

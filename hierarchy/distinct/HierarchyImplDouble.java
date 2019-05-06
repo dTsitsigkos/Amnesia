@@ -69,6 +69,7 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
 //    Map<Double, List<Double>> siblings = new HashMap<>();
     //@JsonView(View.Hier.class)
     Map<Integer, ArrayList<Double>> allParents = null;
+    Map<Integer, List<Integer>> allParentIds = null;
     
     
     public HierarchyImplDouble(String inputFile){
@@ -78,6 +79,7 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
         parents = new HashMap<>();
     //    Map<Double, List<Double>> siblings = new HashMap<>();
         allParents = new HashMap<>();
+        allParentIds = new HashMap<>();
     }
     
     public HierarchyImplDouble(String _name, String _nodesType){
@@ -88,12 +90,19 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
         parents = new HashMap<>();
     //    Map<Double, List<Double>> siblings = new HashMap<>();
         allParents = new HashMap<>();
+        allParentIds = new HashMap<>();
 //        this.hierarchyType = "distinct";
     }
 
     @Override
     public String getInputFile() {
         return inputFile;
+    }
+    
+    
+    @Override
+    public DictionaryString getDictionaryData(){
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     
@@ -1013,7 +1022,13 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
 
     @Override
     public double getParentId(double d) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        Double parentValue = this.parents.get(d);
+        if(parentValue == null){
+            return -1;
+        }
+        else{
+            return parentValue;
+        }
     }
 
     @Override
@@ -1023,22 +1038,48 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
 
     @Override
     public Set<Double> getChildrenIds(double d) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        List<Double> childrenIds = this.children.get(d);
+        Set<Double> chs = null;
+        
+        if(childrenIds != null){
+            chs = new HashSet<>(childrenIds);
+//            System.out.println(childrenStrings);
+//            for(String child : childrenStrings){
+//                
+//                chs.add((double)this.dict.getStringToId(child));
+//            }
+        }
+        return chs;
     }
 
     @Override
     public Integer getLevel(double nodeId) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return (this.height - this.getLevel((Double)nodeId) - 1) ;
     }
 
     @Override
     public List<Integer> getNodeIdsInLevel(int level) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+         int curLevel = this.height - level - 1;
+        List<Integer> curLevelIds = this.allParentIds.get(curLevel);
+        if(curLevelIds == null){
+            
+            ArrayList<Double> nodesInLevel = this.getAllParents().get(curLevel);
+            List<Integer> nodeIdsInLevel = new ArrayList<>(nodesInLevel.size());
+            for(Double id : nodesInLevel){
+                nodeIdsInLevel.add(id.intValue());
+            }
+            
+            this.allParentIds.put(curLevel, nodeIdsInLevel);
+            return nodeIdsInLevel;
+        }
+        else{
+            return curLevelIds;
+        }
     }
 
     @Override
     public Integer getWeight(double nodeId) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return getWeight((Double)nodeId);
     }
 
 
@@ -1356,6 +1397,16 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
 
     @Override
     public int translateDateViaLevel(int level) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public List<Double> getNodesInLevel(int level) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void setDictionaryData(DictionaryString dict) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

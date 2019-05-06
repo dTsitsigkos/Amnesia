@@ -61,6 +61,7 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
     
     Map<RangeDouble, List<RangeDouble>> children = new HashMap<>();
     Map<RangeDouble, NodeStats> stats = new HashMap<>();
+    Map<Double,NodeStats> statsDistinct = new HashMap<>();
     Map<RangeDouble, RangeDouble> parents = new HashMap<>();
 //    Map<Range, List<Range>> siblings = new HashMap<>();
     Map<Integer,ArrayList<RangeDouble>> allParents = new HashMap<>();
@@ -185,6 +186,11 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
     public Integer getLevel(RangeDouble node) {
         return this.stats.get(node).level;
     }
+    
+    @Override
+    public DictionaryString getDictionaryData(){
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 
     @Override
     public RangeDouble getParent(RangeDouble node) {
@@ -292,6 +298,7 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
                     StringBuilder sb = new StringBuilder();
                     System.out.println("cur parent = " + curParent);
                     if (this.getChildren(curParent) != null){
+                        System.out.println("children "+this.getChildren(curParent));
                         for (RangeDouble child : this.getChildren(curParent)){
                             sb.append(((RangeDouble)child).lowerBound);
                             sb.append(",");
@@ -325,6 +332,11 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
        
         
         if(parent != null){
+            
+            System.out.println("new obj = " + newObj);
+            System.out.println("parent = " + parent);
+            System.out.println("level = " + this.stats.get(parent).getLevel());
+            
             this.stats.put(newObj, new NodeStats(this.stats.get(parent).getLevel()+1));
             
             this.parents.put(newObj, parent);
@@ -382,17 +394,27 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
         RangeDouble parent = null;
         ArrayList parentsList = null;
         List<RangeDouble> childrenListNew = null;
+        boolean changeRoot = false;
         
+        /*System.out.println("old "+oldValue+" new "+newValue);
+        System.out.println("Stats "+this.stats.get(oldValue)+" stats root "+this.stats.get(root));
         System.out.println(this.stats.get(oldValue).getLevel());
         System.out.println("before");
             for (Map.Entry<Integer, ArrayList<RangeDouble>> entry : this.allParents.entrySet()) {
                 System.out.println(entry.getKey()+" : "+entry.getValue());
+        }*/
+            
+        System.out.println("before");
+            for (Map.Entry<RangeDouble, NodeStats> entry : this.stats.entrySet()) {
+            System.out.println(entry.getKey()+" : "+entry.getValue());
         }
+        
         
         List<RangeDouble> childrenList = this.children.get(oldValue);
         if(childrenList != null){//node
             if ( allParents.get(0).get(0).equals(oldValue)){
                 System.out.println("roooooooooooooot");
+                changeRoot = true;
                 
                 //children
                 this.children.put(newValue, childrenList);
@@ -409,8 +431,10 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
                  parentsList.remove(0);
                  parentsList.add(newValue);
                  allParents.put(0,parentsList);
+                 this.stats.remove(root);
                  root.setLowerBound(newValue.lowerBound);
                  root.setUpperBound(newValue.upperBound);
+                 this.stats.put(root, new NodeStats(0));
             }
             else{
                 System.out.println("nodeeeeeeeeeeeeee");
@@ -489,10 +513,21 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
             
         }
         
-        this.stats.put(newValue, this.stats.get(oldValue));
-        this.stats.remove(oldValue);
         
-        System.out.println("after");
+        if(!changeRoot){
+            this.stats.put(newValue, this.stats.get(oldValue));
+            System.out.println("after1");
+                for (Map.Entry<RangeDouble, NodeStats> entry : this.stats.entrySet()) {
+                System.out.println(entry.getKey()+" : "+entry.getValue());
+            }
+            this.stats.remove(oldValue);
+            System.out.println("after2");
+                for (Map.Entry<RangeDouble, NodeStats> entry : this.stats.entrySet()) {
+                System.out.println(entry.getKey()+" : "+entry.getValue());
+            }
+        }
+        
+        /*System.out.println("after");
             for (Map.Entry<RangeDouble, List<RangeDouble>> entry : this.children.entrySet()) {
             System.out.println(entry.getKey()+" : "+entry.getValue());
         }
@@ -508,7 +543,7 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
         System.out.println("after");
             for (Map.Entry<RangeDouble, NodeStats> entry : this.stats.entrySet()) {
             System.out.println(entry.getKey()+" : "+entry.getValue());
-        }
+        }*/
             
         /*
         if(parent != null){
@@ -820,8 +855,16 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
         //assign values to nodes, starting from root
         
         for (double[] columnData : data) {
-            System.out.println("columnData[c] = " + columnData[c]);
-            compute(getRoot(), columnData[c],true,true);     
+//            System.out.println("columnData[c] = " + columnData[c]);
+            compute(getRoot(), columnData[c],true,true);
+            if(this.statsDistinct.get(columnData[c])!=null){
+                this.statsDistinct.get(columnData[c]).weight++;
+            }
+            else{
+               NodeStats nodestat = new NodeStats(0) ;
+               nodestat.setWeight(1);
+               this.statsDistinct.put(columnData[c], nodestat);
+            }
         }               
     }
     
@@ -835,18 +878,18 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
 
         if (isRoot == true){
             if(r.contains(value)){
-                System.out.println("Compute");
-                System.out.println("value = " + value.toString());
-                System.out.println(r.toString());
+//                System.out.println("Compute");
+//                System.out.println("value = " + value.toString());
+//                System.out.println(r.toString());
                 this.stats.get(r).weight++;
             }
         }
         else{
             if(r.contains2(value,whichContain)){             
-                System.out.println("Compute111111");
-                System.out.println("value = " + value.toString());
-                System.out.println(whichContain);
-                System.out.println(r.toString());
+//                System.out.println("Compute111111");
+//                System.out.println("value = " + value.toString());
+//                System.out.println(whichContain);
+//                System.out.println(r.toString());
                 this.stats.get(r).weight++;
             }
 
@@ -864,36 +907,36 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
                 //System.out.println("ch = " + ch.toString());
                 int counter = 1;
                 for(RangeDouble c : ch){
-                    System.out.println("cccccccccccccccc = " + c.toString());
+//                    System.out.println("cccccccccccccccc = " + c.toString());
                     if (value == 2147483646.0 || value.equals(Double.NaN)){
                        if (c.toString().equals("NaN - NaN")){
                            this.stats.get(c).weight++;
                            this.stats.get(getRoot()).weight++;
-                            System.out.println("value = " + value.toString());
-                            System.out.println(c.toString());
+//                            System.out.println("value = " + value.toString());
+//                            System.out.println(c.toString());
                        }
                        else if(c.toString().equals("0 - 0")){
                            this.stats.get(c).weight++;
                            this.stats.get(getRoot()).weight++;
-                            System.out.println("value = " + value.toString());
-                            System.out.println(c.toString());
+//                            System.out.println("value = " + value.toString());
+//                            System.out.println(c.toString());
                        }
                     }
                     else if (isRoot == true){
                         if(!c.toString().equals("0 - 0") && !c.toString().equals("NaN - NaN") ){
                             if (counter == ch.size()-1){
                                 if(c.contains2(value,false)){
-                                    System.out.println("Compute22222");
-                                    System.out.println("value = " + value.toString());
-                                    System.out.println(c.toString());
+//                                    System.out.println("Compute22222");
+//                                    System.out.println("value = " + value.toString());
+//                                    System.out.println(c.toString());
                                     compute(c, value,false,false);
                                 }
                             }
                             else{
                                 if(c.contains2(value,true)){
-                                    System.out.println("Compute3333");
-                                     System.out.println("value = " + value.toString());
-                                    System.out.println(c.toString());
+//                                    System.out.println("Compute3333");
+//                                     System.out.println("value = " + value.toString());
+//                                    System.out.println(c.toString());
                                     compute(c, value,true,false);
                                 }
                             }
@@ -904,17 +947,17 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
                        
                             if (counter == ch.size()){
                                 if(c.contains2(value,false)){
-                                    System.out.println("Compute44444");
-                                    System.out.println("value = " + value.toString());
-                                    System.out.println(c.toString());
+//                                    System.out.println("Compute44444");
+//                                    System.out.println("value = " + value.toString());
+//                                    System.out.println(c.toString());
                                     compute(c, value,false,false);
                                 }
                             }
                             else{
                                 if(c.contains2(value,true)){
-                                    System.out.println("Compute555555");
-                                     System.out.println("value = " + value.toString());
-                                    System.out.println(c.toString());
+//                                    System.out.println("Compute555555");
+//                                     System.out.println("value = " + value.toString());
+//                                    System.out.println(c.toString());
                                     compute(c, value,true,false);
                                 }
                             }
@@ -1204,7 +1247,7 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
 
     @Override
     public Integer getLevel(double nodeId) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return 0;
     }
 
     @Override
@@ -1214,7 +1257,7 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
 
     @Override
     public Integer getWeight(double nodeId) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return this.statsDistinct.get(nodeId).weight;
     }
     
 
@@ -1633,7 +1676,7 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
                         else if ( i == tempArr.size()-2){
                             if(!tempR.lowerBound.isNaN() && !tempR.upperBound.isNaN()){ 
                                 if(!tempR.upperBound.equals(upperLimit)){
-                                    str = "Hierarchy Name: " + this.name + "\nLevel: " + entry.getKey() +"\nLast node of the last level must have the same upper bound as the root node. Problem in range:" + r.toString() + ". Root range is :" + (int)lowerLimit + "-" + (int)upperLimit;
+                                    str = "Hierarchy Name: " + this.name + "\nLevel: " + entry.getKey() +"\nLast node of the last level must have the same upper bound as the root node. Problem in range:" + tempR.toString() + ". Root range is :" + (int)lowerLimit + "-" + (int)upperLimit;
                                     return str;
                                     //System.out.println("Hierarchy Name:" + this.name + "\nLevel: " + i +"\nLast node of the last level must have the same upper bound as the root node. Problem in range:" + r.toString());
                                 }
@@ -1664,6 +1707,18 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
 
     @Override
     public int translateDateViaLevel(int level) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public List<RangeDouble> getNodesInLevel(int level) {
+        int curLevel = this.height - level - 1;
+        List<RangeDouble> curLevelIds =  this.allParents.get(curLevel);
+        return curLevelIds;
+    }
+
+    @Override
+    public void setDictionaryData(DictionaryString dict) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

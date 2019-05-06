@@ -5,6 +5,7 @@
  */
 package hierarchy.ranges;
 
+import anonymizeddataset.AnonymizedDataset;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -78,6 +79,44 @@ public class RangeDate {
         return toString().hashCode();
     }
     
+    public int compareTo(RangeDate d){
+        if(upperBound.equals(d.upperBound) && lowerBound.equals(d.lowerBound)){
+            return 0;
+        }
+        else if(this.lowerBound.before(d.lowerBound)  && upperBound.equals(d.upperBound)){
+            return 1;
+        }
+        else if(this.upperBound.after(d.upperBound)){
+            return 1;
+        }
+        else{
+            return -1;
+        }
+    }
+    
+    
+    public int compareTo(Date d){
+        if(this.upperBound.equals(d)){
+            return 1;
+        }
+        else if(this.lowerBound.equals(d)){
+            return 1;
+        }
+        else if(this.upperBound.after(d) && this.lowerBound.before(d)){
+            return 1;
+        }
+        else if(this.lowerBound.after(d)){
+            return 1;
+        }
+        else{
+            return -1;
+        }
+    }
+    
+    public boolean contains(String v) throws ParseException{
+        Date d = AnonymizedDataset.getDateFromString(v);
+        return this.contains(d);
+    }
     
     public boolean contains(Date v){
         //return v >= this.lowerBound && v <= this.upperBound;
@@ -94,6 +133,10 @@ public class RangeDate {
         return false;
         
         //return v.after(this.lowerBound) && v.before(this.upperBound);
+    }
+    
+    public boolean contains2(String v, boolean FLAG) throws ParseException{
+        return contains2(AnonymizedDataset.getDateFromString(v),FLAG);
     }
     
     public boolean contains2(Date v, boolean FLAG){

@@ -58,9 +58,11 @@ public class Buffer {
             GeneralizedRow generalizedRow = project(node, qidColumns, dataset[i]);
             Integer count;
             if((count = frequencies.get(generalizedRow)) != null){
+//                System.out.println("gRow"+generalizedRow.toString()+"Count1="+(count+1));
                 frequencies.put(generalizedRow, ++count);
             }
             else {
+//                 System.out.println("gRow"+generalizedRow.toString()+"Count2="+count);
                 frequencies.put(generalizedRow, 1);
             }
         }
@@ -76,15 +78,20 @@ public class Buffer {
         GeneralizedRow gRow = new GeneralizedRow(node.getTransformation().length);
         
         int j = 0;
+        DictionaryString dict = data.getDictionary();
         for(int k=0; k<node.getTransformation().length; k++){
             Hierarchy h = hierarchies.get(qidColumns[k]);
             
             //get the value of the specified attribute
             Object rowValue = null; 
-            if(data.getColNamesType().get(qidColumns[k]).equals("string") || data.getColNamesType().get(qidColumns[k]).equals("date")){
-                DictionaryString dict = data.getDictionary(qidColumns[k]);
+            if(data.getColNamesType().get(qidColumns[k]).equals("string") ){
+//                DictionaryString dict = data.getDictionary(qidColumns[k]);
+                //rowValue = dict.getIdToString((int)row[qidColumns[k]]);
+                rowValue = row[qidColumns[k]];
+            }
+            else if( data.getColNamesType().get(qidColumns[k]).equals("date")){
                 rowValue = dict.getIdToString((int)row[qidColumns[k]]);
-            } 
+            }
             else {
                 rowValue = row[qidColumns[k]];
             }
@@ -94,10 +101,6 @@ public class Buffer {
             //generalize value
             for(int i=0; i<node.getTransformation()[k]; i++){
 
-                //System.out.println("h.getHierarchyType() = " + h.getHierarchyType());
-                //System.out.println("h.getNodesType() = " + h.getNodesType());
-                //System.out.println("nodegetTransformation = " + node.getTransformation()[k]);
-                
                 if(h.getHierarchyType().equals("range")){
                     if(h.getNodesType().equals("double") ||  h.getNodesType().equals("int")){
                         if ( i ==0 ){
@@ -135,23 +138,8 @@ public class Buffer {
                         else{
                             rd = (RangeDate) rowValue;
                         }
-                        //System.out.println("rowValue = " + rowValue +"\tdate = " + d.toString());
-                        ////////////////////////////////////////////////
                         if (d != null){
-                            //System.out.println("eimai edwwwwwwwwwwwwww");
                             if ( i ==0 ){
-                                //System.out.println("mpika");
-                                /*if ( d.equals(Double.NaN)){
-                                    //System.out.println("mpika2222");
-                                    Map<Integer, ArrayList<RangeDate>> x = h.getAllParents();
-                                    ArrayList<RangeDate> newList = x.get(x.size()-1);
-                                    if(newList.size() != 1){
-                                        rowValue = newList.get(0);
-                                    }
-                                    else{
-                                        rowValue = x.get(0).get(0);//h.getParent((Double)anonymizedValue);
-                                    }
-                                }*/
                                 if ( d == null ){
                                     Map<Integer, ArrayList<RangeDate>> x = h.getAllParents();
                                     ArrayList<RangeDate> newList = x.get(x.size()-1);
@@ -163,33 +151,16 @@ public class Buffer {
                                     }
                                 }
                                 else{
-                                    //System.out.println("mpika3333");
-                                    //System.out.println("edwwwwwwwwwwwwwwwww = " + d.toString());
                                     rowValue = h.getParent(d);
                                 }    
                             }
                             else{
-                                //System.out.println("mpika222222222222");
                                 rowValue = h.getParent(rowValue);
                             }
                         }
                         else{
-                           // System.out.println("eimai edwwwwwwwwwwwwww2222222222222222");
                             if ( i ==0 ){
-                                //System.out.println("mpika");
-                                /*if ( rd.equals(Double.NaN)){
-                                    //System.out.println("mpika2222");
-                                    Map<Integer, ArrayList<RangeDate>> x = h.getAllParents();
-                                    ArrayList<RangeDate> newList = x.get(x.size()-1);
-                                    if(newList.size() != 1){
-                                        rowValue = newList.get(0);
-                                    }
-                                    else{
-                                        rowValue = x.get(0).get(0);//h.getParent((Double)anonymizedValue);
-                                    }
-                                }*/
                                 if ( rd == null){
-                                    //System.out.println("mpika2222");
                                     Map<Integer, ArrayList<RangeDate>> x = h.getAllParents();
                                     ArrayList<RangeDate> newList = x.get(x.size()-1);
                                     if(newList.size() != 1){
@@ -201,13 +172,10 @@ public class Buffer {
                                 }
                                 
                                 else{
-                                    //System.out.println("mpika3333");
-                                   // System.out.println("edwwwwwwwwwwwwwwwww = " + rd.toString());
                                     rowValue = h.getParent(rd);
                                 }    
                             }
                             else{
-                                //System.out.println("mpika222222222222");
                                 rowValue = h.getParent(rowValue);
                             }
                         }
@@ -217,11 +185,12 @@ public class Buffer {
                     }
                 }
                 else{
+                    //System.out.println("rowValue = " + rowValue);
                     rowValue = h.getParent(rowValue);
                 }
             }
 
-            //System.out.println("rowvalue = " + rowValue);
+//            System.out.println("rowvalue = " + rowValue);
             
             gRow.generalizedColumns[j] = rowValue.toString();
             j++;
@@ -250,6 +219,7 @@ public class Buffer {
        
         for(GeneralizedRow distinctRow : frequencies.keySet()){
             Integer count = frequencies.get(distinctRow);
+//            System.out.println("count="+count+" gRow="+distinctRow.toString());
             if(count < k){
                 isAnonymous = false;
                 break;
@@ -319,18 +289,19 @@ public class Buffer {
                         }
                     }
                     else{
-                        if(data.getColNamesType().get(qidColumns[i]).equals("string") || data.getColNamesType().get(qidColumns[i]).equals("date") ){
+                       /* if(data.getColNamesType().get(qidColumns[i]).equals("string") || data.getColNamesType().get(qidColumns[i]).equals("date") ){
                             parent = value;
                             for(int j=0; j<k; j++)
                                 parent =  h.getParent(parent);
                         }
-                        else{
+                        else{*/
                             Double doubleValue = Double.parseDouble(value.toString());
                             parent = doubleValue;
                             for(int j=0; j<k; j++)
                                 parent = h.getParent(parent);  
-                        }  
+                        //}  
                     }
+                    
                     gRow.generalizedColumns[i] = parent.toString();
                 }  
             }
@@ -339,9 +310,11 @@ public class Buffer {
             Integer count;
             Integer curCount = parentNodeBuffer.getFrequencies().get(pRow);   
             if((count = frequencies.get(gRow)) != null){
+                
                 frequencies.put(gRow, count + curCount);
             }
             else{
+                
                 frequencies.put(gRow, curCount);
             }
         }

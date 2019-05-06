@@ -59,7 +59,7 @@ public class Pair {
         else{
             String []temp;
             String date;
-            DictionaryString dictionary = dataset.getDictionary(columnIndex);
+            DictionaryString dictionary = dataset.getDictionary();
             
             for(int i=0; i<data.length; i++){
                 Double d = (Double)data[i][columnIndex];

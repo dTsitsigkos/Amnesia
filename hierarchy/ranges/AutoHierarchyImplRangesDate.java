@@ -135,7 +135,7 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
                     calendar.set(Calendar.MONTH, (calendar.get(Calendar.MONTH) + 1));
                 }
                 else{
-                    calendar.set(Calendar.MONTH, (calendar.get(Calendar.MONTH)));
+                    calendar.set(Calendar.MONTH, (calendar.get(Calendar.MONTH) + months));
                 }
                 calendar.set(Calendar.DAY_OF_MONTH, 1);
                 calendar.set(Calendar.HOUR, 0);
@@ -315,6 +315,8 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
                 currentDate = calendar.getTime();
 
             }
+//            yearsArr.add(null);
+//            yearsArr.add(null);
             
             yearsMap.put(0, yearsArr);
             
@@ -384,14 +386,19 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
                     ArrayList<RangeDate> childsTemp = new ArrayList<RangeDate>(); 
                     
                     
-                    while( p < prevLevelYear.size() &&  (prevLevelYear.get(p).before(yearsArrTemp.get(k)) || prevLevelYear.get(p).equals(yearsArrTemp.get(k)) )){
-                        childsTemp.add(new RangeDate (prevLevelYear.get(p-1),prevLevelYear.get(p)));
-                        parents.put(new RangeDate (prevLevelYear.get(p-1),prevLevelYear.get(p)), new RangeDate(yearsArrTemp.get(k-1), yearsArrTemp.get(k)));
-                        p = p + 2;        
-                    }
+                   
                     
-                    children.put(d, childsTemp);
-                    childsTemp = new ArrayList<RangeDate>();
+                        while( p < prevLevelYear.size() &&  (prevLevelYear.get(p).before(yearsArrTemp.get(k)) || prevLevelYear.get(p).equals(yearsArrTemp.get(k)) )){
+                            childsTemp.add(new RangeDate (prevLevelYear.get(p-1),prevLevelYear.get(p)));
+                            parents.put(new RangeDate (prevLevelYear.get(p-1),prevLevelYear.get(p)), new RangeDate(yearsArrTemp.get(k-1), yearsArrTemp.get(k)));
+                            p = p + 2;        
+                        }
+                    
+                    
+                    
+                        children.put(d, childsTemp);
+                        childsTemp = new ArrayList<RangeDate>();
+                    
                 }
                 
                 
@@ -607,13 +614,21 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
             
             
             //System.out.println("autogenerateeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee44444444444444444444444444444444");
-                    
-            root = new RangeDate(dateStart,dateEnd);
+            RangeDate tempRoot = new RangeDate();
+            tempRoot.setLowerBound(dateStart);
+            tempRoot.setUpperBound(dateEnd);
             ArrayList<RangeDate> allP = new ArrayList<RangeDate>();
             ArrayList<RangeDate> allP2 = new ArrayList<RangeDate>();
-            allP.add(root);
+            allP.add(tempRoot);
             allParents.put(0, allP);
-            stats.put(root, new NodeStats(0));
+            stats.put(tempRoot, new NodeStats(0));
+            root = tempRoot;
+//            root = new RangeDate(dateStart,dateEnd);
+//            ArrayList<RangeDate> allP = new ArrayList<RangeDate>();
+//            ArrayList<RangeDate> allP2 = new ArrayList<RangeDate>();
+//            allP.add(root);
+//            allParents.put(0, allP);
+//            stats.put(root, new NodeStats(0));
             
             allP = new ArrayList<RangeDate>();
 
@@ -656,8 +671,20 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
                     allParents.put(counter, allP);
                 }
             }
-              
+            
+            ///////null//////
+            RangeDate ranNull = new RangeDate(null,null);
+            allP = allParents.get(1);
+            allP.add(ranNull);
+            parents.put(ranNull, root);
+            childsTemp = (ArrayList<RangeDate>) children.get(root);
+            childsTemp.add(ranNull);
+            children.put(ranNull,null);
+            stats.put(ranNull,new NodeStats(1));
+            
        } 
+       
+       
         
        //System.out.println("autogenerateeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee5555555555555555555555555");
        

@@ -35,6 +35,7 @@ public class DictionaryString {
     public DictionaryString(){
         idToString = new HashMap<Integer,String>();
         stringToId = new HashMap<String,Integer>();
+       
     }
     
     /**
@@ -118,6 +119,9 @@ public class DictionaryString {
     }
     
     public int getMaxUsedId(){
+        if(this.idToString.isEmpty() && this.stringToId.isEmpty()){
+            return -1;
+        }
         return Collections.max(this.idToString.keySet());
     }
 
@@ -127,6 +131,12 @@ public class DictionaryString {
 
     public Map<String, Integer> getStringToId() {
         return stringToId;
+    }
+    
+    public void update(Integer id, String newValue){
+        this.remove(id);
+        this.putIdToString(id, newValue);
+        this.putStringToId(newValue, id);
     }
     
     

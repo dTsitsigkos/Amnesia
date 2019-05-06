@@ -57,7 +57,8 @@ public class SETData implements Data {
     private Map <Integer,String> colNamesType = null;
     private CheckVariables chVar = null;
     private Map <Integer,String> colNamesPosition = null;
-    private Map <Integer,DictionaryString> dictionary = null;
+//    private Map <Integer,DictionaryString> dictionary = null;
+    private DictionaryString dictionary = null;
     @JsonView(View.DataSet.class)
     private ArrayList<LinkedHashMap> data;
     @JsonView(View.GetColumnNames.class)
@@ -72,19 +73,22 @@ public class SETData implements Data {
 
     
     
-    public SETData(String inputFile, String del){
+    public SETData(String inputFile, String del,DictionaryString dict){
         colNamesType = new TreeMap<Integer,String>();
         colNamesPosition = new HashMap<Integer,String>();
         chVar = new CheckVariables();
-        dictionary = new HashMap <Integer,DictionaryString>();
+//        dictionary = new HashMap <Integer,DictionaryString>();
+        dictionary = dict;
         
         
         this.inputFile = inputFile;
+        System.out.println("DElimeter Set "+del);
         if ( del == null ){
             delimeter = ",";
         }
         else{
             delimeter = del;
+        
         }
         
         
@@ -136,6 +140,11 @@ public class SETData implements Data {
     }
     
     @Override
+    public int getDataColumns() {
+        return this.sizeOfCol;
+    }
+    
+    @Override
     public void setData(double[][] _dataSet) {
         this.dataSet = _dataSet;
     }
@@ -167,7 +176,7 @@ public class SETData implements Data {
         String []temp = null;
         String colNames = null;
         int counter = 0;
-        int stringCount = 0;
+        int stringCount = dictionary.getMaxUsedId()+1;
         boolean FLAG = true;
         smallDataSet = new String[6][1];
         
@@ -175,6 +184,7 @@ public class SETData implements Data {
             fstream = new FileInputStream(inputFile);
             in = new DataInputStream(fstream);
             br = new BufferedReader(new InputStreamReader(in));
+            System.out.println("del save set "+delimeter);
             
             while ((strLine = br.readLine()) != null){
                 
@@ -185,9 +195,11 @@ public class SETData implements Data {
                     smallDataSet[0][0] = strLine;
                 }
                 else{
-                    //System.out.println("strLine = " + strLine);
+                    System.out.println("strLine = " + strLine);
                     
-                    temp = strLine.split(delimeter);
+                    temp = strLine.split("\\"+delimeter,-1);
+                    System.out.println("Set Data "+temp[0]);
+                    
                     
                     dataSet[counter] = new double[temp.length];
                     if ( counter < 5){
@@ -195,19 +207,20 @@ public class SETData implements Data {
                     }
                     
                     for (int i = 0; i < temp.length ; i ++ ){
-                        DictionaryString tempDict = dictionary.get(0);
+//                        System.out.println("Set Data "+temp[i]);
+//                        DictionaryString tempDict = dictionary.get(0);
                         
                         //if string is not present in the dictionary
-                        if (tempDict.containsString(temp[i]) == false){
-                            tempDict.putIdToString(stringCount, temp[i]);
-                            tempDict.putStringToId(temp[i],stringCount);
+                        if (dictionary.containsString(temp[i]) == false){
+                            dictionary.putIdToString(stringCount, temp[i]);
+                            dictionary.putStringToId(temp[i],stringCount);
 //                            dictionary.put(i, tempDict);
                             dataSet[counter][i] = stringCount;
                             stringCount++;
                         }
                         else{
                             //if string is present in the dictionary, get its id
-                            int stringId = tempDict.getStringToId(temp[i]);
+                            int stringId = dictionary.getStringToId(temp[i]);
                             dataSet[counter][i] = stringId;
                         }
                     }
@@ -267,20 +280,20 @@ public class SETData implements Data {
         return colNamesPosition;
     }
     
+//    @Override
+//    public Map<Integer, DictionaryString> getDictionary() {
+//        return this.dictionary;
+//    }
+    
     @Override
-    public Map<Integer, DictionaryString> getDictionary() {
+    public DictionaryString getDictionary() {
         return this.dictionary;
     }
     
-    @Override
-    public DictionaryString getDictionary(Integer column) {
-        return this.dictionary.get(column);
-    }
-    
-    @Override
-    public void setDictionary(Integer column, DictionaryString dict) {
-        this.dictionary.put(column, dict);
-    }
+//    @Override
+//    public void setDictionary(Integer column, DictionaryString dict) {
+//        this.dictionary.put(column, dict);
+//    }
     
     @Override
     public int getColumnByName(String column) {
@@ -292,26 +305,26 @@ public class SETData implements Data {
         return -1;
     }
     
-    @Override
-    public void replaceColumnDictionary(Integer column, DictionaryString dict) {
-        DictionaryString curDict = this.dictionary.get(column);
-        
-        for (double[] row : dataSet) {
-            
-            for(int j=0; j<row.length; j++){
-                
-                //retrieve actual value from dictionary
-                String columnValue = curDict.getIdToString((int)row[j]);
-                
-                //replace with value from new dictionary
-                row[j] = dict.getStringToId(columnValue);
-            }
-            
-        }
-        
-        //set given dictionary as the new one
-        setDictionary(column, dict);
-    }
+//    @Override
+//    public void replaceColumnDictionary(Integer column, DictionaryString dict) {
+//        DictionaryString curDict = this.dictionary.get(column);
+//        
+//        for (double[] row : dataSet) {
+//            
+//            for(int j=0; j<row.length; j++){
+//                
+//                //retrieve actual value from dictionary
+//                String columnValue = curDict.getIdToString((int)row[j]);
+//                
+//                //replace with value from new dictionary
+//                row[j] = dict.getStringToId(columnValue);
+//            }
+//            
+//        }
+//        
+//        //set given dictionary as the new one
+//        setDictionary(column, dict);
+//    }
     
     @Override
     public void export(String file, Object[][] initialTable, Object[][] anonymizedTable, 
@@ -381,7 +394,10 @@ public class SETData implements Data {
                     }
                     writer.println();
                 }
+                writer.flush();
+                writer.close();
             }
+            
         } catch (FileNotFoundException | UnsupportedEncodingException ex) {
             //Logger.getLogger(AnonymizedDatasetPanel.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -459,7 +475,7 @@ public class SETData implements Data {
                     }
                     else{*/
                     colNamesType.put(0, "string");
-                    dictionary.put(0, new DictionaryString());
+//                    dictionary.put(0, new DictionaryString());
                     //}
                     
                     sizeOfCol = 1;
@@ -559,16 +575,16 @@ public class SETData implements Data {
             linkedHashTemp = new LinkedHashMap<>();
             FLAG = false;
             for (int j = 0 ; j < dataSet[i].length ; j ++){
-                DictionaryString dict = dictionary.get(0);
+//                DictionaryString dict = dictionary.get(0);
                 //System.out.println()
                 if (FLAG == false){
-                    linkedHashTemp.put(columnNames[0], dict.getIdToString((int)dataSet[i][j]));
+                    linkedHashTemp.put(columnNames[0], dictionary.getIdToString((int)dataSet[i][j]));
                 //System.out.println( dict.getIdToString((int)dataSet[i][j]));
                 //linkedHashTemp.put(columnNames[0], null);
                     FLAG = true;
                 }
                 else{
-                    linkedHashTemp.put(columnNames[0], linkedHashTemp.get(columnNames[0]) +","+dict.getIdToString((int)dataSet[i][j]));
+                    linkedHashTemp.put(columnNames[0], linkedHashTemp.get(columnNames[0]) +delimeter+dictionary.getIdToString((int)dataSet[i][j]));
                 }
                 
             }
@@ -609,6 +625,58 @@ public class SETData implements Data {
         String delimiter = "/";
         String[] temp = inputFile.split(delimiter);
         return temp[temp.length-1];
+    }
+
+    @Override
+    public void exportOriginalData() {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        LinkedHashMap linkedHashTemp = null;
+        try (PrintWriter writer = new PrintWriter(this.inputFile, "UTF-8")) {
+            boolean FLAG = false;
+                
+            for(int i = 0 ; i < columnNames.length ; i ++){
+                if (FLAG == false){
+                    writer.print(columnNames[i]);
+                    FLAG = true;
+                }
+                else{
+                    writer.print(","+columnNames[i]);
+                }
+
+            }
+            writer.println();
+            
+            for(int i=0; i<this.sizeOfRows; i++){
+                linkedHashTemp = new LinkedHashMap<>();
+                FLAG = false;
+                for (int j = 0 ; j < dataSet[i].length ; j ++){
+    //                DictionaryString dict = dictionary.get(0);
+                    //System.out.println()
+//                    if (FLAG == false){
+//                        linkedHashTemp.put(columnNames[0], dictionary.getIdToString((int)dataSet[i][j]));
+//                        writer.print(dictionary.getIdToString((int)dataSet[i][j]));
+//                    //System.out.println( dict.getIdToString((int)dataSet[i][j]));
+//                    //linkedHashTemp.put(columnNames[0], null);
+//                        FLAG = true;
+//                    }
+//                    else{
+//                        writer.print(linkedHashTemp.get(columnNames[0]) +","+dictionary.getIdToString((int)dataSet[i][j]));
+//                        linkedHashTemp.put(columnNames[0], linkedHashTemp.get(columnNames[0]) +","+dictionary.getIdToString((int)dataSet[i][j]));
+//                        
+//                    }
+                    writer.print(dictionary.getIdToString((int)dataSet[i][j]));
+                    if(j!= dataSet[i].length-1){
+                        writer.print(",");
+                    }
+                    
+                }
+                writer.println();
+                //System.out.println("temp = " + linkedHashTemp);
+            }
+            
+        }catch(FileNotFoundException | UnsupportedEncodingException ex) {
+            //Logger.getLogger(AnonymizedDatasetPanel.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     

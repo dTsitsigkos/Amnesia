@@ -138,6 +138,39 @@ public class RangeDouble {
             return v >= this.lowerBound && v <= this.upperBound;
         }
     }
+    
+    public int compareTo(RangeDouble d){
+        if(this.upperBound.equals(d.upperBound) && this.lowerBound.equals(d.lowerBound)){
+            return 0;
+        }
+        else if(this.lowerBound < d.lowerBound &&  this.upperBound.equals(d.upperBound)){
+            return 1;
+        }
+        else if(this.upperBound > d.upperBound){
+            return 1;
+        }
+        else{
+            return -1;
+        }
+    }
+    
+    public int compareTo(Double d){
+        if(this.upperBound.equals(d)){
+            return 1;
+        }
+        else if(this.lowerBound.equals(d)){
+            return 1;
+        }
+        else if(this.lowerBound < d && this.upperBound > d){
+            return 1;
+        }
+        else if(this.lowerBound > d){
+            return 1;
+        }
+        else{
+            return -1;
+        }
+    }
      
     public boolean overlays(RangeDouble r){
         return (r.lowerBound < this.lowerBound && r.upperBound < this.lowerBound)

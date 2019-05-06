@@ -19,12 +19,15 @@
 package hierarchy.distinct;
 
 import data.Data;
+import data.RelSetData;
 import data.SETData;
 import dictionary.DictionaryString;
+import graph.Edge;
 import hierarchy.NodeStats;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
@@ -49,7 +52,7 @@ public class AutoHierarchyImplString extends HierarchyImplString {
     
     public AutoHierarchyImplString(String _name, String _nodesType, String _hierarchyType, String _attribute, 
                                     String _sorting, int _fanout, Data _data) {
-        super(_name, _nodesType);
+        super(_name, _nodesType,_data.getDictionary());
         attribute = _attribute;
         sorting = _sorting;
         fanout = _fanout;
@@ -60,21 +63,53 @@ public class AutoHierarchyImplString extends HierarchyImplString {
     public void autogenerate() {
         int column = dataset.getColumnByName(attribute);
         double[][] data = dataset.getDataSet();
-        DictionaryString dict = dataset.getDictionary(column);
+        int strCount = dictData.getMaxUsedId()+1;
+//        DictionaryString dict = dataset.getDictionary();
 
-        Set<String> itemsSet = new HashSet<>();
+        Set<Double> itemsSet = new HashSet<>();
 
         //get distinct values from dataset
         if(dataset instanceof SETData){
             for (double[] rowData : data){
                 for(double d : rowData){
-                    itemsSet.add(dict.getIdToString((int)d));
+                    itemsSet.add(d);
                 }
+            }
+        }
+        else if(dataset instanceof RelSetData){
+//            int i;
+//            for(i=0; i<6; i++){
+//                if(data[i].length != dataset.getDataColumns()){
+//                    for (double[] rowData : data){
+//                        for(double d : rowData){
+//                            itemsSet.add(d);
+//                        }
+//                    }
+//                    break;
+//                }
+//            }
+//            if(i==6){
+//                for (double[] rowData : data){
+//                    itemsSet.add(rowData[column]);
+//                } 
+//            }
+            if(data[0][column] == -1){
+                data = ((RelSetData) dataset).getSet();
+                for (double[] rowData : data){
+                    for(double d : rowData){
+                        itemsSet.add(d);
+                    }
+                }
+            }
+            else{
+                for (double[] rowData : data){
+                   itemsSet.add(rowData[column]);
+                } 
             }
         }
         else{
             for (double[] rowData : data){
-                itemsSet.add(dict.getIdToString((int)rowData[column]));
+                itemsSet.add(rowData[column]);
             }
         }
              
@@ -83,7 +118,7 @@ public class AutoHierarchyImplString extends HierarchyImplString {
         System.out.println("size: " + itemsSet.size() + " fanout: " + fanout + " height: " + height);
 
         //build leaf level 
-        ArrayList<String> initList = new ArrayList<>(itemsSet);
+        ArrayList<Double> initList = new ArrayList<>(itemsSet);
 
         System.out.println("sorting = " + sorting);
         
@@ -92,14 +127,23 @@ public class AutoHierarchyImplString extends HierarchyImplString {
         } 
         else if(sorting.equals("alphabetical")){
             System.out.println("alphabeticalllll");
-            Collections.sort(initList);
+//            Collections.sort(initList);
+            Collections.sort(initList, new Comparator<Double>() {
+                @Override
+                public int compare(Double d1, Double d2) {
+//                    return s1.getTo().compareToIgnoreCase(s2.getTo());
+                    String s1 = dictData.getIdToString(d1.intValue());
+                    String s2 = dictData.getIdToString(d2.intValue());
+                    return s1.compareToIgnoreCase(s2);
+                }
+            });
         }
 
         allParents.put(curHeight, initList);
  
         //build inner nodes of hierarchy
         while(curHeight > 0){
-            String[] prevLevel = allParents.get(curHeight).toArray(new String[allParents.get(curHeight).size()]);
+            Double[] prevLevel = allParents.get(curHeight).toArray(new Double[allParents.get(curHeight).size()]);
             int prevLevelIndex = 0;
             
             int curLevelSize = (int)(prevLevel.length / fanout + 1);
@@ -107,23 +151,26 @@ public class AutoHierarchyImplString extends HierarchyImplString {
                 curLevelSize = prevLevel.length;
             }
             
-            String[] curLevel = new String[curLevelSize];
+            Double[] curLevel = new Double[curLevelSize];
             int curLevelIndex = 0;
             
             while(prevLevelIndex < prevLevel.length){
                 
                 String ran = randomNumber();
+                dict.putIdToString(strCount, ran);
+                dict.putStringToId(ran, strCount++);
+                Double ranId = (double) strCount - 1;
                 
-                String[] tempArray = new String[fanout];
+                Double[] tempArray = new Double[fanout];
                 
                 //assign a parent every #curFanout children
                 int j;
                 for(j=0; j<fanout && (prevLevelIndex < prevLevel.length); j++){
-                    String ch = prevLevel[prevLevelIndex];
+                    Double chId = prevLevel[prevLevelIndex];
                     prevLevelIndex++;
-                    tempArray[j] = ch;
-                    parents.put(ch, ran);
-                    stats.put(ch, new NodeStats(curHeight));
+                    tempArray[j] = chId;
+                    parents.put(chId, ranId);
+                    stats.put(chId, new NodeStats(curHeight));
                 }
                 
                 //array size is not curFanout (elements finished), resize 
@@ -131,8 +178,8 @@ public class AutoHierarchyImplString extends HierarchyImplString {
                     tempArray = Arrays.copyOf(tempArray, j);
                 }
 
-                children.put(ran, new ArrayList<>(Arrays.asList(tempArray)));
-                curLevel[curLevelIndex] = ran;
+                children.put(ranId, new ArrayList<>(Arrays.asList(tempArray)));
+                curLevel[curLevelIndex] = ranId;
                 curLevelIndex++;
             }
 
@@ -151,12 +198,12 @@ public class AutoHierarchyImplString extends HierarchyImplString {
         
         
         System.out.println("allParents");
-        for (Map.Entry<Integer, ArrayList<String>> entry : allParents.entrySet()) {
+        for (Map.Entry<Integer, ArrayList<Double>> entry : allParents.entrySet()) {
             System.out.println(entry.getKey()+" : "+ entry.getValue().toString());
         }
         
         System.out.println("parents");
-        for (Map.Entry<String, String> entry : parents.entrySet()) {
+        for (Map.Entry<Double, Double> entry : parents.entrySet()) {
             System.out.println(entry.getKey()+" : "+ entry.getValue().toString());
         }
         

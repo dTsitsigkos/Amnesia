@@ -18,11 +18,15 @@
  */
 package algorithms.kmanonymity;
 
+import algorithms.Algorithm;
+import algorithms.mixedkmanonymity.MixedApriori;
 import hierarchy.Hierarchy;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -32,11 +36,19 @@ public class SolutionCombinations {
     Hierarchy hierarchy = null;
     Trie trie = null;
     int k = -1;
-    Apriori alg = null;
+    Map<Set<Double>,Integer> trieSet=null;
+    Algorithm alg = null;
     
     SolutionCombinations(Hierarchy _hierarchy, Trie _trie, int _k, Apriori _alg) {
         this.hierarchy = _hierarchy;
         this.trie = _trie;
+        this.k = _k;
+        this.alg = _alg;
+    }
+    
+    public SolutionCombinations(Hierarchy _hierarchy, Map<Set<Double>,Integer> _trieSet, int _k, MixedApriori _alg){
+        this.hierarchy = _hierarchy;
+        this.trieSet = _trieSet;
         this.k = _k;
         this.alg = _alg;
     }
@@ -103,12 +115,34 @@ public class SolutionCombinations {
                 }
                 
                 Arrays.sort(temp);
-                TrieNode node = trie.searchNode(temp);
-                
-                if(node.getSupport() >= k){
-                    double score = alg.getAddedCost(temp, base);
-                    if(!results.containsKey(score)){
-                        results.put(score, temp);
+                if(trie!=null){
+                    TrieNode node = trie.searchNode(temp);
+
+                    if(node.getSupport() >= k){
+                        double score = ((Apriori)alg).getAddedCost(temp, base);
+                        if(!results.containsKey(score)){
+                            results.put(score, temp);
+//                            System.out.println("Results comb Set2 "+Arrays.toString(temp)+" score "+score);
+
+                        }
+                    }
+                }
+                else{
+                    Set<Double> tempSet = new HashSet<Double>();
+                    for(int l=0; l<temp.length; l++){
+                        tempSet.add(temp[l]);
+                    }
+//                    System.out.println("Sol Comb: "+Arrays.toString(tempSet.toArray()));
+                    if(tempSet.contains(-1.0)){
+                        tempSet.remove(-1.0);
+                    }
+                    if(trieSet.containsKey(tempSet) && trieSet.get(tempSet) >= k){
+                        double score = ((MixedApriori)alg).getAddedCost(temp, base);
+//                        double score = trieSet.get(tempSet);
+                        if(!results.containsKey(score)){
+                            results.put(score, temp);
+//                            System.out.println("Results comb Set "+Arrays.toString(tempSet.toArray())+" score "+score);
+                        }
                     }
                 }
                 

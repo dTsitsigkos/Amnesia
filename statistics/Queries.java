@@ -104,7 +104,7 @@ public class Queries {
         Hierarchy h = null;
         int []diff = new int[identifiersArr.length];
         
-        
+        dict = data.getDictionary();
         //non-Anonymized Statistics
         for(int row = 0 ; row < nonAnonymized.length; row++){
             FLAG = true;
@@ -131,7 +131,7 @@ public class Queries {
                     }
                     else{
                         if (columnTypes.get(column).equals("string")){
-                            dict = data.getDictionary(column);
+//                            dict = data.getDictionary(column);
                             valueStr = dict.getIdToString((int)nonAnonymized[row][column]);
                             if(valueStr.equals(distinctArr[column])){
                                 if (FLAG != true ){
@@ -190,7 +190,8 @@ public class Queries {
         String dataAnon = null;
         String []temp = null;
         String del = " - ";
-        Map <Integer,DictionaryString> dictionaries = null;
+//        Map <Integer,DictionaryString> dictionaries = null;
+        DictionaryString dictionary = data.getDictionary();
         boolean EqualFLAG = false;
         
         //System.out.println("calculate Anonymize");
@@ -283,8 +284,8 @@ public class Queries {
                             if (distinctArr[column] != null){//distinct
                                 if (columnTypes.get(column).equals("string")){//distinct string
                                     
-                                    dictionaries = data.getDictionary();
-                                    DictionaryString dictionary = dictionaries.get(column);
+//                                    dictionaries = data.getDictionary();
+//                                    DictionaryString dictionary = dictionaries.get(column);
                                     Double d = (Double)dataset[row][column];
                                     String newValue = dictionary.getIdToString(d.intValue());
                                     h = quasiIdentifiers.get(column);
@@ -352,8 +353,8 @@ public class Queries {
                     else{
                         if (distinctArr[column] != null){
                             if (columnTypes.get(column).equals("string")){
-                                dictionaries = data.getDictionary();
-                                DictionaryString dictionary = dictionaries.get(column);
+//                                dictionaries = data.getDictionary();
+//                                DictionaryString dictionary = dictionaries.get(column);
                                 Double d = (Double)dataset[row][column];
                                 String newValue = dictionary.getIdToString(d.intValue());
                                 

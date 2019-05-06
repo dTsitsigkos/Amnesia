@@ -5,6 +5,7 @@
  */
 package hierarchy.ranges;
 
+import anonymizeddataset.AnonymizedDataset;
 import data.Data;
 import dictionary.DictionaryString;
 import graph.Edge;
@@ -52,12 +53,14 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     RangeDate root = null;
     int months = -1;
     int days = -1;
+    DictionaryString dictData = null;
     
     Map<RangeDate, List<RangeDate>> children = new HashMap<>();
     Map<RangeDate, NodeStats> stats = new HashMap<>();
     Map<RangeDate, RangeDate> parents = new HashMap<>();
 //    Map<Range, List<Range>> siblings = new HashMap<>();
     Map<Integer,ArrayList<RangeDate>> allParents = new HashMap<>();
+    Map<Double,NodeStats> statsDistinct = new HashMap<>();
 
     
     public HierarchyImplRangesDate(String inputFile){
@@ -84,6 +87,11 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     @Override
     public int getHierarchyLength() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    @Override
+    public DictionaryString getDictionaryData(){
+        return this.dictData;
     }
 
     @Override
@@ -312,7 +320,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
 
     @Override
     public Integer getLevel(double nodeId) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return 0;
     }
 
     @Override
@@ -460,6 +468,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
         RangeDate parent = null;
         ArrayList parentsList = null;
         List<RangeDate> childrenListNew = null,parentChildren=null;
+        boolean changeRoot = false;
         
         System.out.println("before");
             for (Map.Entry<Integer, ArrayList<RangeDate>> entry : this.allParents.entrySet()) {
@@ -472,6 +481,8 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                   this.children.put(newValue,childrenListNew);
                   this.children.remove(oldValue);
                   
+                  changeRoot = true;
+                  
                   for(RangeDate child : childrenListNew){
                       this.parents.remove(child);
                       this.parents.put(child, newValue);
@@ -481,8 +492,10 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                   parentsList.remove(oldValue);
                   parentsList.add(newValue);
                   this.allParents.put(0, parentsList);
+                  this.stats.remove(root);
                   root.setLowerBound(newValue.lowerBound);
                   root.setUpperBound(newValue.upperBound);
+                  this.stats.put(root, new NodeStats(0));
             }
             else{ // node with parent and children 
                 this.children.put(newValue,childrenListNew);
@@ -501,6 +514,11 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                 
                 parents.remove(oldValue);
                 parents.put(newValue,parent);
+                
+                for ( int i = 0; i < childrenListNew.size() ; i ++ ){
+                    this.parents.remove(childrenListNew.get(i));
+                    this.parents.put(childrenListNew.get(i), newValue);
+                }
                 
                 parentsList = this.allParents.get(stats.get(oldValue).getLevel());
                 for(int i=0; i<parentsList.size(); i++){
@@ -544,8 +562,10 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
 //            throw new UnsupportedOperationException("Not supported yet for leaves nodes.");
         }
         
-        this.stats.put(newValue, this.stats.get(oldValue));
-        this.stats.remove(oldValue);
+        if(!changeRoot){
+            this.stats.put(newValue, this.stats.get(oldValue));
+            this.stats.remove(oldValue);
+        }
          //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -648,17 +668,163 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
 
     @Override
     public void computeWeights(Data dataset, String column) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        for(RangeDate node : this.stats.keySet()){
+            NodeStats s = this.stats.get(node);
+            s.weight = 0;
+        }
+        
+        Integer c;
+        double[][] data = dataset.getDataSet();
+        for(c  = 0 ; c < dataset.getColNamesPosition().keySet().size() ; c++){
+            if(dataset.getColNamesPosition().get(c).equals(column)){
+                break;
+            }
+        }
+        
+        for (double[] columnData : data) {
+//            System.out.println("columnData[c] = " + columnData[c]);
+            compute(getRoot(), columnData[c],true,true,dataset);
+            if(this.statsDistinct.get(columnData[c])!=null){
+                this.statsDistinct.get(columnData[c]).weight++;
+            }
+            else{
+               NodeStats nodestat = new NodeStats(0) ;
+               nodestat.setWeight(1);
+               this.statsDistinct.put(columnData[c], nodestat);
+            }
+        }   
+    }
+    
+    public void compute(RangeDate r, Double value, boolean whichContain, boolean isRoot,Data dataset){
+        if (isRoot == true){
+            try {
+                if(r.contains(dataset.getDictionary().getIdToString(value.intValue()))){
+//                System.out.println("Compute");
+//                System.out.println("value = " + value.toString());
+//                System.out.println(r.toString());
+                    this.stats.get(r).weight++;
+                }
+            } catch (ParseException ex) {
+                Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        else{
+            try {             
+                if(r.contains2(dataset.getDictionary().getIdToString(value.intValue()),whichContain)){
+//                System.out.println("Compute111111");
+//                System.out.println("value = " + value.toString());
+//                System.out.println(whichContain);
+//                System.out.println(r.toString());
+                    this.stats.get(r).weight++;
+                }
+            } catch (ParseException ex) {
+                Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+        }
+        
+        List<RangeDate> ch = this.children.get(r);
+        /*for ( int i = 0; i < ch.size() ; i ++ ){
+            System.out.println("ch = " + ch.get(i).toString() + "\t i = " + i +"\tsize = " + ch.size());
+            
+        }*/
+        if(ch != null){
+            //List<Range> ch1 = this.children.get(ch.get(0));
+            //if ( ch1 != null ){
+                //System.out.println("ch = " + ch.toString());
+                int counter = 1;
+                for(RangeDate c : ch){
+//                    System.out.println("cccccccccccccccc = " + c.toString());
+                    if (value == 2147483646.0 || value.equals(Double.NaN)){
+                       if (c.toString().equals("NaN - NaN")){
+                           this.stats.get(c).weight++;
+                           this.stats.get(getRoot()).weight++;
+//                            System.out.println("value = " + value.toString());
+//                            System.out.println(c.toString());
+                       }
+                       else if(c.toString().equals("0 - 0")){
+                           this.stats.get(c).weight++;
+                           this.stats.get(getRoot()).weight++;
+//                            System.out.println("value = " + value.toString());
+//                            System.out.println(c.toString());
+                       }
+                    }
+                    else if (isRoot == true){
+                        if(!c.toString().equals("0 - 0") && !c.toString().equals("NaN - NaN") ){
+                            if (counter == ch.size()-1){
+                                try {
+                                    if(c.contains2(dataset.getDictionary().getIdToString(value.intValue()),false)){
+//                                    System.out.println("Compute22222");
+//                                    System.out.println("value = " + value.toString());
+//                                    System.out.println(c.toString());
+                                        compute(c, value,false,false,dataset);
+                                    }
+                                } catch (ParseException ex) {
+                                    Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);
+                                }
+                            }
+                            else{
+                                try {
+                                    if(c.contains2(dataset.getDictionary().getIdToString(value.intValue()),true)){
+//                                    System.out.println("Compute3333");
+//                                     System.out.println("value = " + value.toString());
+//                                    System.out.println(c.toString());
+                                        compute(c, value,true,false,dataset);
+                                    }
+                                } catch (ParseException ex) {
+                                    Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);
+                                }
+                            }
+                        }
+                    }
+                    else{
+                        //if(!c.toString().equals("0 - 0") && !c.toString().equals("NaN - NaN") ){
+                       
+                            if (counter == ch.size()){
+                                try {
+                                    if(c.contains2(dataset.getDictionary().getIdToString(value.intValue()),false)){
+//                                    System.out.println("Compute44444");
+//                                    System.out.println("value = " + value.toString());
+//                                    System.out.println(c.toString());
+                                        compute(c, value,false,false,dataset);
+                                    }
+                                } catch (ParseException ex) {
+                                    Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);
+                                }
+                            }
+                            else{
+                                try {
+                                    if(c.contains2(dataset.getDictionary().getIdToString(value.intValue()),true)){
+//                                    System.out.println("Compute555555");
+//                                     System.out.println("value = " + value.toString());
+//                                    System.out.println(c.toString());
+                                        compute(c, value,true,false,dataset);
+                                    }
+                                } catch (ParseException ex) {
+                                    Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);
+                                }
+                            }
+                        //}
+                    }
+                    counter++;
+                }
+            //}
+           // else{
+            
+            //}
+            
+        }
     }
 
     @Override
     public Integer getWeight(RangeDate node) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return this.stats.get(node).weight;
     }
 
     @Override
     public Integer getWeight(double nodeId) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return this.statsDistinct.get(nodeId).weight;
     }
 
     @Override
@@ -698,7 +864,15 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
 
     @Override
     public RangeDate getParent(Double d) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        String value = this.dictData.getIdToString(d.intValue());
+        RangeDate parent = null;
+        try {
+            parent = this.getParent(AnonymizedDataset.getDateFromString(value));
+        } catch (ParseException ex) {
+            Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return parent;
     }
     
     @Override
@@ -829,7 +1003,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
         System.out.println(" nodeInputtttt = " + nodeInput);
         //System.out.println(" nodeLevellllllll = " + nodeLevel);
         
-        if (!nodeInput.equals("null") ){
+        if ( !nodeInput.equals("null") ){
             //System.out.println("nodeInput11111 = " + nodeInput);
 
             String []temp = null;
@@ -850,7 +1024,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
         int counter = 0;
         
         //if (nodesType.equals("double")){
-            if ( !nodeInput.equals("null") && !nodeInput.equals("") && nodeLevel != 0 ){
+            if (  !nodeInput.equals("null") && !nodeInput.equals("") && nodeLevel != 0 ){
 
                 if (height > nodeLevel + 1){
                     nodeRange = node;
@@ -892,6 +1066,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                         
 
                         nodeRange = this.parents.get(nodeRange);
+                        System.out.println("PArent "+nodeRange);
                         
                     }
                     n = new Node(root.dateToString(0),root.dateToString(0),0,null,this.hierarchyType + "," +this.nodesType);
@@ -1043,6 +1218,9 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                 Collections.sort(tempArr, new Comparator<RangeDate>(){
                     @Override
                     public int compare(RangeDate o1, RangeDate o2){
+                        if(o1.getLowerBound()==null || o2.getLowerBound()==null){
+                            return -1;
+                        }
                         return o1.getLowerBound().compareTo(o2.getLowerBound());
                     }
                 });
@@ -1052,10 +1230,20 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                     RangeDate current = tempArr.get(i);
                     RangeDate next = tempArr.get(i+1);
                     
+                    if(current.lowerBound==null && current.upperBound==null){
+                        continue;
+                    }
+                    
                     Calendar c = Calendar.getInstance();
                     c.setTime(current.upperBound);
-                    c.add(Calendar.DAY_OF_MONTH, 1);
+                    c.add(Calendar.DATE, 1);
+                    c.set(Calendar.HOUR_OF_DAY, 0);
                     Date plusOneDay = c.getTime();
+                    
+//                    System.out.println("current="+current.upperBound+" plusOneDAy="+plusOneDay+" next="+next.lowerBound);
+                    if((current.lowerBound==null && current.upperBound==null) || (next.upperBound==null && next.lowerBound==null)){
+                        continue;
+                    }
                     
                     if(!plusOneDay.equals(next.lowerBound)){
                         str = "Hierarchy Name: " + this.name + "\nLevel: " + entry.getKey() +"\nNot continuous values between ranges: " + current.toString() + " and " + next.toString();
@@ -1204,6 +1392,18 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
         }
         
         return str;
+    }
+
+    @Override
+    public List<RangeDate> getNodesInLevel(int level) {
+        int curLevel = this.height - level - 1;
+        List<RangeDate> curLevelIds =  this.allParents.get(curLevel);
+        return curLevelIds;
+    }
+
+    @Override
+    public void setDictionaryData(DictionaryString dict) {
+        dictData = dict;
     }
     
 }

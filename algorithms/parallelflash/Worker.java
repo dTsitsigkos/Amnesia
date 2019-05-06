@@ -93,7 +93,7 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
      * @return the generalized QI columns of the row
      */
     private GeneralizedRow project(LatticeNode node, int[] qidColumns, double[] row) throws ParseException{
-        
+        DictionaryString dict = data.getDictionary();
         GeneralizedRow gRow = new GeneralizedRow(node.getTransformation().length);
         
         int j = 0;
@@ -102,13 +102,13 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
             
             //get the value of the specified attribute
             Object rowValue = null;
-            if(data.getColNamesType().get(qidColumns[k]).equals("string") || data.getColNamesType().get(qidColumns[k]).equals("date")){
-                DictionaryString dict = data.getDictionary(qidColumns[k]);
-                rowValue = dict.getIdToString((int)row[qidColumns[k]]);
-            }
-            else {
+            //if(data.getColNamesType().get(qidColumns[k]).equals("string") || data.getColNamesType().get(qidColumns[k]).equals("date")){
+//                DictionaryString dict = data.getDictionary(qidColumns[k]);
+            //    rowValue = dict.getIdToString((int)row[qidColumns[k]]);
+            //}
+            //else {
                 rowValue = row[qidColumns[k]];
-            }
+            //}
             
             //generalize value
             for(int i=0; i<node.getTransformation()[k]; i++){
@@ -360,9 +360,11 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
                     }
                     else{
                         if(data.getColNamesType().get(qidColumns[i]).equals("string") || data.getColNamesType().get(qidColumns[i]).equals("date") ){
-                            parent = value;
-                            for(int j=0; j<k; j++)
-                                parent =  h.getParent(parent);
+                            Double doubleValue = Double.parseDouble(value.toString());
+                            parent = doubleValue;
+                            for(int j=0; j<k; j++){
+                                parent =  h.getParent((Double)parent);
+                            }
                         }
                         else{
                             Double doubleValue = Double.parseDouble(value.toString());

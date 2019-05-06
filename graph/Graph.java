@@ -40,6 +40,14 @@ public class Graph {
         edgeList.add(e);
     }
     
+    public void setNodeList(ArrayList<Node> list){
+        nodeList = list;
+    }
+    
+    public void setEdgeList(ArrayList<Edge> list){
+        edgeList = list;
+    }
+    
     public void print(){
         int i = 0 ; 
         for ( i = 0 ; i < nodeList.size() ; i ++){

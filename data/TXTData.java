@@ -64,12 +64,15 @@ public class TXTData implements Data{
     private int sizeOfRows = 0;
     private int sizeOfCol = 0;
     private String delimeter = null;
+//    private static int counterNamesType=0;
+//    private static int counterNamesPosition=0;
     
     @JsonView(View.GetDataTypes.class)
     private Map <Integer,String> colNamesType = null;
     private CheckVariables chVar = null;
     private Map <Integer,String> colNamesPosition = null;
-    private Map <Integer,DictionaryString> dictionary = null;
+//    private Map <Integer,DictionaryString> dictionary = null;
+    private DictionaryString dictionary = null;
     @JsonView(View.SmallDataSet.class)
     private String[][] smallDataSet;
     @JsonView(View.DataSet.class)
@@ -85,7 +88,7 @@ public class TXTData implements Data{
     @JsonView(View.SmallDataSet.class)
     private String errorMessage = null;
     
-     private static final String[] formats = { 
+    private static final String[] formats = { 
                 "yyyy-MM-dd'T'HH:mm:ss'Z'",   "yyyy-MM-dd'T'HH:mm:ssZ",
                 "yyyy-MM-dd'T'HH:mm:ss",      "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
                 "yyyy-MM-dd'T'HH:mm:ss.SSSZ", "yyyy-MM-dd HH:mm:ss", 
@@ -99,13 +102,13 @@ public class TXTData implements Data{
                                                 
     
     
-    public TXTData(String inputFile, String del){
+    public TXTData(String inputFile, String del,DictionaryString dict){
         recordsTotal = 0;
         this.smallDataSet = null;
         colNamesType = new TreeMap<Integer,String>();
         colNamesPosition = new HashMap<Integer,String>();
         chVar = new CheckVariables();
-        dictionary = new HashMap <Integer,DictionaryString>();
+        dictionary = dict;
         
         this.inputFile = inputFile;
         if ( del == null ){
@@ -144,6 +147,13 @@ public class TXTData implements Data{
 
     
     public Map<Integer, String> getColNamesType() {
+//        if(counterNamesType==0){
+//            System.out.println("colNamesType TXT");
+//            for (Map.Entry<Integer, String> entry : colNamesType.entrySet()) {
+//                System.out.println(entry.getKey() + ":" + entry.getValue().toString());
+//            }
+//            counterNamesType++;
+//        }
         return colNamesType;
     }
     
@@ -163,6 +173,7 @@ public class TXTData implements Data{
     public int getDataLenght() {
         return dataSet.length;
     }
+    
     
     /**
      * Prints the dataset
@@ -214,6 +225,7 @@ public class TXTData implements Data{
     /**
      * Loads dataset from file to memory
      */
+    
     @Override
     public String save(boolean[] checkColumns) {
         
@@ -225,7 +237,7 @@ public class TXTData implements Data{
         String []colNames = null;
         ArrayList<String> columns = new ArrayList<String>();
         int counter = 0;
-        int stringCount = 0;
+        int stringCount = dictionary.getMaxUsedId()+1;
         boolean FLAG = true;
         int counter1 = 0 ;
         
@@ -284,9 +296,9 @@ public class TXTData implements Data{
 
                             }
                             else if (colNamesType.get(counter1).contains("date")){
-                                DictionaryString tempDict = dictionary.get(counter1);
+//                                DictionaryString tempDict = dictionary.get(counter1);
                                 String var = null;
-
+//                                System.out.println("date= "+temp[i]+" counter= "+counter+" counter1= "+counter1+" ");
                                 if ( !temp[i].equals("")){
                                     var = temp[i];
                                     var = this.timestampToDate(var);
@@ -301,22 +313,22 @@ public class TXTData implements Data{
                                 
                                 if (var != null) {
                                 //if string is not present in the dictionary
-                                    if (tempDict.containsString(var) == false){
-                                        tempDict.putIdToString(stringCount, var);
-                                        tempDict.putStringToId(var,stringCount);
-                                        dictionary.put(counter1, tempDict);
+                                    if (dictionary.containsString(var) == false){
+                                        dictionary.putIdToString(stringCount, var);
+                                        dictionary.putStringToId(var,stringCount);
+//                                        dictionary.put(counter1, tempDict);
                                         dataSet[counter][counter1] = stringCount;
                                         stringCount++;
                                     }
                                     else{
                                         //if string is present in the dictionary, get its id
-                                        int stringId = tempDict.getStringToId(var);
+                                        int stringId = dictionary.getStringToId(var);
                                         dataSet[counter][counter1] = stringId;
                                     }
                                 }
                             }
                             else{
-                                DictionaryString tempDict = dictionary.get(counter1);
+//                                DictionaryString tempDict = dictionary.get(counter1);
                                 String var = null;
 
                                 if ( !temp[i].equals("")){
@@ -327,16 +339,16 @@ public class TXTData implements Data{
                                 }
 
                                 //if string is not present in the dictionary
-                                if (tempDict.containsString(var) == false){
-                                    tempDict.putIdToString(stringCount, var);
-                                    tempDict.putStringToId(var,stringCount);
-                                    dictionary.put(counter1, tempDict);
+                                if (dictionary.containsString(var) == false){
+                                    dictionary.putIdToString(stringCount, var);
+                                    dictionary.putStringToId(var,stringCount);
+//                                    dictionary.put(counter1, tempDict);
                                     dataSet[counter][counter1] = stringCount;
                                     stringCount++;
                                 }
                                 else{
                                     //if string is present in the dictionary, get its id
-                                    int stringId = tempDict.getStringToId(var);
+                                    int stringId = dictionary.getStringToId(var);
                                     dataSet[counter][counter1] = stringId;
                                 }
                             }
@@ -384,10 +396,10 @@ public class TXTData implements Data{
      * @param column the number of the column
      * @return the dictionary for the column
      */
-    @Override
-    public DictionaryString getDictionary(Integer column){
-        return this.dictionary.get(column);
-    }
+//    @Override
+//    public DictionaryString getDictionary(Integer column){
+//        return this.dictionary.get(column);
+//    }
     
     
     /**
@@ -396,6 +408,13 @@ public class TXTData implements Data{
      */
     @Override
     public Map<Integer, String> getColNamesPosition() {
+//        if(counterNamesPosition==0){
+//            System.out.println("colNamesPosition TXT");
+//            for (Map.Entry<Integer, String> entry : colNamesPosition.entrySet()) {
+//                System.out.println(entry.getKey() + ":" + entry.getValue().toString());
+//            }
+//            counterNamesPosition++;
+//        }
         return colNamesPosition;
     }
     
@@ -404,7 +423,7 @@ public class TXTData implements Data{
      * @return a map with with the column dictionaries by position
      */
     @Override
-    public Map<Integer, DictionaryString> getDictionary() {
+    public DictionaryString getDictionary() {
         return dictionary;
     }
     
@@ -429,10 +448,10 @@ public class TXTData implements Data{
      * @param column the column number
      * @param dict the new dictionary
      */
-    @Override
-    public void setDictionary(Integer column, DictionaryString dict) {
-        this.dictionary.put(column, dict);
-    }
+//    @Override
+//    public void setDictionary(Integer column, DictionaryString dict) {
+//        this.dictionary.put(column, dict);
+//    }
     
     /**
      * Replaces the dictionary of a column with a new one. Updates values in this
@@ -440,23 +459,23 @@ public class TXTData implements Data{
      * @param column the column number
      * @param dict the new dictionary
      */
-    @Override
-    public void replaceColumnDictionary(Integer column, DictionaryString dict) {
-        DictionaryString curDict = this.dictionary.get(column);
-        
-        for (double[] row : dataSet) {
-            
-            //retrieve actual value from dictionary
-            String columnValue = curDict.getIdToString((int)row[column]);
-            
-            //replace with value from new dictionary
-            row[column] = dict.getStringToId(columnValue);
-            
-        }
-        
-        //set given dictionary as the new one
-        setDictionary(column, dict);
-    }
+//    @Override
+//    public void replaceColumnDictionary(Integer column, DictionaryString dict) {
+//        DictionaryString curDict = this.dictionary.get(column);
+//        
+//        for (double[] row : dataSet) {
+//            
+//            //retrieve actual value from dictionary
+//            String columnValue = curDict.getIdToString((int)row[column]);
+//            
+//            //replace with value from new dictionary
+//            row[column] = dict.getStringToId(columnValue);
+//            
+//        }
+//        
+//        //set given dictionary as the new one
+//        setDictionary(column, dict);
+//    }
     
     @Override
     public void export(String file, Object [][] initialTable, Object[][] anonymizedTable,
@@ -678,11 +697,11 @@ public class TXTData implements Data{
                     }
                     else if (columnTypes[i].equals("date")){
                         colNamesType.put(counter, "date");
-                        dictionary.put(counter, new DictionaryString());
+//                        dictionary.put(counter, new DictionaryString());
                     }
                     else{
                         colNamesType.put(counter, "string");
-                        dictionary.put(counter, new DictionaryString());
+//                        dictionary.put(counter, new DictionaryString());
                     }
                     
                     counter++;
@@ -835,7 +854,9 @@ public class TXTData implements Data{
     public String[][] getSmallDataSet() {
         return smallDataSet;
     }   
-
+    
+    
+    
     @Override
     public ArrayList<LinkedHashMap> getPage(int start,int length){
         data = new ArrayList<LinkedHashMap>();
@@ -894,8 +915,9 @@ public class TXTData implements Data{
                     }
                 }
                 else{
-                    DictionaryString dict = dictionary.get(j);
-                    String str = dict.getIdToString((int)dataSet[i][j]);
+                    String str = dictionary.getIdToString((int)dataSet[i][j]);
+//                    DictionaryString dict = dictionary.get(j);
+//                    String str = dict.getIdToString((int)dataSet[i][j]);
 
                     if (str.equals("NaN")){
                         linkedHashTemp.put(columnNames[j],"");
@@ -998,7 +1020,7 @@ public class TXTData implements Data{
     }
     
     
-    public String timestampToDate( String tmstmp){
+    public static String timestampToDate( String tmstmp){
       String [] temp = null;
         if ( tmstmp != null ) {
            for (String parse : formats) {
@@ -1051,6 +1073,74 @@ public class TXTData implements Data{
         }
         
         return null;
+    }
+
+    @Override
+    public void exportOriginalData() {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try (PrintWriter writer = new PrintWriter(this.inputFile, "UTF-8")) {
+            boolean FLAG = false;
+                
+            for(int i = 0 ; i < columnNames.length ; i ++){
+                if (FLAG == false){
+                    writer.print(columnNames[i]);
+                    FLAG = true;
+                }
+                else{
+                    writer.print(","+columnNames[i]);
+                }
+
+            }
+            writer.println();
+            
+            for(int i=0; i<this.sizeOfRows; i++){
+                for(int j=0; j<this.sizeOfCol; j++){
+                    if (colNamesType.get(j).equals("double")){
+                        if (Double.isNaN(dataSet[i][j])){
+                            writer.print("");
+                        }
+                        else{
+                            Object a = dataSet[i][j];
+                            writer.print( dataSet[i][j]);
+                        }
+                    }
+                    else if (colNamesType.get(j).equals("int")){
+                        if (dataSet[i][j] == 2147483646.0){
+                            writer.print("");
+                        }
+                        else{
+                            writer.print( Integer.toString((int)dataSet[i][j])+"");
+                        }
+                    }
+                    else{
+                        String str = dictionary.getIdToString((int)dataSet[i][j]);
+    //                    DictionaryString dict = dictionary.get(j);
+    //                    String str = dict.getIdToString((int)dataSet[i][j]);
+
+                        if (str.equals("NaN")){
+                            writer.print("");
+                        }
+                        else{
+                            writer.print(str);
+                        }
+                    }
+                    
+                    if(j!=this.sizeOfCol-1){
+                        writer.print(",");
+                    }
+                }
+                writer.println();
+            }
+            
+        }catch(FileNotFoundException | UnsupportedEncodingException ex) {
+            //Logger.getLogger(AnonymizedDatasetPanel.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        System.out.println("done orgiginal data");
+    }
+
+    @Override
+    public int getDataColumns() {
+        return this.sizeOfCol;
     }
 
 }

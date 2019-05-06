@@ -20,6 +20,7 @@ package hierarchy.distinct;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import data.Data;
+import data.RelSetData;
 import data.SETData;
 import dictionary.DictionaryString;
 import graph.Edge;
@@ -35,6 +36,7 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,7 +53,7 @@ import jsoninterface.View;
  *
  * @author jimakos
  */
-public class HierarchyImplString implements Hierarchy<String> {
+public class HierarchyImplString implements Hierarchy<Double> {
     String inputFile = null;
     String name = null;
     String nodesType = null;
@@ -59,43 +61,49 @@ public class HierarchyImplString implements Hierarchy<String> {
     int height = -1;
     BufferedReader br = null;
     //@JsonView(View.Hier.class)
-    String root = null;
+    Double root = null;
     DictionaryString dict = null;
+    DictionaryString dictData = null;
     
     //@JsonView(View.Hier.class)
-    Map<String, List<String>> children = null;
-    Map<String, NodeStats> stats = null;    
-    Map<String, String> parents = null;
+    Map<Double, List<Double>> children = null;
+    Map<Double, NodeStats> stats = null;    
+    Map<Double, Double> parents = null;
 //    Map<String, List<String>> siblings = new HashMap<>();
     //@JsonView(View.Hier.class)
-    Map<Integer, ArrayList<String>> allParents = null;
+    Map<Integer, ArrayList<Double>> allParents = null;
     Map<Integer, List<Integer>> allParentIds = null;
     
     Map<Integer, Integer> parentsInteger = null;
 
     
     
-    public HierarchyImplString(String inputFile){
+    public HierarchyImplString(String inputFile,DictionaryString dictData){
         this.inputFile = inputFile;
+        this.dictData = dictData;
         
         children = new HashMap<>();
         stats = new HashMap<>();
         parents = new HashMap<>();
 //    Map<String, List<String>> siblings = new HashMap<>();
+        dict = new DictionaryString();
         allParents = new HashMap<>();
         allParentIds = new HashMap<>();
         parentsInteger = null;
+        
     }
     
-    public HierarchyImplString(String _name, String _nodesType){
+    public HierarchyImplString(String _name, String _nodesType,DictionaryString dictData){
         this.name = _name;
         this.nodesType = _nodesType;
+        this.dictData = dictData;
 //        this.hierarchyType = "distinct";
         
         children = new HashMap<>();
         stats = new HashMap<>();
         parents = new HashMap<>();
 //    Map<String, List<String>> siblings = new HashMap<>();
+        dict = new DictionaryString();
         allParents = new HashMap<>();
         allParentIds = new HashMap<>();
         parentsInteger = null;
@@ -125,40 +133,105 @@ public class HierarchyImplString implements Hierarchy<String> {
     private void loadHierarchy() throws IOException{
         String line;
         int curLevel = this.height - 1;
+        int strCount = dictData.getMaxUsedId()+1;
+        List<String> lastParents = new ArrayList<String>();
+        Map<String,List<Double>> childrenLast = new HashMap<String,List<Double>>();
+        List<Double> lastLevelChilds;
+        double strId;
+
         
         while ((line = br.readLine()) != null) {
             String tokens[] = line.split(" ");
             if(line.trim().isEmpty()){
+                
+                if(curLevel==this.height -1 ){
+                    for(String tkn : lastParents){
+                        if(!dict.containsString(tkn)){
+                            dict.putIdToString(strCount, tkn);
+                            dict.putStringToId(tkn, strCount++);
+                        }
+                        
+                        strId = dict.getStringToId(tkn);
+                        this.stats.put(strId, new NodeStats(curLevel-1));
+                        lastLevelChilds = childrenLast.get(tkn);
+                        this.children.put(strId, lastLevelChilds);
+                        
+                        for(Double chId : lastLevelChilds){
+                            this.parents.put(chId, strId);
+                            this.stats.put(chId, new NodeStats(curLevel));
+
+                        }
+                        
+                    }
+                }
+                
                 curLevel--;
                 continue;
             }
             boolean isChild = false;
-            List<String> ch = new ArrayList<>();
+            List<Double> ch = new ArrayList<>();
             for (String token : tokens){
                 if(token.equals("has")){
                     isChild = true;
                     continue;
                 }
-                if(isChild){
-                    //System.out.println(token);
-                    ch.add(token);
-                    this.stats.put(token, new NodeStats(curLevel));
-                    this.parents.put(token, tokens[0]);
-                }
-                else{
-                    this.stats.put(token, new NodeStats(curLevel-1));
+                if(curLevel!= this.height-1){
                     
-                    //level 0 and isChild == false then set as root
-                    if(curLevel - 1 == 0){
-                        root = tokens[0];
+                    if(!dict.containsString(token)){
+                        dict.putIdToString(strCount, token);
+                        dict.putStringToId(token, strCount++);
+                    }
+                    
+                    
+                    if(dictData.containsString(token)){
+                        strId = dictData.getStringToId(token);
+                    }
+                    else{
+                        strId = dict.getStringToId(token);
+                    }
+
+                    if(isChild){
+                        //System.out.println(token);
+                        ch.add(strId);
+                        this.stats.put(strId, new NodeStats(curLevel));
+                        this.parents.put(strId, (double)dict.getStringToId(tokens[0]));
+                    }
+                    else{
+                        this.stats.put(strId, new NodeStats(curLevel-1));
+
+                        //level 0 and isChild == false then set as root
+                        if(curLevel - 1 == 0){
+                            root = (double)dict.getStringToId(tokens[0]);
+                        }
                     }
                 }
+                else{
+                    if(isChild && !dictData.containsString(token)){
+                        dictData.putIdToString(strCount, token);
+                        dictData.putStringToId(token, strCount++);
+                        ch.add((double)strCount-1);
+                    }
+                    else if(isChild){
+                        strId = dictData.getStringToId(token);
+                        ch.add(strId);
+                    }
+                    else if(!dict.containsString(token)){
+                       lastParents.add(token);
+                    }
+                }
+                
+                
                 
                 //System.out.println(token + ": " + isChild + " "  + curLevel);
                 
             }
-            this.children.put(tokens[0], ch);
             
+            if(curLevel != this.height -1){
+                this.children.put((double)dict.getStringToId(tokens[0]), ch);
+            }
+            else{
+                childrenLast.put(tokens[0], ch);
+            }
             //set siblings
 //            for(String child : ch){
 //                List<String> sib = new ArrayList<>(ch);
@@ -166,6 +239,20 @@ public class HierarchyImplString implements Hierarchy<String> {
 //                this.siblings.put(child, sib);
 //            }
         }
+        
+//        System.out.println("Data dict");
+//        for (Object objectName : dictData.idToString.keySet()) {
+//            System.out.println(objectName);
+//            System.out.println(dictData.idToString.get(objectName));
+//        }
+//        
+//        System.out.println("Hier dict");
+//         for (Object objectName : dict.idToString.keySet()) {
+//            System.out.println(objectName);
+//            System.out.println(dict.idToString.get(objectName));
+//        }
+        
+        
     }
     
     private void processingMetadata() throws IOException{
@@ -193,20 +280,20 @@ public class HierarchyImplString implements Hierarchy<String> {
     
     @Override
     public void findAllParents(){
-        List<String> tempChild = null;
+        List<Double> tempChild = null;
         int i = 0;
         int level = 0;
-        ArrayList<String> tempArr1 = new ArrayList<>();
-        ArrayList<String> tempArr2 = new ArrayList<>();
+        ArrayList<Double> tempArr1 = new ArrayList<>();
+        ArrayList<Double> tempArr2 = new ArrayList<>();
         
         tempArr1.add(root);
         allParents.put(level, tempArr1);
-        tempArr2 = (ArrayList<String>) tempArr1.clone();
+        tempArr2 = (ArrayList<Double>) tempArr1.clone();
         level ++;
         
         while (level <= height - 1 ){
             tempArr1 = new ArrayList<>();
-            for (String x : tempArr2) {
+            for (Double x : tempArr2) {
                 tempChild = children.get(x);
                 if ( tempChild != null){
                     for ( i = 0 ; i < tempChild.size() ; i ++ ){
@@ -215,20 +302,20 @@ public class HierarchyImplString implements Hierarchy<String> {
                 }
             }
             allParents.put(level, tempArr1);
-            tempArr2 = (ArrayList<String>) tempArr1.clone();
+            tempArr2 = (ArrayList<Double>) tempArr1.clone();
             level ++;
         }
     }
     
     
     @Override
-    public List<String> getChildren(String parent){
+    public List<Double> getChildren(Double parent){
         return this.children.get(parent);
     }
     
     
     @Override
-    public Integer getLevel(String node){
+    public Integer getLevel(Double node){
         NodeStats nodeStats = this.stats.get(node);
         if(nodeStats == null){
             System.out.println("Error: stats for node " + node + " cannot be found!");
@@ -240,7 +327,18 @@ public class HierarchyImplString implements Hierarchy<String> {
     
     
     @Override
-    public String getParent(String node){
+    public Double getParent(Double node){
+        /*System.out.println("Parentssssssss");
+        for (Map.Entry<Double, Double> entry : parents.entrySet()) {
+            System.out.println(entry.getKey()+" : "+entry.getValue());
+        }
+        System.out.println("childrens");
+        for (Map.Entry<Double, List<Double>> entry : children.entrySet()) {
+            System.out.println(entry.getKey()+" : "+entry.getValue());
+        }
+        
+        
+        System.out.println("i am here!!!");*/
         return this.parents.get(node);
     }
     
@@ -272,7 +370,7 @@ public class HierarchyImplString implements Hierarchy<String> {
     
     
     @Override
-    public String getRoot(){
+    public Double getRoot(){
         return root;
     }
     
@@ -283,7 +381,7 @@ public class HierarchyImplString implements Hierarchy<String> {
     
     
     @Override
-    public Map<Integer, ArrayList<String>> getAllParents() {
+    public Map<Integer, ArrayList<Double>> getAllParents() {
         return allParents;
     }
     
@@ -301,18 +399,26 @@ public class HierarchyImplString implements Hierarchy<String> {
             for(int curLevel = height - 2; curLevel >= 0; curLevel--){
                 //System.out.println("i = " + curLevel + "\t children = " + this.allParents.get(curLevel).toString() );
                 //List<String> p = this.allParents.get(curLevel);
-                for (String curParent : this.allParents.get(curLevel)){
+                for (Double curParent : this.allParents.get(curLevel)){
                     if(this.getChildren(curParent) == null){
                         continue;
                     }
                     if(this.getChildren(curParent).isEmpty())
                         continue;
                     StringBuilder sb = new StringBuilder();
-                    for (String child : this.getChildren(curParent)){
-                        sb.append(child);
+                    for (Double child : this.getChildren(curParent)){
+                        String childToken;
+                        if(curLevel == height-2){
+                            childToken = dictData.getIdToString(child.intValue());
+                        }
+                        else{
+                            childToken = dict.getIdToString(child.intValue());
+                        }
+                        
+                        sb.append(childToken);
                         sb.append(" ");
                     }
-                    writer.println(curParent + " has " + sb.toString());
+                    writer.println(dict.getIdToString(curParent.intValue()) + " has " + sb.toString());
                 }
                 
                 counter ++;
@@ -333,7 +439,7 @@ public class HierarchyImplString implements Hierarchy<String> {
     
     
     @Override
-    public void add(String newObj, String parent) {
+    public void add(Double newObj, Double parent) {
         System.out.println("add () newItem: "  + newObj.toString() + " parentItem: " + parent.toString());
         
         
@@ -372,11 +478,11 @@ public class HierarchyImplString implements Hierarchy<String> {
             System.out.println(entry.getKey()+" : "+entry.getValue());
             }*/
             
-            this.children.put(newObj, new ArrayList<String>());
+            this.children.put(newObj, new ArrayList<Double>());
             if(this.children.get(parent) != null){
                 this.children.get(parent).add(newObj);
             }else{
-                ArrayList<String> c = new ArrayList<>();
+                ArrayList<Double> c = new ArrayList<>();
                 c.add(newObj);
                 this.children.put(parent, c);
             }
@@ -394,14 +500,14 @@ public class HierarchyImplString implements Hierarchy<String> {
             
             
             if (this.stats.get(parent).getLevel() == allParents.size() - 1){
-                ArrayList<String> p = new ArrayList<>();
+                ArrayList<Double> p = new ArrayList<>();
                 p.add(newObj);
                 this.allParents.put(this.stats.get(parent).getLevel() + 1, p);
                 this.height++;
                 
             }
             else{
-                ArrayList<String> childList = allParents.get(this.stats.get(parent).getLevel() + 1);
+                ArrayList<Double> childList = allParents.get(this.stats.get(parent).getLevel() + 1);
                 childList.add(newObj);
                 allParents.put(this.stats.get(parent).getLevel() + 1, childList);
                 
@@ -418,11 +524,11 @@ public class HierarchyImplString implements Hierarchy<String> {
         }
     }
     
-    private boolean isLeafLevel(ArrayList<String> parentsInLevel){
+    private boolean isLeafLevel(ArrayList<Double> parentsInLevel){
         boolean  leafLevel = true;
         
-        for (String parent : parentsInLevel){
-            List<String> ch = this.children.get(parent);
+        for (Double parent : parentsInLevel){
+            List<Double> ch = this.children.get(parent);
             if(ch != null && ch.size() > 0){
                 leafLevel = true;
                 break;
@@ -432,14 +538,18 @@ public class HierarchyImplString implements Hierarchy<String> {
     }
     
     @Override
-    public Map<Integer, Set<String>> remove(String item)
+    public Map<Integer, Set<Double>> remove(Double item)
     {
-        Map<Integer, Set<String>> nodesMap = BFS(item,null);
+        Map<Integer, Set<Double>> nodesMap = BFS(item,null);
         for(Integer i = nodesMap.keySet().size() ; i > 0 ; i--)
         {
             //System.out.println(i + "-> " + nodesMap.get((i)));
             
-            for(String itemToDelete : nodesMap.get(i)){
+            for(Double itemToDelete : nodesMap.get(i)){
+                
+                if(this.getLevel(itemToDelete)!=this.height-1){
+                    dict.remove(itemToDelete.intValue());
+                }
                 //System.out.println(itemToDelete.toString());
                 if(itemToDelete.equals(root)){
                     System.out.println("Cannot remove root");
@@ -456,7 +566,7 @@ public class HierarchyImplString implements Hierarchy<String> {
 //                    }
 //                }
 //                siblings.remove(itemToDelete);
-                List<String> p = allParents.get(stats.get(itemToDelete).level);
+                List<Double> p = allParents.get(stats.get(itemToDelete).level);
                 p.remove(itemToDelete);
                 if(p.isEmpty()){
                     allParents.remove(stats.get(itemToDelete).level);
@@ -464,6 +574,7 @@ public class HierarchyImplString implements Hierarchy<String> {
                 }
                 stats.remove(itemToDelete);
             }
+            
             
         }
         return nodesMap;
@@ -480,7 +591,7 @@ public class HierarchyImplString implements Hierarchy<String> {
         parents = new HashMap<>();
 //        siblings = new HashMap<>();
         allParents = new HashMap<>();
-        children.put(root, new ArrayList<String>());
+        children.put(root, new ArrayList<Double>());
         stats.put(root, new NodeStats(0));
         //System.out.println("model : " + root.toString());
         /*
@@ -494,11 +605,11 @@ public class HierarchyImplString implements Hierarchy<String> {
     
     
     @Override
-    public void edit(String oldValue, String newValue){
+    public void edit(Double oldValue, Double newValue){
         //update children map
-        String parent = null;
+        Double parent = null;
         ArrayList parentsList = null;
-        List<String> childrenListNew = null;
+        List<Double> childrenListNew = null;
         
         /*System.out.println(this.stats.get(oldValue).getLevel());
         System.out.println("before");
@@ -506,7 +617,7 @@ public class HierarchyImplString implements Hierarchy<String> {
         System.out.println(entry.getKey()+" : "+entry.getValue());
         }*/
         
-        List<String> childrenList = this.children.get(oldValue);
+        List<Double> childrenList = this.children.get(oldValue);
         if(childrenList != null){//node
             if ( allParents.get(0).get(0).equals(oldValue)){
                 //System.out.println("root");
@@ -679,14 +790,14 @@ public class HierarchyImplString implements Hierarchy<String> {
     
     
     @Override
-    public boolean contains(String o){
+    public boolean contains(Double o){
         return stats.get(o) != null;
     }
     
     
     @Override
-    public Map<Integer,Set<String>> dragAndDrop(String firstObj, String lastObj) {
-        String parentFirstObj ;
+    public Map<Integer,Set<Double>> dragAndDrop(Double firstObj, Double lastObj) {
+        Double parentFirstObj ;
         ArrayList childs1 = null;
         ArrayList childs2 = null;
         ArrayList simb1 = null;
@@ -696,7 +807,7 @@ public class HierarchyImplString implements Hierarchy<String> {
         int levelLastObj;
         int levelObj;
         int newLevel;
-        Set<String> s = null;
+        Set<Double> s = null;
         NodeStats nodeStat = null;
         
         
@@ -719,7 +830,7 @@ public class HierarchyImplString implements Hierarchy<String> {
         
         //System.out.println("old height = " + this.height);
         
-        Map<Integer,Set<String>> m = this.BFS(firstObj,lastObj);
+        Map<Integer,Set<Double>> m = this.BFS(firstObj,lastObj);
         
         if ( m != null ){
             
@@ -775,7 +886,7 @@ public class HierarchyImplString implements Hierarchy<String> {
             //diagrafw to allparents tou prwtou kai tou dentrou tou
             for ( int i = 1 ; i <= m.size() ; i ++ ){
                 s = m.get(i);
-                for( String node : s ){
+                for( Double node : s ){
                     //System.out.println("node = " + node );
                     levelObj = this.getLevel(node);
                     parents = this.allParents.get(levelObj);
@@ -822,7 +933,7 @@ public class HierarchyImplString implements Hierarchy<String> {
             for ( int i = 2 ; i <= m.size() ; i ++  ){
                 newLevel = newLevel + 1;
                 s = m.get(i);
-                for (String d : s){
+                for (Double d : s){
                     nodeStat = this.stats.get(d);
                     nodeStat.level = newLevel;
                 }
@@ -859,14 +970,14 @@ public class HierarchyImplString implements Hierarchy<String> {
     }
     
     
-    public Map<Integer,Set<String>> BFS(String firstnode,String lastNode){
-        Map<Integer,Set<String>> bfsMap = new HashMap<>();
-        LinkedList<String> listNodes = new LinkedList<String>();
+    public Map<Integer,Set<Double>> BFS(Double firstnode,Double lastNode){
+        Map<Integer,Set<Double>> bfsMap = new HashMap<>();
+        LinkedList<Double> listNodes = new LinkedList<Double>();
         ArrayList childs1 = null;
         int counter = 1;
         int levelNode1;
         int levelNode2;
-        Set s = new HashSet<String>();
+        Set s = new HashSet<Double>();
         
         
         s.add(firstnode);
@@ -878,7 +989,7 @@ public class HierarchyImplString implements Hierarchy<String> {
         while (!listNodes.isEmpty()){
             childs1 = (ArrayList) this.getChildren(listNodes.getFirst());
             if ( childs1 != null && !childs1.isEmpty()){// ean exei paidia
-                levelNode2 = this.getLevel((String) childs1.get(0));
+                levelNode2 = this.getLevel((Double) childs1.get(0));
                 System.out.println("edw lala " + levelNode2 + " " + childs1.get(0));
                 if (levelNode2 == levelNode1){// ean einai sto idio epipedo tote valta sto proigoumeno set
                     s.addAll(childs1);
@@ -891,7 +1002,7 @@ public class HierarchyImplString implements Hierarchy<String> {
                     bfsMap.put(counter, s);
                 }
                 else{// ean den einai sto idio epipedo dimiourgise kainourgio set
-                    s = new HashSet<String>();
+                    s = new HashSet<Double>();
                     levelNode1 = levelNode2;
                     s.addAll(childs1);
                     if ( lastNode != null ){
@@ -926,7 +1037,7 @@ public class HierarchyImplString implements Hierarchy<String> {
     
     @Override
     public void computeWeights(Data dataset, String column) {
-        for(String node : this.stats.keySet()){
+        for(Double node : this.stats.keySet()){
             NodeStats s = this.stats.get(node);
             s.weight = 0;
         }
@@ -940,9 +1051,9 @@ public class HierarchyImplString implements Hierarchy<String> {
             }
         }
         
-        DictionaryString dict = dataset.getDictionary(c);
+//        DictionaryString dict = dataset.getDictionary();
         if(dict == null){
-            System.out.println("No dictionary found for column " + c);
+            System.out.println("No dictionary found  " );
             return;
         }
         //System.out.println(c);
@@ -950,11 +1061,11 @@ public class HierarchyImplString implements Hierarchy<String> {
         if(dataset instanceof SETData){
             for (double[] rowData : data) {
                 for(double d : rowData){
-                    String fromDict = dict.getIdToString((int)d);
-                    NodeStats s = this.stats.get(fromDict);
+//                    String fromDict = dict.getIdToString((int)d);
+                    NodeStats s = this.stats.get(d);
                     
                     if(s != null){      //find weights of leaf level
-                        List<String> cList = this.children.get(fromDict);
+                        List<Double> cList = this.children.get(d);
                         if(cList == null || cList.isEmpty()){
                             
                             //System.out.println(rowData[c]);
@@ -964,13 +1075,49 @@ public class HierarchyImplString implements Hierarchy<String> {
                 }
             }
         }
+        else if(dataset instanceof RelSetData){
+            RelSetData datasetRelSet = (RelSetData) dataset;
+            if(c == datasetRelSet.getSetColumn() ){
+                data = datasetRelSet.getSet();
+                for (double[] rowData : data) {
+                    for(double d : rowData){
+    //                    String fromDict = dict.getIdToString((int)d);
+                        NodeStats s = this.stats.get(d);
+
+                        if(s != null){      //find weights of leaf level
+                            List<Double> cList = this.children.get(d);
+                            if(cList == null || cList.isEmpty()){
+
+                                //System.out.println(rowData[c]);
+                                s.weight++;
+                            }
+                        }
+                    }
+                }
+            }
+            else{
+                for (double[] columnData : data) {
+//                String fromDict = dict.getIdToString((int)columnData[c]);
+                    NodeStats s = this.stats.get(columnData[c]);
+
+                    if(s != null){      //find weights of leaf level
+                        List<Double> cList = this.children.get(columnData[c]);
+                        if(cList == null || cList.isEmpty()){
+
+                            //System.out.println(rowData[c]);
+                            s.weight++;
+                        }
+                    }
+                }  
+            }
+        }
         else{
             for (double[] columnData : data) {
-                String fromDict = dict.getIdToString((int)columnData[c]);
-                NodeStats s = this.stats.get(fromDict);
+//                String fromDict = dict.getIdToString((int)columnData[c]);
+                NodeStats s = this.stats.get(columnData[c]);
                 
                 if(s != null){      //find weights of leaf level
-                    List<String> cList = this.children.get(fromDict);
+                    List<Double> cList = this.children.get(columnData[c]);
                     if(cList == null || cList.isEmpty()){
                         
                         //System.out.println(rowData[c]);
@@ -982,11 +1129,11 @@ public class HierarchyImplString implements Hierarchy<String> {
         
         //find weights for inner nodes
         for(int j = this.allParents.keySet().size()-2 ; j>=0 ; j--){
-            for(String node : this.allParents.get(j)){
+            for(Double node : this.allParents.get(j)){
                 Integer totalWeight = 0;
-                List<String> cList = this.children.get(node);
+                List<Double> cList = this.children.get(node);
                 if(cList != null && !cList.isEmpty()){
-                    for(String child : cList){
+                    for(Double child : cList){
                         totalWeight += this.stats.get(child).weight;
                     }
                     this.stats.get(node).weight = totalWeight;
@@ -997,9 +1144,9 @@ public class HierarchyImplString implements Hierarchy<String> {
     }
     
     @Override
-    public String checkColumn(int column, Data dataset){
+    public Double checkColumn(int column, Data dataset){
         
-        DictionaryString colDict = dataset.getDictionary(column);
+//        DictionaryString colDict = dataset.getDictionary();
         
         double[][] data = dataset.getDataSet();
         int dataLength = dataset.getDataLenght();
@@ -1008,8 +1155,8 @@ public class HierarchyImplString implements Hierarchy<String> {
         for(int i=0; i<dataLength; i++){
             
             //if not, return value missing
-            if(!this.stats.containsKey(colDict.getIdToString((int)data[i][column]))){
-                return colDict.getIdToString((int)data[i][column]);
+            if(!this.stats.containsKey(dictData.getIdToString((int)data[i][column]))){
+                return data[i][column];
             }
         }
         
@@ -1018,7 +1165,7 @@ public class HierarchyImplString implements Hierarchy<String> {
     }
     
     @Override
-    public Integer getWeight(String node){
+    public Integer getWeight(Double node){
         NodeStats stats = this.stats.get(node);
         if(stats == null){
             return null;
@@ -1027,7 +1174,7 @@ public class HierarchyImplString implements Hierarchy<String> {
     }
     
     
-    public void incWeight(String node){
+    public void incWeight(Double node){
         this.stats.get(node).weight++;
     }
     
@@ -1057,11 +1204,16 @@ public class HierarchyImplString implements Hierarchy<String> {
     }
     
     @Override
+    public DictionaryString getDictionaryData(){
+        return this.dictData;
+    }
+    
+    @Override
     public void transformParents(){
         parentsInteger = null;
         parentsInteger = new HashMap<>();
-        for (String key : parents.keySet()) {
-            parentsInteger.put(dict.getStringToId(key), dict.getStringToId(parents.get(key)));
+        for (Double key : parents.keySet()) {
+            parentsInteger.put(key.intValue(), parents.get(key).intValue());
         }
         
         
@@ -1072,10 +1224,10 @@ public class HierarchyImplString implements Hierarchy<String> {
         return parentsInteger;
     }
     
-    @Override
-    public String getParent(Double d) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+//    @Override
+//    public Double getParent(Double d) {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
     
     @Override
     public int getLevelSize(int level) {
@@ -1084,68 +1236,101 @@ public class HierarchyImplString implements Hierarchy<String> {
     
     @Override
     public double getParentId(double d) {
-        String stringValue = this.dict.getIdToString((int)d);
-        String parentStringValue = this.parents.get(stringValue);
+//        String stringValue = this.dict.getIdToString((int)d);
+        Double parentStringValue = this.parents.get(d);
         if(parentStringValue == null){
             return -1;
         }
         else{
-            return this.dict.getStringToId(parentStringValue);
+            return parentStringValue;
         }
     }
     
     @Override
     public void buildDictionary(DictionaryString dictionary) {
-        int id = dictionary.getMaxUsedId();
-        
-        //add values to dictionnary bottom-up
-        for(int curLevel = Collections.max(this.allParents.keySet()); curLevel != -1; curLevel--){
-            for(String value : this.allParents.get(curLevel)){
-                if(!dictionary.containsString(value)){
-                    dictionary.putIdToString(++id, value);
-                    dictionary.putStringToId(value, id);
-                }
-            }
-        }
-        
-        //set column's dictionary the same as hierarchy's
-        this.dict = dictionary;
+//        int id = dictionary.getMaxUsedId();
+//        
+//        //add values to dictionnary bottom-up
+//        for(int curLevel = Collections.max(this.allParents.keySet()); curLevel != -1; curLevel--){
+//            for(String value : this.allParents.get(curLevel)){
+//                if(!dictionary.containsString(value)){
+//                    dictionary.putIdToString(++id, value);
+//                    dictionary.putStringToId(value, id);
+//                }
+//            }
+//        }
+//        
+//        //set column's dictionary the same as hierarchy's
+//        this.dict = dictionary;
     }
 
     @Override
     public Set<Double> getChildrenIds(double d) {
 //        System.out.println(this.stats.keySet().size());
-        String stringValue = this.dict.getIdToString((int)d);
-        List<String> childrenStrings = this.children.get(stringValue);
+//        String stringValue = this.dict.getIdToString((int)d);
+        List<Double> childrenIds = this.children.get(d);
         Set<Double> chs = null;
         
-        if(childrenStrings != null){
-            chs = new HashSet<>();
+        if(childrenIds != null){
+            chs = new HashSet<>(childrenIds);
 //            System.out.println(childrenStrings);
-            for(String child : childrenStrings){
-                
-                chs.add((double)this.dict.getStringToId(child));
-            }
+//            for(String child : childrenStrings){
+//                
+//                chs.add((double)this.dict.getStringToId(child));
+//            }
         }
         return chs;
     }
 
     @Override
     public Integer getLevel(double nodeId) {
-        String value = this.dict.getIdToString((int)nodeId);
-        return (this.height - this.getLevel(value) - 1) ;
+//        System.out.println("getLevel hierarchy = " + nodeId + "\t height = " + this.height);
+//        String value = this.dict.getIdToString((int)nodeId);
+        return (this.height - this.getLevel((Double)nodeId) - 1) ;
     }
 
     @Override
     public List<Integer> getNodeIdsInLevel(int level) {
-        int curLevel = this.height - level - 1;
+        /*int curLevel = this.height - level - 1;
+        System.out.println("currentLevel = " + curLevel);
         List<Integer> curLevelIds = this.allParentIds.get(curLevel);
         if(curLevelIds == null){
             
-            ArrayList<String> nodesInLevel = this.getAllParents().get(curLevel);
+            ArrayList<Double> nodesInLevel = this.getAllParents().get(curLevel);
+            
             List<Integer> nodeIdsInLevel = new ArrayList<>(nodesInLevel.size());
-            for(String str : nodesInLevel){
-                nodeIdsInLevel.add(this.dict.getStringToId(str));
+            for(Double id : nodesInLevel){
+                if ( curLevel == this.height - 1){
+                    nodeIdsInLevel.add(id.intValue());
+                    //nodeIdsInLevel.add(this.dictData.g);
+                }
+                else{
+                    nodeIdsInLevel.add(id.intValue());
+                }
+            }
+            
+            this.allParentIds.put(curLevel, nodeIdsInLevel);
+            return nodeIdsInLevel;
+        }
+        else{
+            return curLevelIds;
+        }*/
+        
+        int curLevel = this.height - level - 1;
+        System.out.println("currentLevel = " + curLevel);
+        List<Integer> curLevelIds = this.allParentIds.get(curLevel);
+        if(curLevelIds == null){
+            
+            ArrayList<Double> nodesInLevel = this.getAllParents().get(curLevel);          
+            List<Integer> nodeIdsInLevel = new ArrayList<>(nodesInLevel.size());
+            for(Double id : nodesInLevel){
+                if ( curLevel == this.height - 1){
+                    nodeIdsInLevel.add(id.intValue());
+                    //nodeIdsInLevel.add(this.dictData.g);
+                }
+                else{
+                    nodeIdsInLevel.add(id.intValue());
+                }
             }
             
             this.allParentIds.put(curLevel, nodeIdsInLevel);
@@ -1154,20 +1339,21 @@ public class HierarchyImplString implements Hierarchy<String> {
         else{
             return curLevelIds;
         }
+        
     }
 
     @Override
     public Integer getWeight(double nodeId) {
-        String value = this.dict.getIdToString((int)nodeId);
-        return getWeight(value);
+//        String value = this.dict.getIdToString((int)nodeId);
+        return getWeight((Double)nodeId);
     }
     
 
     @Override
-    public int findAllChildren(String node,int sum) {
+    public int findAllChildren(Double node,int sum) {
         int result = 0;
        
-        List<String> child = this.getChildren(node);
+        List<Double> child = this.getChildren(node);
        
         if ( child == null){
             return 1;
@@ -1193,11 +1379,13 @@ public class HierarchyImplString implements Hierarchy<String> {
         ArrayList<String> nodes = null;
         boolean FLAG = false;
         String parent = null;
-        List<String> nodeChilds = null;
+        List<Double> nodeChilds = null;
         int counter = 0;
         int counterNode = 0;
         String color = null;
         String label = null;
+        Double nodeId;
+        String nodeChild;
         
         System.out.println("roottttttttttttttttttttttttttt = " + root);
         
@@ -1206,12 +1394,18 @@ public class HierarchyImplString implements Hierarchy<String> {
         
         if ( !node.equals("null") && !node.equals("") && nodeLevel != 0 ){
             
-           
-            System.out.println("i am here");
+            if(dictData.containsString(node)){
+                nodeId = (double) dictData.getStringToId(node);
+            }
+            else{
+                nodeId = (double) dict.getStringToId(node);
+            }
+            
+            System.out.println("i am here"+nodeId);
             counter = 1;
             if (height > nodeLevel + 1){
                 for (int i = nodeLevel ; i >= 0 ; i --){
-                    nodeChilds = this.children.get(node);
+                    nodeChilds = this.children.get(nodeId);
                     //System.out.println(node);
                     counterNode = counter;
                     counter ++;                
@@ -1220,22 +1414,26 @@ public class HierarchyImplString implements Hierarchy<String> {
                         Collections.sort(nodeChilds);
                         for (int j = 0 ; j < nodeChilds.size() ; j ++){
                             if (this.getLevel(nodeChilds.get(j)) == this.height -1){
-                                 color = "red";
+                                color = "red";
+                                nodeChild = dictData.getIdToString(nodeChilds.get(j).intValue());
                             }
                             else{
                                 color = null;
+                                nodeChild = dict.getIdToString(nodeChilds.get(j).intValue());
                             }
                             
-                            if (nodeChilds.get(j).equals("NaN")){
+                            if (nodeChild.equals("NaN")){
                                 label = "(null)";
                             }
                             else{
-                                label = nodeChilds.get(j)+"";
+                                label = nodeChild;
                             }
 
-                            n = new Node(nodeChilds.get(j),label,i+1,color,this.hierarchyType + "," +this.nodesType);  
+//                            n = new Node(nodeChilds.get(j),label,i+1,color,this.hierarchyType + "," +this.nodesType); 
+                            
+                            n = new Node(nodeChild,label,i+1,color,this.hierarchyType + "," +this.nodesType);
                             graph.setNode(n);
-                            e = new Edge(node + "",nodeChilds.get(j)+"");
+                            e = new Edge(node,nodeChild);
                             graph.setEdge(e);
                             counter ++;
                         }
@@ -1243,11 +1441,14 @@ public class HierarchyImplString implements Hierarchy<String> {
                     else{
                         System.out.println("noChildren");
                     }
-                    node = this.parents.get(node);
-                    
+                    nodeId = this.parents.get(nodeId);
+                    System.out.println("ParentId: "+nodeId);
+                    if(nodeId!=null){
+                        node = dict.getIdToString(nodeId.intValue());
+                    }
                     //System.out.println("node = " + node);
                 }
-                n = new Node(root,root,0,null,null);
+                n = new Node(dict.getIdToString(root.intValue()),dict.getIdToString(root.intValue()),0,null,null);
                 graph.setNode(n);
                 Collections.reverse(graph.getNodeList());
                 Collections.reverse(graph.getEdgeList());
@@ -1256,7 +1457,7 @@ public class HierarchyImplString implements Hierarchy<String> {
             else{
                 System.out.println("i am here222");
                 for (int i = nodeLevel ; i >= 0 ; i --){
-                    nodeChilds = this.children.get(node);
+                    nodeChilds = this.children.get(nodeId);
                    
                     System.out.println("ola kala");
                     //Collections.sort(nodeChilds);
@@ -1267,20 +1468,22 @@ public class HierarchyImplString implements Hierarchy<String> {
                         for (int j = 0 ; j < nodeChilds.size() ; j ++){
                             if (this.getLevel(nodeChilds.get(j)) == this.height -1){
                                 color = "red";
+                                nodeChild = dictData.getIdToString(nodeChilds.get(j).intValue());
                             }
                             else{
                                 color = null;
+                                nodeChild = dict.getIdToString(nodeChilds.get(j).intValue());
                             }
                             
-                            if (nodeChilds.get(j).equals("NaN")){
+                            if (nodeChild.equals("NaN")){
                                 label = "(null)";
                             }
                             else{
-                                label = nodeChilds.get(j)+"";
+                                label = nodeChild;
                             }
-                            n = new Node(nodeChilds.get(j),label,i+1,color,this.hierarchyType + "," +this.nodesType);  
+                            n = new Node(nodeChild,label,i+1,color,this.hierarchyType + "," +this.nodesType);  
                             graph.setNode(n);
-                            e = new Edge(node + "",nodeChilds.get(j)+"");
+                            e = new Edge(node ,nodeChild);
                             graph.setEdge(e);
                             counter ++;
                         }
@@ -1288,20 +1491,23 @@ public class HierarchyImplString implements Hierarchy<String> {
                     else{
                         System.out.println("noChildren");
                     }
-                    node = this.parents.get(node);
+                    nodeId = this.parents.get(nodeId);
+                    if(nodeId!=null){
+                        node = dict.getIdToString(nodeId.intValue());
+                    }
                     //System.out.println("node = " + node);
                 }
-                n = new Node(root,root,0,null,this.hierarchyType + "," +this.nodesType);
+                n = new Node(dict.getIdToString(root.intValue()),dict.getIdToString(root.intValue()),0,null,this.hierarchyType + "," +this.nodesType);
                 graph.setNode(n);
             
             }
             
         }
         else{
-            node = root;
+            nodeId = root;
             nodeLevel= 0;
             for (int i = nodeLevel ; i >= 0 ; i --){
-                    nodeChilds = this.children.get(node);
+                    nodeChilds = this.children.get(nodeId);
                     //Collections.sort(nodeChilds);
                     counterNode = counter;
                     counter ++;
@@ -1311,20 +1517,22 @@ public class HierarchyImplString implements Hierarchy<String> {
 
                             if (this.getLevel(nodeChilds.get(j)) == this.height -1){
                                 color = "red";
+                                nodeChild = dictData.getIdToString(nodeChilds.get(j).intValue());
                             }
                             else{
                                 color = null;
+                                nodeChild = dict.getIdToString(nodeChilds.get(j).intValue());
                             }
                             
                             if (nodeChilds.get(j).equals("NaN")){
                                 label = "(null)";
                             }
                             else{
-                                label = nodeChilds.get(j)+"";
+                                label = nodeChild;
                             }
-                            n = new Node(nodeChilds.get(j),label,i+1,color,this.hierarchyType + "," +this.nodesType);  
+                            n = new Node(nodeChild,label,i+1,color,this.hierarchyType + "," +this.nodesType);  
                             graph.setNode(n);
-                            e = new Edge(node + "",nodeChilds.get(j)+"");
+                            e = new Edge(dict.getIdToString(root.intValue()),nodeChild);
                             graph.setEdge(e);
                             counter ++;
                         }
@@ -1332,10 +1540,11 @@ public class HierarchyImplString implements Hierarchy<String> {
                     else{
                         System.out.println("noChildren");
                     }
-                    node = this.parents.get(node);
+                    nodeId = this.parents.get(nodeId);
+                    
                     //System.out.println("nodeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee = " + node);
                 }
-                n = new Node(root,root,0,null,this.hierarchyType + "," +this.nodesType);
+                n = new Node(dict.getIdToString(root.intValue()),dict.getIdToString(root.intValue()),0,null,this.hierarchyType + "," +this.nodesType);
                 graph.setNode(n);
             
             
@@ -1353,7 +1562,15 @@ public class HierarchyImplString implements Hierarchy<String> {
             System.out.println("From = " + graph.getEdgeList().get(i).getFrom() + "\t to = " + graph.getEdgeList().get(i).getTo() );
             
         }*/
-      
+        ArrayList<Edge> list = graph.getEdgeList();
+        Collections.sort(list, new Comparator<Edge>() {
+            @Override
+            public int compare(Edge s1, Edge s2) {
+                return s1.getTo().compareToIgnoreCase(s2.getTo());
+            }
+        });
+        
+        graph.setEdgeList(list);
         
         
         return graph;
@@ -1365,12 +1582,22 @@ public class HierarchyImplString implements Hierarchy<String> {
     }
 
     @Override
-    public String getParent(Date d) {
+    public Double getParent(Date d) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public int translateDateViaLevel(int level) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public List<Double> getNodesInLevel(int level) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void setDictionaryData(DictionaryString dict) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     
