@@ -80,7 +80,7 @@ public class ParallelFlash implements Algorithm{
     
     @Override
     public void anonymize() {
-        System.out.println("Parallel Flash running");
+//        System.out.println("Parallel Flash running");
         hierarchiesNum = this.hierarchies.keySet().size();
         int qidColumns[] = new int[hierarchiesNum];
         int minLevels[] = new int[hierarchiesNum];
@@ -126,7 +126,7 @@ public class ParallelFlash implements Algorithm{
                }
             }
         }
-        System.out.println("Results : " + this.resultset);
+//        System.out.println("Results : " + this.resultset);
     }
     
     public void checkPath(LatticeNode[] path, Heap heap){
@@ -247,7 +247,7 @@ public class ParallelFlash implements Algorithm{
         int k = 0;
         String[] attrNames = new String[hierarchies.size()];
         for (Map.Entry<Integer, Hierarchy> entry : hierarchies.entrySet()) {
-            System.out.println(entry.getKey()+" : "+dataset.getColumnByPosition(entry.getKey()));
+//            System.out.println(entry.getKey()+" : "+dataset.getColumnByPosition(entry.getKey()));
             attrNames[k] = dataset.getColumnByPosition(entry.getKey());
             k++;
         }

@@ -120,14 +120,24 @@ public class RangeDate {
     
     public boolean contains(Date v){
         //return v >= this.lowerBound && v <= this.upperBound;
-        if (v.equals(this.lowerBound)){
+//        System.out.println("v = "+v);
+        if(v==null && this.lowerBound==v && this.upperBound==null){
+//            RangeDate ranNull = new RangeDate(null,null);
             return true;
         }
-        else if (v.equals(this.upperBound)){
-            return true;
+        else if(v==null){
+            return false;
         }
-        else if ( v.after(this.lowerBound) && v.before(this.upperBound)){
-            return true;
+        else{
+            if (v.equals(this.lowerBound)){
+                return true;
+            }
+            else if (v.equals(this.upperBound)){
+                return true;
+            }
+            else if ( v.after(this.lowerBound) && v.before(this.upperBound)){
+                return true;
+            }
         }
             
         return false;
@@ -140,14 +150,24 @@ public class RangeDate {
     }
     
     public boolean contains2(Date v, boolean FLAG){
+        if(v!=null && this.lowerBound==null &&  this.upperBound==null){
+            return false;
+        }
         if ( FLAG == true){
             //return v >= this.lowerBound && v < this.upperBound;
-            if (v.equals(this.lowerBound)){
+            if(v==null && this.lowerBound==v &&  this.upperBound==v){
+                return true;
+            }
+            else if(v==null){
+                return false;
+            }
+            else if (v.equals(this.lowerBound)){
                 return true;
             }
             else if ( v.after(this.lowerBound) && v.before(this.upperBound)){
                 return true;
             }
+            
             
             return false;
         }

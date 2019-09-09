@@ -356,11 +356,19 @@ public class RelSetData implements Data {
                                 if (var != null) {
                                 //if string is not present in the dictionary
                                     if (dictionary.containsString(var) == false){
-                                        dictionary.putIdToString(stringCount, var);
-                                        dictionary.putStringToId(var,stringCount);
+                                        if(var.equals("NaN")){
+                                            dictionary.putIdToString(2147483646, var);
+                                            dictionary.putStringToId(var,2147483646);
 //                                        dictionary.put(counter1, tempDict);
-                                        relationalData[counter][counter1] = stringCount;
-                                        stringCount++;
+                                            relationalData[counter][counter1] = 2147483646.0;
+                                        }
+                                        else{
+                                            dictionary.putIdToString(stringCount, var);
+                                            dictionary.putStringToId(var,stringCount);
+    //                                        dictionary.put(counter1, tempDict);
+                                            relationalData[counter][counter1] = stringCount;
+                                            stringCount++;
+                                        }
                                     }
                                     else{
                                         //if string is present in the dictionary, get its id
@@ -384,11 +392,19 @@ public class RelSetData implements Data {
 
                                     //if string is not present in the dictionary
                                     if (dictionary.containsString(var) == false){
-                                        dictionary.putIdToString(stringCount, var);
-                                        dictionary.putStringToId(var,stringCount);
-    //                                    dictionary.put(counter1, tempDict);
-                                        setData[counter][j] = stringCount;
-                                        stringCount++;
+                                        if(var.equals("NaN")){
+                                            dictionary.putIdToString(2147483646, var);
+                                            dictionary.putStringToId(var,2147483646);
+//                                        dictionary.put(counter1, tempDict);
+                                            setData[counter][j] = 2147483646.0;
+                                        }
+                                        else{
+                                            dictionary.putIdToString(stringCount, var);
+                                            dictionary.putStringToId(var,stringCount);
+        //                                    dictionary.put(counter1, tempDict);
+                                            setData[counter][j] = stringCount;
+                                            stringCount++;
+                                        }
                                     }
                                     else{
                                         //if string is present in the dictionary, get its id
@@ -413,11 +429,19 @@ public class RelSetData implements Data {
 
                                 //if string is not present in the dictionary
                                 if (dictionary.containsString(var) == false){
-                                    dictionary.putIdToString(stringCount, var);
-                                    dictionary.putStringToId(var,stringCount);
-//                                    dictionary.put(counter1, tempDict);
-                                    relationalData[counter][counter1] = stringCount;
-                                    stringCount++;
+                                    if(var.equals("NaN")){
+                                        dictionary.putIdToString(2147483646, var);
+                                        dictionary.putStringToId(var,2147483646);
+//                                        dictionary.put(counter1, tempDict);
+                                        relationalData[counter][counter1] = 2147483646.0;
+                                    }
+                                    else{
+                                        dictionary.putIdToString(stringCount, var);
+                                        dictionary.putStringToId(var,stringCount);
+    //                                    dictionary.put(counter1, tempDict);
+                                        relationalData[counter][counter1] = stringCount;
+                                        stringCount++;
+                                    }
                                 }
                                 else{
                                     //if string is present in the dictionary, get its id
@@ -731,13 +755,19 @@ public class RelSetData implements Data {
                                             if (chVar.isDouble(temp[i])){
                                                 smallDataSet[0][i] = "double";
                                             }
+                                            else if(temp[i].contains(this.delimeterSet)){
+                                                smallDataSet[0][i] = "set";
+                                            }
                                             else {
                                                 smallDataSet[0][i] = "string";
                                             }
                                         }
                                     }
                                     else if(smallDataSet[0][i].equals("double")){
-                                        if (!chVar.isInt(temp[i]) && !chVar.isDouble(temp[i])){
+                                        if(temp[i].contains(this.delimeterSet)){
+                                             smallDataSet[0][i] = "set";
+                                        }
+                                        else if (!chVar.isInt(temp[i]) && !chVar.isDouble(temp[i])){
                                             smallDataSet[0][i] = "string";
                                         }
                                     }

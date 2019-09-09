@@ -46,6 +46,7 @@ public interface Hierarchy <T> {
     
     public String getNodesType();
     public T getParent(T node);
+    public void setLevel(int l);
 //    public List<T> getSiblings(T node);
     public T getRoot();
     public String getName();
@@ -88,9 +89,10 @@ public interface Hierarchy <T> {
     public List<T> getNodesInLevel(int level);
     public void setNodesType(String nodesType);
     public int findAllChildren(T node, int sum);
-    
+    public Map<Integer,Set<T>> getLeafNodesAndParents();
     public String getInputFile();
     
+    public void syncDictionaries(Integer column, Data data);
     public Graph getGraph(String node,int level);
     
     public String checkHier();

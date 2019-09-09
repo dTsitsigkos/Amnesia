@@ -58,6 +58,7 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
     int height = -1;
     BufferedReader br = null;
     RangeDouble root = null;
+    int levelFlash = -1;
     
     Map<RangeDouble, List<RangeDouble>> children = new HashMap<>();
     Map<RangeDouble, NodeStats> stats = new HashMap<>();
@@ -70,6 +71,7 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
     public HierarchyImplRangesNumbers(String inputFile){
         this.inputFile = inputFile;
     }
+    
     
     public HierarchyImplRangesNumbers(String _name, String _nodesType){
         this.name = _name;
@@ -106,7 +108,7 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
                 this.name = tokens[1];
             }
             else if(tokens[0].equalsIgnoreCase("type")){
-                this.nodesType = tokens[1];
+                this.nodesType = tokens[1].replace("decimal", "double");
             }
             else if(tokens[0].equalsIgnoreCase("height")){
                 this.height = Integer.parseInt(tokens[1]);
@@ -195,22 +197,35 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
     @Override
     public RangeDouble getParent(RangeDouble node) {
         //System.out.println("GET PARENT Range = " +node.toString());
-        RangeDouble r = new RangeDouble(Double.NaN,Double.NaN);
-        //r.nodesType = "int";
-        //System.out.println("rrrrrrrrrrrrrrrrrrrrrrrrrrrrr = "+ r.toString());
-        for (Map.Entry<RangeDouble, RangeDouble> entry : parents.entrySet()) {
-            //System.out.println(entry.getKey()+" : "+entry.getValue());
-            RangeDouble r1 = entry.getKey();
-           // System.out.println("r1 = " + r1);
-            //System.out.println("r = " + r);
-            //System.out.println("dfsdfsdfsd :" + parents.get(r1));
-            //System.out.println("dfsdfsdfsd :" + parents.get(node));
-            if (r1.equals(r)){
-                //System.out.println("i am hereeeeeeeeeeeeeeeeeeeeeedsfgsfewfe");
+        if(levelFlash==-1){
+            RangeDouble r = new RangeDouble(Double.NaN,Double.NaN);
+            //r.nodesType = "int";
+            //System.out.println("rrrrrrrrrrrrrrrrrrrrrrrrrrrrr = "+ r.toString());
+            for (Map.Entry<RangeDouble, RangeDouble> entry : parents.entrySet()) {
+                //System.out.println(entry.getKey()+" : "+entry.getValue());
+                RangeDouble r1 = entry.getKey();
+               // System.out.println("r1 = " + r1);
+                //System.out.println("r = " + r);
+                //System.out.println("dfsdfsdfsd :" + parents.get(r1));
+                //System.out.println("dfsdfsdfsd :" + parents.get(node));
+                if (r1.equals(r)){
+                    //System.out.println("i am hereeeeeeeeeeeeeeeeeeeeeedsfgsfewfe");
+                }
+            }
+
+            return this.parents.get(node);
+        }
+        else{
+            RangeDouble rb = this.parents.get(node);
+            int currentLevel = this.height - this.getLevel(node) ;
+//            System.out.println("flash level "+levelFlash+" anon level "+currentLevel+" anon Value "+rb);
+            if(levelFlash == currentLevel){
+               return rb;
+            }
+            else{
+                return node;
             }
         }
-        
-        return this.parents.get(node);
     }
 
 //    @Override
@@ -286,7 +301,7 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
         try (PrintWriter writer = new PrintWriter(file, "UTF-8")) {
             writer.println("range");
             writer.println("name " + this.name);
-            writer.println("type " + this.nodesType);
+            writer.println("type " + this.nodesType.replace("double", "decimal"));
             writer.println("height " + this.height);
             writer.println();
             
@@ -1134,6 +1149,11 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
     @Override
     public RangeDouble getParent(Double d) {
         
+        if(d.isNaN() || d==2147483646.0){
+            if(this.parents.containsKey(new RangeDouble(Double.NaN,Double.NaN))){
+                return this.parents.get(new RangeDouble(Double.NaN,Double.NaN));
+            }
+        }
         //System.out.println("parentssize = " + this.allParents.size() + "\t height = " + height);
         List<RangeDouble> leafNodes = this.allParents.get(this.height-1);
        // System.out.println("parentssize = " + this.allParents.size());
@@ -1179,15 +1199,16 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
         else if (d > r.upperBound){
             for ( int i = mid ; i < list.size() ; i ++ ){
                 r = list.get(i);
-                          
                 if (list.get(list.size()-1).equals(new RangeDouble(Double.NaN,Double.NaN)) ){
                     if( i == list.size()-2){
                         if ( r.contains2(d,false)){
+//                            System.out.print("returned1 "+r.toString());
                             return r;
                         }
                     }
                     else{
                         if ( r.contains2(d,true)){
+//                            System.out.print("returned2 "+r.toString());
                             return r;
                         }
                     }
@@ -1195,11 +1216,13 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
                 else{
                     if( i == list.size()-1){
                         if ( r.contains2(d,false)){
+//                            System.out.print("returned3 "+r.toString());
                             return r;
                         }
                     }
                     else{
                         if ( r.contains2(d,true)){
+//                            System.out.print("returned4 "+r.toString());
                             return r;
                         }
                     }
@@ -1566,7 +1589,7 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
     @Override
     public String checkHier() {
         String str = null;
-        System.out.println("Check Hierarchies");
+//        System.out.println("Check Hierarchies");
         
         
         ArrayList<RangeDouble> firstArr = allParents.get(0);
@@ -1719,6 +1742,21 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
 
     @Override
     public void setDictionaryData(DictionaryString dict) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void setLevel(int l) {
+        this.levelFlash = l;
+    }
+
+    @Override
+    public Map<Integer, Set<RangeDouble>> getLeafNodesAndParents() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void syncDictionaries(Integer column, Data data) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

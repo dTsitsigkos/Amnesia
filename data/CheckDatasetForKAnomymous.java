@@ -39,7 +39,7 @@ public class CheckDatasetForKAnomymous {
             boolean FLAG = false;
             for ( int j = 0 ; j < data[i].length ; j ++ ){
                 if (sQids.contains(j)){
-                    if(data[i][j]==-1){
+                    if(data[i][j]==-1 && setData!=null){
                         String setRow = "";
                         for(int n=0; n< setData[i].length; n++){
                             setRow += setData[i][n];

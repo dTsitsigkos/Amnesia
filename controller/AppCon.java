@@ -58,6 +58,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.CodeSource;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -155,7 +159,7 @@ public class AppCon extends SpringBootServletInitializer {
 //@RequestMapping("/greeting")
 class AppController {
     
-    private String os = "linux";
+    private String os = "windows";
 
     
     @RequestMapping(value = "/")
@@ -194,18 +198,24 @@ class AppController {
             String mimeType = null;
             String filename = null;
             byte[] bytes = null;
-            File dir = null;
+            File dir = null,dirErr = null;
             String input = (String)session.getAttribute("inputpath");
             if(os.equals("online")){
 //            if (input == null){
 
                 String rootPath = System.getProperty("catalina.home");
                 //String rootPath = "/usr/local/apache-tomcat-8.0.15";
-                //String rootPath = "/var/lib/tomcat8";
+//                String rootPath = "/var/lib/tomcat8";
                 dir = new File(rootPath + File.separator + "amnesia"+ File.separator + session.getId());  
                 if (!dir.exists()){
                     dir.mkdirs();
                 }
+                
+//                dirErr = new File(rootPath + File.separator+ "errorLog");
+//                if(!dirErr.exists()){
+//                    dirErr.mkdirs();
+//                }
+                
     //            }
     //            else{
     //              
@@ -255,7 +265,7 @@ class AppController {
                 filename = file.getOriginalFilename();
                 bytes = file.getBytes();
 
-                System.out.println("uploadedFile = " + uploadedFile +"\tfile =" + file +"\t mimeType =" + mimeType + "\tilename = "+ filename +"\tbytes = " + bytes);
+//                System.out.println("uploadedFile = " + uploadedFile +"\tfile =" + file +"\t mimeType =" + mimeType + "\tilename = "+ filename +"\tbytes = " + bytes);
 
             }
             
@@ -293,7 +303,25 @@ class AppController {
         return null;
     }
     
-    
+    @RequestMapping(value = "/action/errorhandle", method = RequestMethod.POST)
+    public @ResponseBody void errorHandling(@RequestParam("error") String error, HttpSession session) throws IOException{
+        if(os.equals("online")){
+            System.out.println("Error handling");
+            String rootPath = System.getProperty("catalina.home");
+//            String rootPath = "/var/lib/tomcat8";
+            File dir = new File(rootPath+File.separator+"amnesia"+File.separator+"errorLog");
+            if(!dir.exists()){
+                dir.mkdirs();
+            }
+            File errorFile = new File(dir.getAbsolutePath()+File.separator+"error_"+session.getId()+".txt");
+//            if(!errorFile.exists()){
+//                errorFile.createNewFile();
+//            }
+            BufferedWriter out = new BufferedWriter(new FileWriter(errorFile.getAbsolutePath(),true));
+            out.write(error+"\n\n\n\n");
+            out.close();
+        }
+    }
     
     
     
@@ -306,11 +334,14 @@ class AppController {
      * @return
      */
     @RequestMapping(value = "/action/upload", method = RequestMethod.POST)
-    public @ResponseBody ErrorMessage upload(@RequestParam("file") MultipartFile file,@RequestParam("data") boolean data , HttpSession session){
+    public @ResponseBody ErrorMessage upload(@RequestParam("file") MultipartFile file,@RequestParam("data") boolean data , HttpSession session) throws Exception{
+        
         ErrorMessage errMes = new ErrorMessage();
+        System.out.println("Eimai edwwwwww");
+        String message = "memory problem";
         //boolean fileCreate = false;
         boolean problem = false;
-                
+        
         /*
         // Get name of uploaded file.
         String fileName = file.getOriginalFilename();
@@ -381,11 +412,11 @@ class AppController {
         if (!file.isEmpty()) {
             try {
                 // Creating the directory to store file
-                File dir = null;
+                File dir = null,dirErr = null;
                 String input = (String)session.getAttribute("inputpath");
-                System.out.println(" i am here");
-                System.out.println("session id  = " + session.getId());
-                System.out.println("input = " + input);
+//                System.out.println(" i am here");
+//                System.out.println("session id  = " + session.getId());
+//                System.out.println("input = " + input);
                 if(os.equals("online")){
 //                if (input == null){
                     //Desktop
@@ -397,15 +428,21 @@ class AppController {
 //                        dir.mkdirs();
 //                    }
                     
-                    //String rootPath = "/usr/local/apache-tomcat-8.0.15";
+//                    String rootPath = "/usr/local/apache-tomcat-8.0.15";
                     //System.out.println("session id  = " + session.getId());
                     String rootPath = System.getProperty("catalina.home");
-                    //String rootPath = "/var/lib/tomcat8";
+//                    String rootPath = "/var/lib/tomcat8";
                     dir = new File(rootPath + File.separator + "amnesia"+ File.separator + session.getId());  
-                    System.out.println("dir name = " + dir.getAbsolutePath() + "\t root path = " + rootPath);
+                    
+//                    System.out.println("dir name = " + dir.getAbsolutePath() + "\t root path = " + rootPath);
                     if (!dir.exists()){
                         dir.mkdirs();
                     }
+                    
+//                    dirErr = new File(rootPath + File.separator+ "errorLog");
+//                    if(!dirErr.exists()){
+//                        dirErr.mkdirs();
+//                    }
 
                     if (data == true){
                         session.setAttribute("inputpath",dir.toString());
@@ -471,7 +508,7 @@ class AppController {
                 if (input == null){
                     session.setAttribute("inputpath",dir.toString());
                 }*/
-                
+//                throw new Exception("kalos kalos!! kalos..");
                     
                 byte[] bytes = file.getBytes();
 
@@ -491,7 +528,13 @@ class AppController {
                 errMes.setProblem("You successfully uploaded file=" + file.getOriginalFilename());
 
                 return  errMes;
-            } catch (Exception e) {
+            }catch (OutOfMemoryError e) {
+                
+                errMes.setSuccess(false);
+                errMes.setProblem("Memory problem");
+                return errMes;
+            }
+            catch (Exception e) {
                     //return "You failed to upload " + file.getOriginalFilename() + " => " + e.getMessage();
                     errMes.setSuccess(false);
                     errMes.setProblem("You failed to upload " + file.getOriginalFilename() + " => " + e.getMessage());
@@ -505,6 +548,7 @@ class AppController {
                 problem = true;     
                 return  errMes;
         }
+        
         
         //return errMes;
     }
@@ -628,20 +672,40 @@ class AppController {
         
         String inputPath = (String) session.getAttribute("inputpath");
         String filename = (String)session.getAttribute("filename");
-        System.out.println("inputPAth delete "+inputPath);
+//        System.out.println("inputPAth delete "+inputPath);
         int index=inputPath.lastIndexOf('/');
-        File  dir = new File(inputPath.substring(0,index));
-        if(filename!=null && !filename.endsWith("xml")){
-            
-            FileUtils.cleanDirectory(dir);
+        if(index==-1){
+            index = inputPath.lastIndexOf('\\');
         }
-        else{
-            for (File file: dir.listFiles()) {
-                System.out.println("Filename to delette "+file.getName()+" session "+session.toString());
-                if(!file.getName().equals(session.getId()))
-                    FileUtils.forceDelete(file);
+        
+        
+        File  dir = new File(inputPath.substring(0,index));
+        
+        File dir2 = new File(inputPath);
+        System.out.println("Dir1 "+dir+" dir2 "+dir2);
+        FileUtils.cleanDirectory(dir2);
+        for (File file: dir.listFiles()) {
+            System.out.println("Filename to delette "+file.getName()+" session "+session.toString());
+            if(file.getName().equals(session.getId())){
+                FileUtils.forceDelete(file);
+                break;
             }
         }
+        
+        
+//        if(filename!=null && !filename.endsWith("xml")){
+//            System.out.println("Delete dir "+dir);
+//            FileUtils.cleanDirectory(dir);
+//        }
+//        else{
+//            for (File file: dir.listFiles()) {
+//                System.out.println("Filename to delette "+file.getName()+" session "+session.toString());
+//                if(!file.getName().equals(session.getId()))
+//                    FileUtils.forceDelete(file);
+//            }
+//        }
+        
+        
 //        FileUtils.cleanDirectory(dir);
 //        for (File file: dir.listFiles()) {
 //            if(filename!=null && !filename.endsWith("xml")) {
@@ -791,122 +855,149 @@ class AppController {
         return hiername;
     }
     
-    
+    @RequestMapping(value="/action/removehierarchy", method = RequestMethod.POST)
+    public @ResponseBody String removeHierarchy ( HttpSession session)  {
+        
+        String hiername = null;
+        hiername =(String)session.getAttribute("selectedhier");
+        Map<String,Hierarchy> hierarchies = (Map<String, Hierarchy>) session.getAttribute("hierarchies");
+        if(!hierarchies.containsKey(hiername)){
+            return "no";
+        }
+        
+        hierarchies.remove(hiername);
+        if(hierarchies.size()>0){
+            session.setAttribute("selectedhier", hierarchies.entrySet().iterator().next().getKey());
+        }
+        else{
+            session.setAttribute("selectedhier", "");
+        }
+        
+        return "OK";
+    }
     
     //@JsonView(View.Hier.class)
     @RequestMapping(value="/action/loadhierarchy", method = RequestMethod.POST) //method = RequestMethod.POST
     public @ResponseBody String loadHierarcy (@RequestParam("filename") String filename, HttpSession session) throws IOException  {
-        Map<String, Hierarchy> hierarchies  = null;
-        hierarchies = (Map<String, Hierarchy>) session.getAttribute("hierarchies");
-        
-        String filenamex = (String)session.getAttribute("filename");
-        
-        
-        if ( hierarchies == null ){
-            hierarchies = new HashMap<>();
-            session.setAttribute("hierarchies", hierarchies);
-        }
-        
-        
-        
-        String rootPath = (String)session.getAttribute("inputpath");
-        this.createInputPath(rootPath, session);
-        File dir = new File(rootPath);
-        
-        
-        String fullPath = dir + "/" + filename;
-       
-        
-        Hierarchy h = null;
-        
-        //read metadata of file to determine which type of hierarchy to use
-        List<String> results = findHierarchyType(fullPath);
-        
-        
-//        System.out.println(results);
-        if(results.size() != 2){
-            //error
-            //ErrorWindow.showErrorWindow("Error reading metadata in hierarchy file");
-           
-        }
-        
-        boolean distinct = false;
-        String type = null;
-        
-        for(String res : results){
-            if(res.equalsIgnoreCase("distinct")){
-                distinct = true;
+//        try{
+            Map<String, Hierarchy> hierarchies  = null;
+            hierarchies = (Map<String, Hierarchy>) session.getAttribute("hierarchies");
+
+            String filenamex = (String)session.getAttribute("filename");
+
+
+            if ( hierarchies == null ){
+                hierarchies = new HashMap<>();
+                session.setAttribute("hierarchies", hierarchies);
+//                throw new Exception("Kati kati kati");
             }
-            if(res.equalsIgnoreCase("int") || res.equalsIgnoreCase("double") || res.equalsIgnoreCase("string") || res.equalsIgnoreCase("date")){
-                type = res;
-            }
-        }
-        
-        if (results.isEmpty()){
-            System.out.println("results = empty");
-        }
-        
-        
-        
-        //create distinct hierarchy according to type
-        if(distinct){
-            if(type == null){
-                //error
-                //ErrorWindow.showErrorWindow("Error reading metadata: no valid type found");
-                
-            }
+
             
-            else if(type.equalsIgnoreCase("string")){
-                Data data = (Data) session.getAttribute("data");
-                if(data!=null){
-                    h = new HierarchyImplString(fullPath,data.getDictionary());
+
+            String rootPath = (String)session.getAttribute("inputpath");
+            this.createInputPath(rootPath, session);
+            File dir = new File(rootPath);
+
+
+            String fullPath = dir + "/" + filename;
+
+
+            Hierarchy h = null;
+
+            //read metadata of file to determine which type of hierarchy to use
+            List<String> results = findHierarchyType(fullPath);
+
+
+    //        System.out.println(results);
+            if(results.size() != 2){
+                //error
+                //ErrorWindow.showErrorWindow("Error reading metadata in hierarchy file");
+
+            }
+
+            boolean distinct = false;
+            String type = null;
+
+            for(String res : results){
+                if(res.equalsIgnoreCase("distinct")){
+                    distinct = true;
+                }
+                if(res.equalsIgnoreCase("int") || res.equalsIgnoreCase("decimal") || res.equalsIgnoreCase("string") || res.equalsIgnoreCase("date") || res.equalsIgnoreCase("double")){
+                    type = res.replace("double", "decimal");
+                }
+            }
+
+            if (results.isEmpty()){
+                System.out.println("results = empty");
+            }
+
+
+
+            //create distinct hierarchy according to type
+            if(distinct){
+                if(type == null){
+                    //error
+                    //ErrorWindow.showErrorWindow("Error reading metadata: no valid type found");
+
+                }
+
+                else if(type.equalsIgnoreCase("string")){
+                    Data data = (Data) session.getAttribute("data");
+                    if(data!=null){
+                        h = new HierarchyImplString(fullPath,data.getDictionary());
+                    }
+                    else{
+                        DictionaryString dict = new DictionaryString();
+                        if(hierarchies!=null){
+                            for(Map.Entry<String,Hierarchy> entry : hierarchies.entrySet()){
+                                Hierarchy hTemp = entry.getValue();
+                                if(hTemp instanceof HierarchyImplString){
+                                    if(hTemp.getDictionaryData().getMaxUsedId() > dict.getMaxUsedId()){
+                                        dict = hTemp.getDictionaryData();
+                                    }
+                                }
+
+                            }
+                        }
+    //                    System.out.println("Mpainei string");
+                        h = new HierarchyImplString(fullPath,dict);
+                    }
+    //                h = new HierarchyImplString(fullPath);
+    //                h.setHierachyType("distinct");
+                }
+                else if(type.equalsIgnoreCase("date")){
+                    return "error";
                 }
                 else{
-                    DictionaryString dict = new DictionaryString();
-                    if(hierarchies!=null){
-                        for(Map.Entry<String,Hierarchy> entry : hierarchies.entrySet()){
-                            Hierarchy hTemp = entry.getValue();
-                            if(hTemp instanceof HierarchyImplString){
-                                if(hTemp.getDictionaryData().getMaxUsedId() > dict.getMaxUsedId()){
-                                    dict = hTemp.getDictionaryData();
-                                }
-                            }
-
-                        }
-                    }
-                    h = new HierarchyImplString(fullPath,dict);
+                    h = new HierarchyImplDouble(fullPath);
+    //                System.out.println("Mpaineiii");
+    //                h.setHierachyType("distinct");
                 }
-//                h = new HierarchyImplString(fullPath);
-//                h.setHierachyType("distinct");
+            }else{      //create range hierarchy
+                if (type.equalsIgnoreCase("date")){
+                    h = new HierarchyImplRangesDate(fullPath);
+                }
+                else{
+                    h = new HierarchyImplRangesNumbers(fullPath);
+                }
+    //            h.setHierachyType("range");
             }
-            else if(type.equalsIgnoreCase("date")){
-                return "error";
-            }
-            else{
-                h = new HierarchyImplDouble(fullPath);
-//                h.setHierachyType("distinct");
-            }
-        }else{      //create range hierarchy
-            if (type.equalsIgnoreCase("date")){
-                h = new HierarchyImplRangesDate(fullPath);
-            }
-            else{
-                h = new HierarchyImplRangesNumbers(fullPath);
-            }
-//            h.setHierachyType("range");
-        }
 
-        
-        
-        h.load();
-        session.setAttribute("selectedhier", h.getName());
-        hierarchies.put(h.getName(), h);
 
-        if(os.equals("online")){
-            this.deleteFiles(session);
-        }
-        
-        return "xaxaxa";
+
+            h.load();
+            session.setAttribute("selectedhier", h.getName());
+            hierarchies.put(h.getName(), h);
+
+            if(os.equals("online")){
+                this.deleteFiles(session);
+            }
+
+            return "xaxaxa";
+//        }catch(Exception e){
+//            System.out.println("Edwww exception");
+//            return "Problem with loading anonymization rules "+e.getMessage();
+//        }
     }
     
     
@@ -1245,6 +1336,9 @@ class AppController {
             if (h.getHierarchyType().equals("range")){
                 checkHier = h.checkHier();
             }
+            else if(h instanceof HierarchyImplString){
+                h.syncDictionaries(entry.getKey(),data);
+            }
             
             
             //provlima stin  hierarchia
@@ -1321,14 +1415,14 @@ class AppController {
         algorithm.setArguments(args);
 
 
-        System.out.println("k = " + k + "\t m = " + m );
+//        System.out.println("k = " + k + "\t m = " + m );
 
         //long startTime = System.currentTimeMillis();
 //        long startCpuTime = getCpuTime();
 
         String message = "memory problem";
         try {
-
+            
             algorithm.anonymize();
 
         } catch (Exception e) {
@@ -1348,10 +1442,10 @@ class AppController {
             return null;
         }
         else{
-            System.out.println("result set = " + algorithm.getResultSet() );
+//            System.out.println("result set = " + algorithm.getResultSet() );
 
             session.setAttribute("results", algorithm.getResultSet());
-            System.out.println("algorithm : "+algorithmSelected);
+//            System.out.println("algorithm : "+algorithmSelected);
             if(!algorithmSelected.equals("apriori") && !algorithmSelected.equals("mixedapriori")){
                 Graph graph = algorithm.getLattice();
 
@@ -1422,7 +1516,7 @@ class AppController {
             minHierArray[counter] = Ints.max(temp);
             counter++;
         }
-        System.out.println("Info loass "+Arrays.toString(minHierArray));
+//        System.out.println("Info loass "+Arrays.toString(minHierArray));
         minHier = Ints.min(minHierArray);
 
         for ( LatticeNode n : infoLossFirstStep){
@@ -1442,7 +1536,7 @@ class AppController {
         solutionStr = solutionStr.replace("[","");
         solutionStr = solutionStr.replace("]","");
         solutionStr = solutionStr.replace(" ", "");
-        System.out.println("solution = " + solutionStr);
+//        System.out.println("solution = " + solutionStr);
         
         
         return solutionStr;
@@ -1546,7 +1640,7 @@ class AppController {
                 }
                 else if(data.getClass().toString().contains("SET")){
                     
-                    System.out.println("action/getanondataset ===========");
+//                    System.out.println("action/getanondataset ===========");
                     
                     Map<Double, Double> rules = (Map<Double, Double>) session.getAttribute("results");
                     if ( allRules == null){
@@ -1557,7 +1651,7 @@ class AppController {
                     }
                 }
                 else{
-                    System.out.println("action/getanondataset Mixed ===========");
+//                    System.out.println("action/getanondataset Mixed ===========");
                     
                     Map<Integer,Map<Object,Object>> rules = (Map<Integer,Map<Object,Object>>) session.getAttribute("results");
                     if ( allRules == null){
@@ -1703,10 +1797,10 @@ class AppController {
         this.createInputPath(inputPath, session);
         
         
-        System.out.println("Export Anonymized Dataset... " + filename);
+//        System.out.println("Export Anonymized Dataset... " + filename);
         AnonymizedDataset anonData = (AnonymizedDataset)session.getAttribute("anondata");
         anonData.setStart(0);
-        System.out.println("Export anonymizedDataset...");
+//        System.out.println("Export anonymizedDataset...");
         File file = new File(inputPath + "/anonymized_" +filename);
         
         if (data.getClass().toString().contains("SET")){
@@ -1749,7 +1843,7 @@ class AppController {
     
     @RequestMapping(value="/action/getzenodofiles", produces = "application/json", method = RequestMethod.POST) //method = RequestMethod.POST
     public @ResponseBody ZenodoFilesToJson getZenodoFiles ( HttpSession session,@RequestParam("usertoken") String usertoken  ) throws FileNotFoundException, IOException {
-        System.out.println("Zenodo Files = " + usertoken);
+//        System.out.println("Zenodo Files = " + usertoken);
         ZenodoFilesToJson zenJson = null;
         Map<Integer, ZenodoFile> files = null;
         
@@ -1773,14 +1867,14 @@ class AppController {
     
     @RequestMapping(value="/action/loadzenodofile", method = RequestMethod.POST) //method = RequestMethod.POST
     public @ResponseBody String loadzenodofile ( HttpSession session,@RequestParam("filename") String fileName, @RequestParam("title") String title, @RequestParam("usertoken") String usertoken  ) throws FileNotFoundException, IOException {
-        System.out.println("Zenodo Files");
+//        System.out.println("Zenodo Files");
         ZenodoFilesToJson zenJson = null;
         ZenodoFile zenFile = null;
         File dir = null;
         
-        System.out.println("i am hereeeee");
-        
-        System.out.println("usertoken = " + usertoken);
+//        System.out.println("i am hereeeee");
+//        
+//        System.out.println("usertoken = " + usertoken);
         
         Map<Integer, ZenodoFile> files = (Map<Integer, ZenodoFile>)session.getAttribute("zenodofiles");
         String inputPath = null;//(String)session.getAttribute("inputpath");
@@ -1797,13 +1891,13 @@ class AppController {
             
         }
         
-        System.out.println("i am hereeeee22222");
+//        System.out.println("i am hereeeee22222");
 
        
         for (Map.Entry<Integer, ZenodoFile> entry : files.entrySet()) {
             zenFile = entry.getValue();
-            System.out.println("zen file = " + zenFile.getFileName() + "\timportname = " + fileName);
-            System.out.println("zen title = " + zenFile.getTitle() + "\timporttitle = " + title);
+//            System.out.println("zen file = " + zenFile.getFileName() + "\timportname = " + fileName);
+//            System.out.println("zen title = " + zenFile.getTitle() + "\timporttitle = " + title);
             if (zenFile.getFileName().equals(fileName)){
                 if (zenFile.getTitle().equals(title)){
                     break;
@@ -1967,35 +2061,44 @@ System.out.println("url = " + url);
     
     
     @RequestMapping(value="/action/getsetdata", produces = "application/json", method = RequestMethod.POST) //method = RequestMethod.POST
-    public @ResponseBody void getSetData ( HttpSession session   ) throws FileNotFoundException, IOException {
-            
-        Data data = null;
-        String rootPath = (String)session.getAttribute("inputpath");
-        String filename = (String)session.getAttribute("filename");
-        DictionaryString dict = null;
-        Map<String, Hierarchy> hierarchies = (Map<String, Hierarchy>) session.getAttribute("hierarchies");
-        
-       
-	File dir = new File(rootPath);
-     
-        String fullPath = dir + "/" + filename;
-        
-        dict = new DictionaryString();
-        if(hierarchies!=null){
-            for(Map.Entry<String,Hierarchy> entry : hierarchies.entrySet()){
-                Hierarchy h = entry.getValue();
-                if(h instanceof HierarchyImplString){
-                    if(h.getDictionaryData().getMaxUsedId() > dict.getMaxUsedId()){
-                        dict = h.getDictionaryData();
+    public @ResponseBody ErrorMessage getSetData ( HttpSession session   ) throws FileNotFoundException, IOException {
+        ErrorMessage errMes = new ErrorMessage();
+        try{ 
+            Data data = null;
+            String rootPath = (String)session.getAttribute("inputpath");
+            String filename = (String)session.getAttribute("filename");
+            DictionaryString dict = null;
+            Map<String, Hierarchy> hierarchies = (Map<String, Hierarchy>) session.getAttribute("hierarchies");
+
+
+            File dir = new File(rootPath);
+
+            String fullPath = dir + "/" + filename;
+
+            dict = new DictionaryString();
+            if(hierarchies!=null){
+                for(Map.Entry<String,Hierarchy> entry : hierarchies.entrySet()){
+                    Hierarchy h = entry.getValue();
+                    if(h instanceof HierarchyImplString){
+                        if(h.getDictionaryData().getMaxUsedId() > dict.getMaxUsedId()){
+                            dict = h.getDictionaryData();
+                        }
                     }
+
                 }
-                
             }
+
+            data = new SETData(fullPath,",",dict);
+            data.readDataset(null, null);
+            session.setAttribute("data", data);   
+            errMes.setSuccess(true);
+            errMes.setProblem("Set-valued dataset was successfully saved on server");
+            return errMes;
+        }catch(Exception e){
+            errMes.setSuccess(false);
+            errMes.setProblem("Problem with set-valued dataset");
+            return errMes;
         }
-        
-        data = new SETData(fullPath,",",dict);
-        data.readDataset(null, null);
-        session.setAttribute("data", data);        
         
     }
     
@@ -2037,40 +2140,58 @@ System.out.println("url = " + url);
             if(newNode.equals("")){
                 newNode = "NaN";
             }
+            DictionaryString dictData = h.getDictionaryData();
+            DictionaryString dictHier = h.getDictionary();
+            Double parentVal=null;
+//            System.out.println("Parent "+parent);
+            parentVal = dictHier.getStringToId(parent) == null ? (double) dictData.getStringToId(parent) : (double) dictHier.getStringToId(parent);
             
-            if(h.getDictionaryData().containsString(parent)){
+            if(h.getDictionaryData().containsString(parent) && h.getHeight()-1==h.getLevel(parentVal)){
                 return;
             }
+            else if(h.getDictionaryData().containsString(parent)){
+                
+                strCount = dictData.getMaxUsedId() > h.getDictionary().getMaxUsedId() ? dictData.getMaxUsedId()+1 : dictHier.getMaxUsedId()+1;
+                dictData.putIdToString(strCount, newNode);
+                dictData.putStringToId(newNode, strCount);
+            }
             else{
-                DictionaryString dictData = h.getDictionaryData();
-                DictionaryString dictHier = h.getDictionary();
+                
                 
                 if(dictHier.containsString(newNode)){
                     return;
                 }
                 
                 if(dictData.containsString(newNode)){
-                    System.out.println("Edvvvvv gia nan add");
+//                    System.out.println("Edvvvvv gia nan add");
                     strCount = dictData.getStringToId(newNode);
                 }
                 else{
                 
-                    Double parentVal = (double) dictHier.getStringToId(parent);
+                    parentVal = (double) dictHier.getStringToId(parent);
+                    if(parentVal == null){
+                        parentVal = (double) dictData.getStringToId(parent);
+                    }
+                    strCount = dictData.getMaxUsedId() > h.getDictionary().getMaxUsedId() ? dictData.getMaxUsedId()+1 : dictHier.getMaxUsedId()+1;
+                    dictData.putIdToString(strCount, newNode);
+                    dictData.putStringToId(newNode, strCount);
                     
-                    if(h.getLevel(parentVal) == h.getHeight()-2){
-                        strCount = dictData.getMaxUsedId()+1;
-                        dictData.putIdToString(strCount, newNode);
-                        dictData.putStringToId(newNode, strCount);
-
-                    }
-                    else{
-                        strCount = dictHier.getMaxUsedId()+1;
-                        dictHier.putIdToString(strCount, newNode);
-                        dictHier.putStringToId(newNode, strCount);
-                    }
+//                    if(h.getLevel(parentVal) == h.getHeight()-2){
+//                        strCount = dictData.getMaxUsedId()+1;
+//                        dictData.putIdToString(strCount, newNode);
+//                        dictData.putStringToId(newNode, strCount);
+//
+//                    }
+//                    else{
+//                        strCount = dictHier.getMaxUsedId()+1;
+//                        dictHier.putIdToString(strCount, newNode);
+//                        dictHier.putStringToId(newNode, strCount);
+//                    }
                 }
-                h.add((double)strCount, dictHier.getStringToId(parent).doubleValue());
+//                System.out.println("child "+strCount+" parent "+parentVal);
+               
             }
+            h.add((double)strCount, parentVal);
         }
         else{
             if(h.getHierarchyType().equals("range")){
@@ -2174,7 +2295,7 @@ System.out.println("url = " + url);
     
     
     @RequestMapping(value="/action/deletenodehier", method = RequestMethod.POST) //method = RequestMethod.POST
-    public @ResponseBody void delNodeHier (@RequestParam("deletenode") String delnode,@RequestParam("hiername") String hierName, HttpSession session) throws ParseException  {
+    public @ResponseBody String delNodeHier (@RequestParam("deletenode") String delnode,@RequestParam("hiername") String hierName, HttpSession session) throws ParseException  {
         Map<String, Hierarchy> hierarchies  = null;
         Hierarchy h = null;
        
@@ -2193,6 +2314,10 @@ System.out.println("url = " + url);
                 
             }
             double nodeId = dict.getStringToId(delnode);
+            Double root = (Double) h.getRoot();
+            if(root == nodeId){
+                return "You can not delete root";
+            }
             h.remove(nodeId);
             dict.remove((int) nodeId);
         }
@@ -2208,19 +2333,33 @@ System.out.println("url = " + url);
                 
                 if(h.getNodesType().equals("date")){
                     RangeDate delDate = new RangeDate(((HierarchyImplRangesDate) h).getDateFromString(temp[0], true),((HierarchyImplRangesDate) h).getDateFromString(temp[1], false));
+                    RangeDate root = (RangeDate) h.getRoot();
+                    if(root.equals(delDate)){
+                        return "You can not delete root";
+                    }
                     h.remove(delDate);
                 }
                 else{
                 
                     RangeDouble delRange = new RangeDouble(Double.parseDouble(temp[0]),Double.parseDouble(temp[1]));
-                    
+                    RangeDouble root = (RangeDouble) h.getRoot();
+                    if(root.equals(delRange)){
+                        return "You can not delete root";
+                    }
                     h.remove(delRange);
                 }
             }
             else{
-                h.remove(Double.parseDouble(delnode));
+                Double delValue = Double.parseDouble(delnode);
+                Double root = (Double) h.getRoot();
+                if(root.equals(delValue)){
+                    return "You can not delete root";
+                }
+                h.remove(delValue);
             }
         }
+        
+        return "OK";
 
     }
     
@@ -2683,7 +2822,7 @@ System.out.println("url = " + url);
         Data dataset = (Data) session.getAttribute("data");
         SolutionsArrayList solutions = null;
         
-        System.out.println("SupresssValues//////////////////////////////////////////");
+//        System.out.println("SupresssValues//////////////////////////////////////////");
         String selectedAttrNames = (String)session.getAttribute("selectedattributenames");
         String selectedAttr = (String)session.getAttribute("selectedattributes");
         int k = (int)session.getAttribute("k");
@@ -2777,7 +2916,7 @@ System.out.println("url = " + url);
             }
         }
         
-        System.out.println("//////endddddddddddddddddddd supressssss////////////////");
+//        System.out.println("//////endddddddddddddddddddd supressssss////////////////");
         
         
        /* System.out.println("/////////////////////////Supresss////////////////////////////////////////");
@@ -2812,7 +2951,7 @@ System.out.println("url = " + url);
          boolean suppress = false;
          
         
-        System.out.println("source statistics");
+//        System.out.println("source statistics");
         
         String[] temp = null;
         String del = ",";
@@ -2966,7 +3105,7 @@ System.out.println("url = " + url);
     public @ResponseBody int checkDataset ( @RequestParam("attributes") String attributes ,HttpSession session)  {
         Data data = (Data) session.getAttribute("data");
         Set<Integer> sQids = new HashSet<Integer>();
-        System.out.println("Attribute = " + attributes);
+//        System.out.println("Attribute = " + attributes);
         if (!attributes.equals("")){
             if (attributes.contains(",")){
                 String []temp = null;
@@ -2984,7 +3123,7 @@ System.out.println("url = " + url);
         CheckDatasetForKAnomymous check = new CheckDatasetForKAnomymous(data);
         int k = check.compute(sQids);
         
-        System.out.println("k = " + k);
+//        System.out.println("k = " + k);
        
 
         return k;
@@ -3049,7 +3188,7 @@ System.out.println("url = " + url);
         Map<Integer, Hierarchy> quasiIdentifiers = (Map<Integer, Hierarchy>)session.getAttribute("quasiIdentifiers");
         Hierarchy h = null;
         ColumnsNamesAndTypes colNamesTypes = null;
-        System.out.println("dimitris");
+//        System.out.println("dimitris");
         for (Map.Entry<Integer,String> entry : data.getColNamesPosition().entrySet()) {
             String columnName = entry.getValue();
             h = quasiIdentifiers.get(entry.getKey());
@@ -3086,6 +3225,24 @@ System.out.println("url = " + url);
         
     }
     
+    @RequestMapping(value="/action/createdatabase", method = RequestMethod.GET)
+    public @ResponseBody String createDatabase(@RequestParam("name") String name, HttpSession session) throws ClassNotFoundException, InstantiationException, IllegalAccessException{
+        Class.forName("org.sqlite.JDBC").newInstance();
+        String rootPath = System.getProperty("catalina.home");
+        String url = "jdbc:sqlite:"+rootPath+File.separator+name;
+        try (Connection conn = DriverManager.getConnection(url)) {
+            if (conn != null) {
+                DatabaseMetaData meta = conn.getMetaData();
+                System.out.println("The driver name is " + meta.getDriverName());
+                System.out.println("A new database has been created.");
+            }
+ 
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return "Database created";
+    }
+    
     @RequestMapping(value="/action/checkanonymity", method = RequestMethod.GET)
     public @ResponseBody String checkAnonymity( @RequestParam("k") Integer k, @RequestParam("m") Integer m, @RequestParam(value = "cols", required=false) String columns, HttpSession session){
         Data data = (Data) session.getAttribute("data");
@@ -3100,8 +3257,14 @@ System.out.println("url = " + url);
             
             
             alg.setDataTable(data.getDataSet());
-            
-            return alg.checkAnonymity(k, m, columnsCheck);
+//            System.out.println("Oxi set "+Arrays.toString(((RelSetData) data).getSet()));
+            if(data instanceof RelSetData){
+                alg.setSetData(((RelSetData) data).getSet());
+                return alg.checkAnonymity(k, m, columnsCheck,((RelSetData) data).getSetColumn());
+            }
+            else{
+                return alg.checkAnonymity(k, m, columnsCheck,-1);
+            }
         }
         else{
            alg.setSetData(data.getDataSet());
@@ -3123,11 +3286,11 @@ System.out.println("url = " + url);
         double[] resultArr = null;
         
         
-        System.out.println("Identifiers");
+//        System.out.println("Identifiers");
         for ( int i = 0 ; i < identifiersArray.length ; i ++){
-            System.out.println(identifiersArray[i]);
+//            System.out.println(identifiersArray[i]);
             if (identifiersArray[i].equals("null")){
-                System.out.println("xaxaxaxaxaxaxa");
+//                System.out.println("xaxaxaxaxaxaxa");
                 identifiersArr[i] = null;
             }
             else{
@@ -3135,9 +3298,9 @@ System.out.println("url = " + url);
             }
         }
         
-        System.out.println("MinArr");
+//        System.out.println("MinArr");
         for ( int i = 0 ; i < minArray.length ; i ++){
-            System.out.println(minArray[i]);
+//            System.out.println(minArray[i]);
             if ( minArray[i].equals("null")){
                 minArr[i] = Double.NaN;
             }
@@ -3146,9 +3309,9 @@ System.out.println("url = " + url);
             }
         }
         
-        System.out.println("MaxArr");
+//        System.out.println("MaxArr");
         for ( int i = 0 ; i < maxArray.length ; i ++){
-            System.out.println(maxArray[i]);
+//            System.out.println(maxArray[i]);
             if ( maxArray[i].equals("null")){
                 maxArr[i] = Double.NaN;
             }
@@ -3158,19 +3321,19 @@ System.out.println("url = " + url);
         }
         
         
-        System.out.println("distinct");
+//        System.out.println("distinct");
         for ( int i = 0 ; i < distinctArr.length ; i ++){
             if (distinctArr[i].equals("null")){
                 distinctArr[i] = null;
             }
-            System.out.println(distinctArr[i]);
+//            System.out.println(distinctArr[i]);
         }
         
-        System.out.println("anon" );
+//        System.out.println("anon" );
         int []level = anonData.getHierarchyLevel();
-        for( int  i = 0 ;i < level.length ; i ++){
-            System.out.println(level[i]);
-        }
+//        for( int  i = 0 ;i < level.length ; i ++){
+//            System.out.println(level[i]);
+//        }
         
         Queries queries = new Queries(identifiersArr, minArr, maxArr , distinctArr, hierarchies, data, anonData.getHierarchyLevel(), quasiIdentifiers);
         Results results = queries.executeQueries();
@@ -3208,6 +3371,20 @@ System.out.println("url = " + url);
         }
         else{
             return"txt";
+        }
+        
+    }
+    
+    @RequestMapping(value="/action/getsetvaluedcolumn", method = RequestMethod.POST) //method = RequestMethod.POST
+    public @ResponseBody String getSetValuedColumn ( HttpSession session ) throws FileNotFoundException, IOException {
+        Data data = (Data) session.getAttribute("data");
+        
+        if(data instanceof RelSetData){
+            RelSetData relsetdata = (RelSetData) data;
+            return data.getColNamesPosition().get(relsetdata.getSetColumn())+"_"+relsetdata.getSetColumn();
+        }
+        else{
+            return "none";
         }
         
     }
@@ -3272,9 +3449,10 @@ System.out.println("url = " + url);
     
     @RequestMapping(value="/action/loadanonymizationrules", method = RequestMethod.POST) //method = RequestMethod.POST
     public @ResponseBody String loadAnonynizationRules ( HttpSession session , String filename) throws FileNotFoundException, IOException {
-        System.out.println("load anon rules");
+//        System.out.println("load anon rules");
+        try{
         Data data = (Data) session.getAttribute("data");
-        System.out.println("fileName = " + filename);
+//        System.out.println("fileName = " + filename);
         //String filename = (String)session.getAttribute("filename");
         String inputPath = (String)session.getAttribute("inputpath");
         this.createInputPath(inputPath, session);
@@ -3282,7 +3460,7 @@ System.out.println("url = " + url);
         String anonRulesFile = inputPath + "/"+filename;
         AnonymizationRules anonRules = new AnonymizationRules();
         
-        System.out.println("inputPath = " + inputPath);
+//        System.out.println("inputPath = " + inputPath);
         
         anonRules.importRules(anonRulesFile);
         Map<String, Map<String, String>> rules = anonRules.getAnonymizedRules();
@@ -3290,9 +3468,9 @@ System.out.println("url = " + url);
         
        
         
-        for (Map.Entry<String, Map<String, String>> entry : rules.entrySet()) {
-            System.out.println(entry.getKey()+" : "+entry.getValue());
-        }
+//        for (Map.Entry<String, Map<String, String>> entry : rules.entrySet()) {
+//            System.out.println(entry.getKey()+" : "+entry.getValue());
+//        }
         
         session.setAttribute("anonrules",rules);
         
@@ -3310,7 +3488,10 @@ System.out.println("url = " + url);
         
                 
         
-        return null;
+            return null;
+        }catch(Exception e){
+            return "Problem with loading anonymization rules "+e.getMessage();
+        }
     }
     
     //@JsonView(View.DatasetsExists.class)
@@ -3327,9 +3508,9 @@ System.out.println("url = " + url);
        
         
         String algorithm = (String) session.getAttribute("algorithm");
-        System.out.println("algorithmmmmmmmmmmm = " + algorithm);
+//        System.out.println("algorithmmmmmmmmmmm = " + algorithm);
         
-        System.out.println("checkdatasetsexistence");
+//        System.out.println("checkdatasetsexistence");
         if(data!=null && allRules!=null){
             check.setOriginalExists("true");
             check.setAnonExists("true");
@@ -3394,8 +3575,8 @@ System.out.println("url = " + url);
         //}
         
         
-        System.out.println("checkdatasetsexistence44444");
-        System.out.println("check Origin = " + check.getOriginalExists() + "\t check anon = " + check.getAnonExists());
+//        System.out.println("checkdatasetsexistence44444");
+//        System.out.println("check Origin = " + check.getOriginalExists() + "\t check anon = " + check.getAnonExists());
                 
         
         /*if (data != null ){
@@ -3440,8 +3621,8 @@ System.out.println("url = " + url);
     ///////////////////////////////api my-health my-data/////////////////////////////////////////////////////
     
     @RequestMapping(value="/anonymizedata", produces = MediaType.TEXT_PLAIN, method = RequestMethod.POST)
-    public void AnonimizeData(@RequestParam("files") MultipartFile[] files, @RequestParam("del") String del,  MultipartHttpServletRequest request,  HttpSession session, HttpServletResponse response) throws IOException, FileNotFoundException, ParseException{
-         
+    public void AnonimizeData(@RequestParam("files") MultipartFile[] files, @RequestParam("del") String del,  MultipartHttpServletRequest request,  HttpSession session, HttpServletResponse response) throws IOException, FileNotFoundException, ParseException, Exception{
+        try{
         this.upload(files[0], true, session);
         String errorMessage;
         String path = (String) session.getAttribute("inputpath");
@@ -3452,7 +3633,7 @@ System.out.println("url = " + url);
         if(del.equals("s")){
             del = ";";
         }
-        System.out.println("Del fiuwtyfuirwfgyrefgweygfy: "+del);
+//        System.out.println("Del fiuwtyfuirwfgyrefgweygfy: "+del);
  
         if(files.length==1 || files[1]==null){
             
@@ -3475,7 +3656,7 @@ System.out.println("url = " + url);
                     out.write("////////////////////// check columns, vartypes /////////////////////////////");
                     out.newLine();
                     for(int i=0; i<splitLine.length; i++){
-                        out.write(splitLine[i]+": true,"+types[i][0]);
+                        out.write(splitLine[i]+": true,"+types[i][0].replace("double", "decimal"));
                         out.newLine();
 
                     }
@@ -3491,7 +3672,7 @@ System.out.println("url = " + url);
                     out.write("////////////////////// check columns, vartypes /////////////////////////////");
                     out.newLine();
                     for(int i=0; i<names.length; i++){
-                       out.write(names[i]+": true,"+types[i][0]);
+                       out.write(names[i]+": true,"+types[i][0].replace("double", "decimal"));
                        out.newLine();
                     }
                     out.write("//////////////////// END ////////////////////////////////////////////\n\n");
@@ -3536,7 +3717,7 @@ System.out.println("url = " + url);
            relationsArr = new ArrayList<String>();
            checkColumnsArr = new ArrayList<Boolean>();
            
-           ArrayList<String> possibleTypes = new ArrayList(){{ add("int"); add("double"); add("date"); add("string"); }};
+           ArrayList<String> possibleTypes = new ArrayList(){{ add("int"); add("decimal"); add("date"); add("string"); }};
            String error_msg="";
            
            while((strline = br.readLine()) != null){
@@ -3548,7 +3729,7 @@ System.out.println("url = " + url);
                        String columnInfo[] = strline.split(":");
                        String attributes[] = columnInfo[1].replaceAll("\n", "").replaceAll(" ", "").split(",");
                        
-                       System.out.println("length attr: "+attributes.length);
+//                       System.out.println("length attr: "+attributes.length);
                        if(attributes.length>1 && attributes.length<=3){
                            if(!attributes[0].equals("true") && !attributes[0].equals("false")){
                                error_msg += "In "+columnInfo[0]+": bollean type must be true or false.\n";
@@ -3558,7 +3739,7 @@ System.out.println("url = " + url);
                            if(!possibleTypes.contains(attributes[1])){
                               error_msg += "In "+columnInfo[0]+": not accepted variable type. It must be one of the "+Arrays.toString(possibleTypes.toArray())+"\n"; 
                            }
-                           vartypesArr.add(attributes[1]); 
+                           vartypesArr.add(attributes[1].replace("decimal", "double")); 
                            
                            if(attributes.length==3){
                                relationsArr.add( attributes[2] );
@@ -3594,7 +3775,7 @@ System.out.println("url = " + url);
                 return;
             }
             
-            System.out.println("Results: k->"+k+" vartypes-> "+Arrays.toString(vartypesArr.toArray(new String[vartypesArr.size()]))+" checkColumns-> "+Arrays.toString(checkColumnsArr.toArray())+" relations-> "+Arrays.toString(relationsArr.toArray()));
+//            System.out.println("Results: k->"+k+" vartypes-> "+Arrays.toString(vartypesArr.toArray(new String[vartypesArr.size()]))+" checkColumns-> "+Arrays.toString(checkColumnsArr.toArray())+" relations-> "+Arrays.toString(relationsArr.toArray()));
             this.getSmallDataSet(del, "tabular","", session);
             boolean [] checkColumns = new boolean[checkColumnsArr.size()];
             for(int i=0; i<checkColumns.length; i++){
@@ -3612,6 +3793,13 @@ System.out.println("url = " + url);
         }
 
         response.flushBuffer();
+        if(os.equals("online")){
+            this.deleteFiles(session);
+        }
+        
+        }catch(Exception e){
+            this.errorHandling(e.toString(), session);
+        }
 //        response.setContentType("text/plain");
 //        response.getOutputStream().println("katiksgsf");
 //        return ResponseEntity
@@ -3629,7 +3817,7 @@ System.out.println("url = " + url);
     
     //amnesia/dataset
     @RequestMapping(value="/dataset", produces = "application/json",  method = RequestMethod.POST)//, method = RequestMethod.POST) //method = RequestMethod.POST
-    public @ResponseBody String Dataset ( @RequestParam("file") MultipartFile file, @RequestParam("data") boolean data, @RequestParam("del") String del, @RequestParam("datatype") String datatype , @RequestParam("vartypes") String [] vartypes, @RequestParam("checkColumns") boolean [] checkColumns, HttpSession session  ) throws FileNotFoundException, IOException {
+    public @ResponseBody String Dataset ( @RequestParam("file") MultipartFile file, @RequestParam("data") boolean data, @RequestParam("del") String del, @RequestParam("datatype") String datatype , @RequestParam("vartypes") String [] vartypes, @RequestParam("checkColumns") boolean [] checkColumns, HttpSession session  ) throws FileNotFoundException, IOException, Exception {
         
         this.upload(file, data, session);
         this.getSmallDataSet(del, datatype,"", session);
@@ -3641,10 +3829,10 @@ System.out.println("url = " + url);
     
     //amnesia/hierarchy
     @RequestMapping(value="/hierarchy",  method = RequestMethod.POST)//, method = RequestMethod.POST) //method = RequestMethod.POST
-    public @ResponseBody String hierarchy ( @RequestParam("file") MultipartFile file, @RequestParam("data") boolean data,  HttpSession session ) throws FileNotFoundException, IOException {
+    public @ResponseBody String hierarchy ( @RequestParam("file") MultipartFile file, @RequestParam("data") boolean data,  HttpSession session ) throws FileNotFoundException, IOException, Exception {
         
-        System.out.println("fileeeename = " +file.getName());
-        System.out.println("file = " + file);
+//        System.out.println("fileeeename = " +file.getName());
+//        System.out.println("file = " + file);
         
         this.upload(file, data, session);
         this.loadHierarcy(file.getOriginalFilename(), session);
@@ -3669,10 +3857,10 @@ System.out.println("url = " + url);
         
         String algorithmSelected = algo;
         
-        System.out.println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-        for ( int  i = 0 ; i < relations.length ; i ++){
-            System.out.println(" relation = " + relations[i]);
-        }
+//        System.out.println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+//        for ( int  i = 0 ; i < relations.length ; i ++){
+//            System.out.println(" relation = " + relations[i]);
+//        }
         
         
         
@@ -3684,9 +3872,9 @@ System.out.println("url = " + url);
         }
         
         
-        /*for (Map.Entry<Integer, Hierarchy> entry : quasiIdentifiers.entrySet()) {
-            System.out.println(entry.getKey()+" : "+entry.getValue());
-        }*/
+//        for (Map.Entry<Integer, Hierarchy> entry : quasiIdentifiers.entrySet()) {
+//            System.out.println(entry.getKey()+" : "+entry.getValue());
+//        }
         
         
         ///////////////////////new feature///////////////////////
@@ -3767,7 +3955,7 @@ System.out.println("url = " + url);
         algorithm.setArguments(args);
 
 
-        System.out.println("k = " + k + "\t m = " + m );
+//        System.out.println("k = " + k + "\t m = " + m );
 
         //long startTime = System.currentTimeMillis();
 //        long startCpuTime = getCpuTime();
@@ -3837,7 +4025,7 @@ System.out.println("url = " + url);
             br = new BufferedReader(new FileReader(file));
             
             while ((line = br.readLine()) != null) {
-                System.out.println(line);
+//                System.out.println(line);
                 if(line.trim().isEmpty())
                     break;
                 
@@ -3856,6 +4044,7 @@ System.out.println("url = " + url);
                     result.add(tokens[1]);
                 }
             }
+            br.close();
         } catch (IOException ex) {
             System.out.println("problem");
             //Logger.getLogger(HierarchyPanel.class.getName()).log(Level.SEVERE, null, ex);
@@ -3866,5 +4055,3 @@ System.out.println("url = " + url);
     }
     
 }
-
-

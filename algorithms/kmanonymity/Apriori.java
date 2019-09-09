@@ -47,9 +47,13 @@ public class Apriori implements Algorithm {
     Hierarchy hierarchy = null;
     Trie trie = null;
     int nextIndex = 0;
-    int[] testGens = null;
-    int[][] pointMap = null;
-    double[] costs = null;
+//    int[] testGens = null;
+//    int[][] pointMap = null;
+//    double[] costs = null;
+    Map<Integer,Integer> testGens = null;
+    Map<Integer,Integer[]> pointMap = null;
+    Map<Integer,Double> costs = null;
+    Set<Double> domainLeaves = null;
     int domainSize = -1;
     int k = -1;
     int m = -1;
@@ -102,13 +106,15 @@ public class Apriori implements Algorithm {
         for (Map.Entry<Integer,String> entry : dict.idToString.entrySet()) {
             System.out.println(entry.getKey()+" : "+entry.getValue());
         }*/
+        System.out.println("trie construct start for m="+size);
         
         while((transaction = getNextTransaction()) != null){
 //            System.out.println("transaction = ");
 //            for (int i = 0 ; i < transaction.length ; i ++ ){
 //                System.out.println(transaction[i]+",");
 //            }
-            
+//            if(size == 2)
+//                System.out.println("row "+this.nextIndex);
             //expand transaction
             //System.out.println("transaction = ");
             //for( int i = 0 ; i < transaction.length ; i ++){
@@ -128,6 +134,7 @@ public class Apriori implements Algorithm {
            // System.out.println();
             
             //generate combinations
+            
             combinations = Combinations.getCombinations(expandedTransaction, size, hierarchy);
             
             /*System.out.println("combinations = ");
@@ -149,6 +156,8 @@ public class Apriori implements Algorithm {
             //System.out.println("i am hereeeeeee");
         }
         
+        System.out.println("trie constrcted for m="+size);
+        
         //System.out.println("Trieeeeeeeeeeeee "  );
         //trie.printTree(trie.getRoot());
         //System.out.println("trie = " + trie.getRoot());
@@ -165,6 +174,7 @@ public class Apriori implements Algorithm {
         
         
         double[] anonTransaction = new double[originalTransaction.length];
+//        System.out.println("line "+nextIndex);
         for(int i=0; i<originalTransaction.length; i++){
             anonTransaction[i] = getTranslation(originalTransaction[i]);
         }
@@ -174,7 +184,9 @@ public class Apriori implements Algorithm {
     }
     
     private double getTranslation(double point) {
-        return pointMap[(int)point][1];
+//        return pointMap[(int)point][1];
+//        System.out.println("point "+point+" "+dataset.getDictionary().getIdToString((int)point));
+        return pointMap.get((int)point)[1];
     } 
     
     private void fixAll(){
@@ -293,11 +305,16 @@ public class Apriori implements Algorithm {
     @Override
     public Object getResultSet() {
         Map<Double, Double> rules = new HashMap<>();
-        for(int i=0; i<pointMap.length; i++){
-            if(pointMap[i][0] != pointMap[i][1]){
-                rules.put((double)pointMap[i][0], (double)pointMap[i][1]);
+        for(Entry<Integer,Integer[]> entry : pointMap.entrySet() ){
+            if(entry.getValue()[0]!= entry.getValue()[1]){
+                rules.put(entry.getValue()[0].doubleValue(), entry.getValue()[1].doubleValue());
             }
         }
+//        for(int i=0; i<pointMap.length; i++){
+//            if(pointMap[i][0] != pointMap[i][1]){
+//                rules.put((double)pointMap[i][0], (double)pointMap[i][1]);
+//            }
+//        }
         
         return rules;
     }
@@ -326,8 +343,11 @@ public class Apriori implements Algorithm {
                 double[] anonPath = entry.getValue();
                 for(int i=0; i<anonPath.length; i++){
                     double anonItem = anonPath[i];
-                    if((anonItem != -1) && (anonItem != prefix.get(i))){
-                        System.out.println("General anon : "+this.hierarchy.getDictionary().getIdToString((int)anonItem)+" prefix "+this.hierarchy.getDictionary().getIdToString(prefix.get(i).intValue()));
+                    if((anonItem != -1) && (anonItem != prefix.get(i)) && anonItem == this.getTranslation(anonItem)){
+//                        System.out.println("General anon : "+this.hierarchy.getDictionary().getIdToString((int)anonItem)+" prefix "+this.hierarchy.getDictionary().getIdToString(prefix.get(i).intValue()));
+//                        if(this.hierarchy.getDictionary().getIdToString((int)anonItem)==null){
+//                            System.out.println("General anon null previous : "+this.hierarchy.getDictionaryData().getIdToString((int)anonItem)+" prefix "+this.hierarchy.getDictionaryData().getIdToString(prefix.get(i).intValue()));
+//                        }
                         generalize(anonItem);
                     }
                 }
@@ -345,13 +365,19 @@ public class Apriori implements Algorithm {
         if(children != null){
             if(l == 1){
                 for(Double child : children){
-                    pointMap[child.intValue()][1] = (int)generalized;
-                    pointMap[child.intValue()][2] = getLevel(generalized);
+                    Integer[] temp = pointMap.get(child.intValue());
+                    temp[1] = (int)generalized;
+                    pointMap.put(child.intValue(), temp);
+//                    pointMap[child.intValue()][1] = (int)generalized;
+//                    pointMap[child.intValue()][2] = getLevel(generalized);
                 }
             }else{
                 for(Double child : children){
-                    pointMap[child.intValue()][1] = (int)generalized;
-                    pointMap[child.intValue()][2] = getLevel(generalized);
+                    Integer[] temp = pointMap.get(child.intValue());
+                    temp[1] = (int)generalized;
+                    pointMap.put(child.intValue(), temp);
+//                    pointMap[child.intValue()][1] = (int)generalized;
+//                    pointMap[child.intValue()][2] = getLevel(generalized);
                     gen(child, generalized);
                 }
             }
@@ -360,15 +386,21 @@ public class Apriori implements Algorithm {
     
     private void gen(double o, double g){
         if(getLevel(o) == 0){
-            pointMap[(int)o][1] = (int)g;
-            pointMap[(int)o][2] = getLevel(g);
+            Integer[] temp = pointMap.get((int)o);
+            temp[1] = (int)g;
+            pointMap.put((int)o, temp);
+//            pointMap[(int)o][1] = (int)g;
+//            pointMap[(int)o][2] = getLevel(g);
         }
         else{
             Set<Double> children = this.hierarchy.getChildrenIds(o);
             if(children != null){
                 for(Double child : children){
-                    pointMap[child.intValue()][1] = (int)g;
-                    pointMap[child.intValue()][2] = getLevel(g);
+                    Integer[] temp = pointMap.get(child.intValue());
+                    temp[1] = (int)g;
+                    pointMap.put(child.intValue(), temp);
+//                    pointMap[child.intValue()][1] = (int)g;
+//                    pointMap[child.intValue()][2] = getLevel(g);
                     gen(child, g);
                 }
             }
@@ -404,16 +436,17 @@ public class Apriori implements Algorithm {
     }
     
     private void createInternalStructures() {
-        List<Integer> nodeIds = this.hierarchy.getNodeIdsInLevel(0);
-        domainSize = nodeIds.size();
-        
-        System.out.println("Domain size : "+domainSize);
+//        List<Integer> nodeIds = this.hierarchy.getNodeIdsInLevel(0);
+//        domainSize = nodeIds.size();
+//        
+//        System.out.println("Domain size : "+domainSize);
         
         //allocate and init testgens
-        this.testGens = new int[domainSize];
-        for (int i=0;i<domainSize;i++) {
-            testGens[i] = -1;
-        }
+//        this.testGens = new int[domainSize];
+//        for (int i=0;i<domainSize;i++) {
+//            testGens[i] = -1;
+//        }
+        testGens = new HashMap();
         
         //get root id
         //String strValue = (String)this.hierarchy.getRoot();
@@ -424,34 +457,96 @@ public class Apriori implements Algorithm {
         System.out.println("Root num = " + num);
         
         //allocate and init pointMap
-        pointMap = new int[maxId + 1][];
-        costs = new double[maxId + 1];
+//        pointMap = new int[maxId + 1][];
+//        costs = new double[maxId + 1];
+        pointMap = new HashMap();
+        costs = new HashMap();
         hierarchy.computeWeights(dataset, dataset.getColumnByPosition(0));
         for(int height=0; height<this.hierarchy.getHeight(); height++){
             System.out.println("height = " + height);
-            List<Integer> nodeIdsInLevel = this.hierarchy.getNodeIdsInLevel(height);
-            for(Integer nodeId : nodeIdsInLevel){
-                
-                pointMap[nodeId] = new int[3];
-                pointMap[nodeId][0] = nodeId;       //original value
-                pointMap[nodeId][1] = nodeId;       //generalized value
-                pointMap[nodeId][2] = height;       //level
-                
-                //calculate costs
-                costs[nodeId] = 0;
-                if(height > 0){
-                    Set<Double> children = this.hierarchy.getChildrenIds(nodeId);
-                    if (height == 1){
-                        costs[nodeId] = (double)children.size() / (double)domainSize;
-                    }
-                    else{
-                        for(Double child : children){
-                            
-                            costs[nodeId] = costs[nodeId]+costs[child.intValue()];
+            if(height == 0){
+                Map<Integer,Set<Double>> leavesAndParents = this.hierarchy.getLeafNodesAndParents();
+                domainSize = leavesAndParents.get(0).size();
+                domainLeaves = leavesAndParents.get(0);
+                for(Entry<Integer,Set<Double>> entry : leavesAndParents.entrySet()){
+                    Set<Double> values = entry.getValue();
+                    for(Double nodeId : values){
+                        Integer[] temp = new Integer[2];
+                        temp[0] = nodeId.intValue();
+                        temp[1] = nodeId.intValue();
+                        pointMap.put(nodeId.intValue(), temp);
+                        costs.put(nodeId.intValue(), 0.0);
+                        if(entry.getKey() == 0){
+//                            System.out.println("Leaves ");
+                            testGens.put(nodeId.intValue(), -1);
+                        }
+                        else{
+//                            System.out.println("Parents ");
+                            Set<Double> children = this.hierarchy.getChildrenIds(nodeId);
+                            costs.put(nodeId.intValue(), (double)children.size() / (double)domainSize);
+
                         }
                     }
                 }
             }
+            else{
+                List<Integer> nodeIdsInLevel = this.hierarchy.getNodeIdsInLevel(height);
+                for(Integer nodeId : nodeIdsInLevel){
+                    if(pointMap.containsKey(nodeId)){
+                        continue;
+                    }
+                    else{
+                        Integer[] temp  = new Integer[2];
+                        temp[0] = nodeId;       //original value
+                        temp[1] = nodeId;       //generalized value
+                        pointMap.put(nodeId, temp);
+                        costs.put(nodeId, 0.0);
+                        Set<Double> children = this.hierarchy.getChildrenIds(nodeId);
+                        for(Double child : children){
+                            costs.put(nodeId, costs.get(nodeId)+costs.get(child.intValue()));
+                        }
+                    }
+                }
+            }
+            
+            
+            
+//            return;
+//            List<Integer> nodeIdsInLevel = this.hierarchy.getNodeIdsInLevel(height);
+//            for(Integer nodeId : nodeIdsInLevel){
+//                
+//                Integer[] temp  = new Integer[2];
+//                temp[0] = nodeId;       //original value
+//                temp[1] = nodeId;       //generalized value
+//                pointMap.put(nodeId, temp);
+////                pointMap[nodeId][2] = height;       //level
+//                
+//                //calculate costs
+////                costs[nodeId] = 0;
+//                costs.put(nodeId, 0.0);
+//                if(height > 0){
+//                    Set<Double> children = this.hierarchy.getChildrenIds(nodeId);
+//                    if(children!=null){
+//                        if (height == 1){
+//    //                        costs[nodeId] = (double)children.size() / (double)domainSize;
+//                               costs.put(nodeId, (double)children.size() / (double)domainSize);
+//                        }
+//                        else{
+//                            for(Double child : children){
+//                                costs.put(nodeId, costs.get(nodeId)+costs.get(child.intValue()));
+//    //                            costs[nodeId] = costs[nodeId]+costs[child.intValue()];
+//                            }
+//                        }
+//                    }
+//                }
+//                else{
+//                    testGens.put(nodeId, -1);
+//                }
+//            }
+            
+            
+            
+            
         }
         
         /*System.out.println("Pointttttt Mapppp");
@@ -477,14 +572,18 @@ public class Apriori implements Algorithm {
         existingCost = getTotalCost();
         newCost = getTestCost();
         
-        System.out.println("exist cost "+existingCost+" test Cost "+newCost);
+//        System.out.println("exist cost "+existingCost+" test Cost "+newCost);
         return (newCost - existingCost);
     }
     
     private void resetTestGens(){
-        for(int i=0; i<domainSize; i++){
-//            System.out.println("i="+i);
-            testGens[i] = pointMap[i][1];
+        
+//        for(int i=0; i<domainSize; i++){
+////            System.out.println("i="+i);
+//            testGens[i] = pointMap[i][1];
+//        }
+        for(Entry<Integer,Integer> entry: testGens.entrySet()){
+            entry.setValue(pointMap.get(entry.getKey())[1]);
         }
     }
     
@@ -498,7 +597,13 @@ public class Apriori implements Algorithm {
         if(children != null){
             if (l == 1){
                 for(Double child : children){
-                    testGens[child.intValue()] = (int)generalized;
+//                    if(hierarchy.getDictionaryData().containsId(child.intValue())){
+//                        System.out.println("child dataset "+hierarchy.getDictionaryData().getIdToString(child.intValue())+" id "+child);
+//                    }
+//                    else{
+//                        System.out.println("child hierarchy "+hierarchy.getDictionary().getIdToString(child.intValue())+" id "+child);
+//                    }
+                    testGens.put(child.intValue(), (int)generalized);
                 }
             }
             else{
@@ -513,7 +618,7 @@ public class Apriori implements Algorithm {
     private void genTest(double o, double g){
         
         if(getLevel(o) == 0){
-            testGens[(int)o] = (int)g;
+            testGens.put((int)o,(int)g);
         }
         else{
             Set<Double> children = this.hierarchy.getChildrenIds(o);
@@ -532,9 +637,16 @@ public class Apriori implements Algorithm {
     private double getTotalCost() {
         double res = 0;
         
-        for(int i=0; i<domainSize; i++){
-            res += (costs[pointMap[i][1]]*this.hierarchy.getWeight(i));
+//        for(int i=0; i<domainSize; i++){
+//            res += (costs[pointMap[i][1]]*this.hierarchy.getWeight(i));
+//        }
+//        List<Integer> domainLeaves = this.hierarchy.getNodeIdsInLevel(0);
+        for(Double  leaf : domainLeaves){
+            res += costs.get(pointMap.get(leaf.intValue())[1])*this.hierarchy.getWeight(leaf.doubleValue());
         }
+//        for(Entry<Integer,Double> entry : costs.entrySet()){
+//            res += entry.getValue()*this.hierarchy.getWeight(entry.getKey().doubleValue());
+//        }
         
         return res;
     }
@@ -542,16 +654,18 @@ public class Apriori implements Algorithm {
     private double getTestCost() {
         double res = 0;
         
-        for(int i=0; i<domainSize; i++){
-            if (testGens[i] == 49 ||
-                testGens[i] == 45 ||
-                testGens[i] == 46 ||
-                testGens[i] == 47 || 
-                testGens[i] == 48){
-            }
-            res += (costs[testGens[i]]*this.hierarchy.getWeight(i));
+//        for(int i=0; i<domainSize; i++){
+//            if (testGens[i] == 49 ||
+//                testGens[i] == 45 ||
+//                testGens[i] == 46 ||
+//                testGens[i] == 47 || 
+//                testGens[i] == 48){
+//            }
+//            res += (costs[testGens[i]]*this.hierarchy.getWeight(i));
+//        }
+        for(Entry<Integer,Integer> entry : testGens.entrySet()){
+            res += costs.get(entry.getValue())*this.hierarchy.getWeight(entry.getKey().doubleValue());
         }
-        
         return res;
     }
     

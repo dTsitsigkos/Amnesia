@@ -149,13 +149,13 @@ public class XMLData implements Data {
                                     return tmstmp;
                                 }
                                 else{
-                                    System.out.println("parse = " + parse);
+//                                    System.out.println("parse = " + parse);
                                     //System.out.println("date111111" );
                                     SimpleDateFormat sf = new SimpleDateFormat("dd/MM/yyyy");
 
                                     //Date date = sf.parse(tmstmp); 
                                     //System.out.println("date = " + date );
-                                    System.out.println("return = " +sf.format(d1));
+//                                    System.out.println("return = " +sf.format(d1));
                                     //System.out.println(date.);
                                     tmstmp = null;
                                     tmstmp = sf.format(d1);
@@ -164,13 +164,13 @@ public class XMLData implements Data {
                             } 
                         }
                         else{
-                            System.out.println("parse = " + parse);
+//                            System.out.println("parse = " + parse);
                             //System.out.println("date111111" );
                             SimpleDateFormat sf = new SimpleDateFormat("dd/MM/yyyy");
 
                             //Date date = sf.parse(tmstmp); 
                             //System.out.println("date = " + date );
-                            System.out.println("return = " +sf.format(d1));
+//                            System.out.println("return = " +sf.format(d1));
                             //System.out.println(date.);
                             tmstmp = null;
                             tmstmp = sf.format(d1);
@@ -351,9 +351,9 @@ public class XMLData implements Data {
                 }
                 if(value !=null){
                     for(int l=0; l<value.length; l++){
-                        if(value[l]!=null && value[l].equals("97.79")){
-                            System.out.println("date IGHVI "+value[5]);
-                        }
+//                        if(value[l]!=null && value[l].equals("97.79")){
+//                            System.out.println("date IGHVI "+value[5]);
+//                        }
                         if(value[l]==null){
                             if ( colNamesType.get(l).contains("int") ){
                                 dataSet[rec][l] = 2147483646;
@@ -441,11 +441,11 @@ public class XMLData implements Data {
         
         Object[][] temp = null;
         if ( initialTable != null ){
-            System.out.println("initial table");
+//            System.out.println("initial table");
             temp = initialTable;
         }
         else{
-            System.out.println("anonymized table");
+//            System.out.println("anonymized table");
             temp = anonymizedTable;
         }
         
@@ -526,7 +526,7 @@ public class XMLData implements Data {
             DOMSource domSource = new DOMSource(doc);
             StreamResult sr = new StreamResult(new File(file));
             tf.transform(domSource, sr);
-            System.out.println("Done xml");
+//            System.out.println("Done xml");
         }catch(Exception e){
             System.err.println("Error in export: "+e.getMessage());
         }
@@ -621,7 +621,7 @@ public class XMLData implements Data {
         this.namesToColumns = new HashMap<String,Integer>();
         
         try{
-            System.out.println("file path: "+this.inputFile);
+//            System.out.println("file path: "+this.inputFile);
             fXmlFile = new File(this.inputFile); 
             dbFactory = DocumentBuilderFactory.newInstance();
             dBuilder = dbFactory.newDocumentBuilder();

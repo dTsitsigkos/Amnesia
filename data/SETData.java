@@ -195,10 +195,10 @@ public class SETData implements Data {
                     smallDataSet[0][0] = strLine;
                 }
                 else{
-                    System.out.println("strLine = " + strLine);
+//                    System.out.println("strLine = " + strLine);
                     
                     temp = strLine.split("\\"+delimeter,-1);
-                    System.out.println("Set Data "+temp[0]);
+//                    System.out.println("Set Data "+temp[0]);
                     
                     
                     dataSet[counter] = new double[temp.length];

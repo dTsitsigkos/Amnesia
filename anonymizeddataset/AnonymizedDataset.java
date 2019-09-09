@@ -104,6 +104,7 @@ public class AnonymizedDataset {
         Object columnName = null;
         Object[][]columnData = null;
         LinkedHashMap linkedHashTemp = null;
+        Map<Integer,Integer> immediateTranslationLevel = new HashMap<Integer,Integer>();
         int max;
             
         if ( start + length <= dataset.getRecordsTotal() ){
@@ -133,7 +134,11 @@ public class AnonymizedDataset {
         for (int i = 0 ; i < hierarchyLevel.length ; i++){
             hierarchyLevel[i] = 0;
         }
-
+        for(int i=0; i<qids.length; i++){
+            immediateTranslationLevel.put(qids[i], i);
+        }
+        Arrays.sort(qids);
+        System.out.println("transormation "+Arrays.toString(transformation) +" qids "+Arrays.toString(qids));
         for(int column=0; column<dataSet[0].length; column++){
             
             columnName = colNamesPosition.get(column);
@@ -144,7 +149,8 @@ public class AnonymizedDataset {
             if((count < qids.length) && (qids[count] == column)){
                 anonymizeColumn = true;
                 hierarchy = quasiIdentifiers.get(column);
-                level = transformation[count];
+//                System.out.println("column "+column+" hier "+quasiIdentifiers);
+                level = transformation[immediateTranslationLevel.get(column)];
                 count++;
                 hierarchyLevel [column] = level;
             }
@@ -177,13 +183,19 @@ public class AnonymizedDataset {
             }
             else if(colNamesType.get(column).contains("double")){
                 for(int line=0; line<columnData.length; line++){
+                    
                     if(anonymizeColumn && level > 0){
+                        System.out.println("level double "+level+" hierarchy "+hierarchy.getName()+"value "+columnData[line][column]);
                         columnData[line][column] = anonymizeValue(columnData[line][column], hierarchy, level);
                         if ( hierarchy.getHierarchyType().equals("range")) {
                             columnData[line][column] = columnData[line][column].toString();
                         }
                     }
                     else{
+//                        if(hierarchy!=null){
+//                            System.out.println("level double "+level+" hierarchy "+hierarchy.getName());
+//                        }
+                        
                         if ( columnData[line][column].equals(Double.NaN)){
                             columnData[line][column] = "(null)";
                         }
@@ -205,8 +217,18 @@ public class AnonymizedDataset {
                             columnData[line][column] = anonymizeValue(dataset.getDictionary().getIdToString().get(num.intValue()), hierarchy, level); 
                         }
                         else{
-                            double value = (double)anonymizeValue(columnData[line][column], hierarchy, level);
-                            columnData[line][column] = hierarchy.getDictionary().getIdToString().get((int)value);
+                            Object value = anonymizeValue(columnData[line][column], hierarchy, level);
+                            if(value instanceof String && ((String)value).equals("(null)")){
+                                columnData[line][column] = "(null)";
+                            }
+                            else{
+                                
+                                columnData[line][column] = hierarchy.getDictionary().getIdToString().get(((Double)value).intValue());
+                                if(columnData[line][column]==null){
+                                    columnData[line][column] = dataset.getDictionary().getIdToString().get(((Double)value).intValue());
+                                }
+                            }
+                            
                         }
                         
                        
@@ -324,7 +346,7 @@ public class AnonymizedDataset {
                 else{
                     value = dataSet[i][j];
                 }
-                rowset.add(dictionary.getIdToString(value.intValue()));
+                rowset.add(dictionary.getIdToString(value.intValue()) == null ? dataset.getDictionary().getIdToString(value.intValue()) : dictionary.getIdToString(value.intValue()));
             }
             
             StringBuilder sb = new StringBuilder();
@@ -428,7 +450,7 @@ public class AnonymizedDataset {
                         else{
                             value = setData[i][j];
                         }
-                        rowset.add(dictHierSet.getIdToString(value.intValue()));
+                        rowset.add(dictHierSet.getIdToString(value.intValue()) == null ? dataset.getDictionary().getIdToString(value.intValue()) : dictHierSet.getIdToString(value.intValue()));
                     }
                     
                     StringBuilder sb = new StringBuilder();
@@ -459,7 +481,7 @@ public class AnonymizedDataset {
             else if(colNamesType.get(column).equals("int")){
                /// Not Supported yet
                 rulesRelational = rules.get(column);
-                System.out.println("Rules "+rulesRelational);
+//                System.out.println("Rules "+rulesRelational);
                 for(int line=0; line<columnData.length; line++){
                     if(anonymizeColumn){
                         if(hierarchy.getHierarchyType().equals("range")){
@@ -467,12 +489,31 @@ public class AnonymizedDataset {
                                 columnData[line][column] = ((RangeDouble)rulesRelational.get(columnData[line][column])).toString();
                             }
                             else{
-                                columnData[line][column] = ((Double)rulesRelational.get(columnData[line][column])).intValue();
+//                                System.out.println("nan "+(Double)rulesRelational.get(columnData[line][column])+" boolean "+!Double.isNaN((Double)rulesRelational.get(columnData[line][column])));
+                                if(((Double)rulesRelational.get(columnData[line][column])) == 2147483646.0 || ((Double)rulesRelational.get(columnData[line][column])).isNaN()){
+                                    Object value = rulesRelational.get(new RangeDouble(Double.NaN,Double.NaN));
+                                    if(value instanceof RangeDouble){
+                                        columnData[line][column] = ((RangeDouble)rulesRelational.get(new RangeDouble(Double.NaN,Double.NaN))).toString();
+                                    }
+                                    else{
+                                        columnData[line][column] = "(null)";
+                                    }
+                                }
+                                else{
+                                   columnData[line][column] = ((Double)rulesRelational.get(columnData[line][column])).intValue();
+                                }
+                                
                             }
                         }
                         else{
 //                            System.out.println("Value "+columnData[line][column]);
-                            columnData[line][column] = ((Double)rulesRelational.get(columnData[line][column])).intValue();
+//                            columnData[line][column] = ((Integer)rulesRelational.get(columnData[line][column])).intValue();
+//                            columnData[line][column] = ((Double)rulesRelational.get(columnData[line][column])).intValue();
+                            try{
+                                columnData[line][column] = ((Double)rulesRelational.get(columnData[line][column])).intValue();
+                            }catch(ClassCastException e){
+                                columnData[line][column] = ((Integer)rulesRelational.get(columnData[line][column]));
+                            }
                         }
                     }
                     else{
@@ -488,15 +529,29 @@ public class AnonymizedDataset {
             }
             else if(colNamesType.get(column).equals("double")){
                 rulesRelational = rules.get(column);
+//                System.out.println("Rules "+rulesRelational);
                 for(int line=0; line<columnData.length; line++){
                     if(anonymizeColumn){
                         if(hierarchy.getHierarchyType().equals("range")){
+                            
                             if(rulesRelational.get(columnData[line][column]) instanceof RangeDouble){
                                 columnData[line][column] = ((RangeDouble)rulesRelational.get(columnData[line][column])).toString();
                             }
                             else{
-                                columnData[line][column] = ((Double)rulesRelational.get(columnData[line][column]));
+                                if(((Double)rulesRelational.get(columnData[line][column])) == 2147483646.0 || ((Double)rulesRelational.get(columnData[line][column])).isNaN()){
+                                    Object value = rulesRelational.get(new RangeDouble(Double.NaN,Double.NaN));
+                                    if(value instanceof RangeDouble){
+                                        columnData[line][column] = ((RangeDouble)rulesRelational.get(new RangeDouble(Double.NaN,Double.NaN))).toString();
+                                    }
+                                    else{
+                                        columnData[line][column] = "(null)";
+                                    }
+                                }
+                                else{
+                                    columnData[line][column] = ((Double)rulesRelational.get(columnData[line][column]));
+                                }
                             }
+                            
                         }
                         else{
                             columnData[line][column] = ((Double)rulesRelational.get(columnData[line][column]));
@@ -516,7 +571,7 @@ public class AnonymizedDataset {
             else{
                 /// Not Supported yet
                 rulesRelational = rules.get(column);
-                System.out.println("Date rules "+rulesRelational);
+//                System.out.println("Date rules "+rulesRelational);
                 for(int line=0; line<columnData.length; line++){
                     if(anonymizeColumn){
                         if(hierarchy.getHierarchyType().equals("range")){
@@ -525,9 +580,22 @@ public class AnonymizedDataset {
                                 columnData[line][column] = rd.dateToString(hierarchy.translateDateViaLevel(hierarchy.getHeight() - hierarchy.getLevel(rd)));
 //                                columnData[line][column] = ((RangeDate)rulesRelational.get(columnData[line][column]))hn;
                             }
-                            else{
-                                System.out.println("column Val"+rulesRelational.get(columnData[line][column]));
-                               columnData[line][column] = dataset.getDictionary().getIdToString().get(((Double)rulesRelational.get(columnData[line][column])).intValue()); 
+                            else{   
+                                Double value = (Double)rulesRelational.get(columnData[line][column]);
+                                if(value == 2147483646.0){
+                                    Object tempVal = rulesRelational.get(new RangeDate(null,null));
+                                    if(tempVal instanceof RangeDate){
+                                        RangeDate rd = ((RangeDate)rulesRelational.get(new RangeDate(null,null)));
+                                        columnData[line][column] = rd.dateToString(hierarchy.translateDateViaLevel(hierarchy.getHeight() - hierarchy.getLevel(rd)));
+                                    }
+                                    else{
+                                        columnData[line][column] = "(null)";
+                                    }
+                                }
+                                else{
+//                                System.out.println("column Val"+rulesRelational.get(columnData[line][column]));
+                                    columnData[line][column] = dataset.getDictionary().getIdToString().get(((Double)rulesRelational.get(columnData[line][column])).intValue()); 
+                                }
                             }
                         }
                         else{
@@ -633,7 +701,9 @@ public class AnonymizedDataset {
                         else{
                             value = setData[i][j];
                         }
-                        rowset.add(hierarchy.getDictionary().getIdToString(value.intValue()));
+                        
+                        String anonymizeValue = hierarchy.getDictionary().getIdToString(value.intValue()) == null ? data.getDictionary().getIdToString(value.intValue()) : hierarchy.getDictionary().getIdToString(value.intValue());
+                        rowset.add(anonymizeValue);
                     }
 
                     StringBuilder sb = new StringBuilder();
@@ -671,12 +741,38 @@ public class AnonymizedDataset {
                                 columnData[line][column] = ((RangeDouble)rulesRelational.get(columnData[line][column])).toString();
                             }
                             else{
-                                columnData[line][column] = ((Double)rulesRelational.get(columnData[line][column])).intValue();
+                                if(((Double)rulesRelational.get(columnData[line][column])) == 2147483646.0 || ((Double)rulesRelational.get(columnData[line][column])).isNaN()){
+                                    Object value = rulesRelational.get(new RangeDouble(Double.NaN,Double.NaN));
+                                    if(value instanceof RangeDouble){
+                                        columnData[line][column] = ((RangeDouble)rulesRelational.get(new RangeDouble(Double.NaN,Double.NaN))).toString();
+                                    }
+                                    else{
+                                        columnData[line][column] = "(null)";
+                                    }
+                                }
+                                else{
+                                    columnData[line][column] = ((Double)rulesRelational.get(columnData[line][column])).intValue();
+                                }
+                                
+                                
+                                
+//                                Double value = (Double)rulesRelational.get(columnData[line][column]);
+//                                if(value == 2147483646.0){
+//                                    columnData[line][column] = ((Double)rulesRelational.get(new RangeDouble(Double.NaN,Double.NaN))).intValue();
+//                                }
+//                                else{
+//                                    columnData[line][column] = ((Double)rulesRelational.get(columnData[line][column])).intValue();
+//                                }
                             }
                         }
                         else{
 //                            System.out.println("Value "+columnData[line][column]);
-                            columnData[line][column] = ((Double)rulesRelational.get(columnData[line][column])).intValue();
+                            try{
+                                columnData[line][column] = ((Double)rulesRelational.get(columnData[line][column])).intValue();
+                            }catch(ClassCastException e){
+                                columnData[line][column] = ((Integer)rulesRelational.get(columnData[line][column]));
+                            }
+//                            columnData[line][column] = ((Double)rulesRelational.get(columnData[line][column])).intValue();
                         }
                     }
                     else{
@@ -699,7 +795,24 @@ public class AnonymizedDataset {
                                 columnData[line][column] = ((RangeDouble)rulesRelational.get(columnData[line][column])).toString();
                             }
                             else{
-                                columnData[line][column] = ((Double)rulesRelational.get(columnData[line][column]));
+                                if(((Double)rulesRelational.get(columnData[line][column])) == 2147483646.0 || ((Double)rulesRelational.get(columnData[line][column])).isNaN()){
+                                    Object value = rulesRelational.get(new RangeDouble(Double.NaN,Double.NaN));
+                                    if(value instanceof RangeDouble){
+                                        columnData[line][column] = ((RangeDouble)rulesRelational.get(new RangeDouble(Double.NaN,Double.NaN))).toString();
+                                    }
+                                    else{
+                                        columnData[line][column] = "(null)";
+                                    }
+                                }
+                                else{
+                                    columnData[line][column] = ((Double)rulesRelational.get(columnData[line][column]));
+                                }
+
+//                                Double value = (Double)rulesRelational.get(columnData[line][column]);
+//                                if(value == 2147483646.0){
+//                                    columnData[line][column] = ((Double)rulesRelational.get(new RangeDouble(Double.NaN,Double.NaN)));
+//                                }
+//                                columnData[line][column] = ((Double)rulesRelational.get(columnData[line][column]));
                             }
                         }
                         else{
@@ -719,7 +832,7 @@ public class AnonymizedDataset {
             }
             else{
                rulesRelational = rules.get(column);
-                System.out.println("Date rules "+rulesRelational);
+//                System.out.println("Date rules "+rulesRelational);
                 for(int line=0; line<columnData.length; line++){
                     if(anonymizeColumn){
                         if(hierarchy.getHierarchyType().equals("range")){
@@ -729,8 +842,15 @@ public class AnonymizedDataset {
 //                                columnData[line][column] = ((RangeDate)rulesRelational.get(columnData[line][column]))hn;
                             }
                             else{
-                                System.out.println("column Val"+rulesRelational.get(columnData[line][column]));
-                               columnData[line][column] = dataset.getDictionary().getIdToString().get(((Double)rulesRelational.get(columnData[line][column])).intValue()); 
+                                Double value = (Double)rulesRelational.get(columnData[line][column]);
+                                if(value == 2147483646.0){
+                                    RangeDate rd = ((RangeDate)rulesRelational.get(new RangeDate(null,null)));
+                                    columnData[line][column] = rd.dateToString(hierarchy.translateDateViaLevel(hierarchy.getHeight() - hierarchy.getLevel(rd)));
+                                }
+                                else{
+//                                    System.out.println("column Val"+rulesRelational.get(columnData[line][column]));
+                                    columnData[line][column] = dataset.getDictionary().getIdToString().get(((Double)rulesRelational.get(columnData[line][column])).intValue()); 
+                                }
                             }
                         }
                         else{
@@ -798,7 +918,8 @@ public class AnonymizedDataset {
                 else{
                     value = dataSet[i][j];
                 }
-                rowset.add(quasiIdentifiers.get(0).getDictionary().getIdToString(value.intValue()));
+                String anonymized = quasiIdentifiers.get(0).getDictionary().getIdToString(value.intValue()) == null ? dataset.getDictionary().getIdToString(value.intValue()) :  quasiIdentifiers.get(0).getDictionary().getIdToString(value.intValue());
+                rowset.add(anonymized);
             }
             
             StringBuilder sb = new StringBuilder();
@@ -898,6 +1019,7 @@ public class AnonymizedDataset {
                     level = transformation[count];
                     count++;
                     hierarchyLevel [column] = level;
+                    hierarchy.setLevel(level);
                 }
 
                 if(colNamesType.get(column).contains("int")){
@@ -950,8 +1072,17 @@ public class AnonymizedDataset {
                                columnData[line][column] = anonymizeValue(dataset.getDictionary().getIdToString(((Double)columnData[line][column]).intValue()), hierarchy, level);
                             }
                             else{
-                                double value = (double)anonymizeValue(columnData[line][column], hierarchy, level);
-                                columnData[line][column] = hierarchy.getDictionary().getIdToString().get((int)value);
+                                Object value = anonymizeValue(columnData[line][column], hierarchy, level);
+                                if(value instanceof String && ((String)value).equals("(null)")){
+                                    columnData[line][column] = "(null)";
+                                }
+                                else{
+
+                                    columnData[line][column] = hierarchy.getDictionary().getIdToString().get(((Double)value).intValue());
+                                    if(columnData[line][column]==null){
+                                        columnData[line][column] = dataset.getDictionary().getIdToString().get(((Double)value).intValue());
+                                    }
+                                }
                             }
                         }
                         else{
@@ -980,8 +1111,9 @@ public class AnonymizedDataset {
      */
     private Object anonymizeValue(Object value, Hierarchy h, int level) throws ParseException{
         Object anonymizedValue = value;
-
+//        System.out.println("level "+level+" heirarchy "+h.getName());
         for(int i=0; i<level; i++){
+            h.setLevel(i);
             if(h.getHierarchyType().equals("range")){
                 if(h.getNodesType().equals("double") ||  h.getNodesType().equals("int")){
                     if ( i ==0 ){
@@ -996,6 +1128,7 @@ public class AnonymizedDataset {
                             }
                         }
                         else{
+                            
                             anonymizedValue = h.getParent((Double)anonymizedValue);
                         }    
                     }
@@ -1093,7 +1226,7 @@ public class AnonymizedDataset {
         if(h.getHierarchyType().equals("range")){
             if(h.getNodesType().equals("date")) {
                 RangeDate rd = (RangeDate)anonymizedValue;
-                System.out.println("AnoValue="+anonymizedValue);
+//                System.out.println("AnoValue="+anonymizedValue);
                 /*if (level == 3){
                     anonymizedValue = rd.dateToString(0);
                 }
@@ -1384,7 +1517,15 @@ public class AnonymizedDataset {
                 else if(colNamesType.get(column).contains("int")){
                     for(int line=0; line<columnData.length; line++){
                         if ((double) columnData[line][column] == 2147483646.0) {
-                            columnData[line][column] = columnRules.get("");
+                            if(columnRules.containsKey("")){
+                                columnData[line][column] = columnRules.get("");
+                            }
+                            else if(columnRules.containsKey("(null)")){
+                                columnData[line][column] = columnRules.get("(null)");
+                            }
+                            else{
+                                columnData[line][column] = columnRules.get("NaN");
+                            }
                         }
                         else {
 
@@ -1396,7 +1537,16 @@ public class AnonymizedDataset {
                 else if(colNamesType.get(column).contains("double")){
                     for(int line=0; line<columnData.length; line++){
                         if ( columnData[line][column].equals(Double.NaN)){
-                            columnData[line][column] = columnRules.get("");
+                            if(columnRules.containsKey("")){
+                                columnData[line][column] = columnRules.get("");
+                            }
+                            else if(columnRules.containsKey("(null)")){
+                                columnData[line][column] = columnRules.get("(null)");
+                            }
+                            else{
+                                columnData[line][column] = columnRules.get("NaN");
+                            }
+                            
                         }
                         else{
                             Double num = (Double)columnData[line][column];
@@ -1410,7 +1560,15 @@ public class AnonymizedDataset {
                         columnData[line][column] = dictionary.getIdToString(d.intValue());
 
                         if ( ((String)columnData[line][column]).equals("NaN")){
-                            columnData[line][column] = columnRules.get("");
+                            if(columnRules.containsKey("")){
+                                columnData[line][column] = columnRules.get("");
+                            }
+                            else if(columnRules.containsKey("(null)")){
+                                columnData[line][column] = columnRules.get("(null)");
+                            }
+                            else{
+                                columnData[line][column] = columnRules.get("NaN");
+                            }
                         }
                         else{
                             columnData[line][column] = columnRules.get(columnData[line][column]);
@@ -1581,7 +1739,7 @@ public class AnonymizedDataset {
             }
             linkedHashTemp.put(colNamesPosition.get(0), newRow);
             dataAnon.add(linkedHashTemp);
-            System.out.println();
+//            System.out.println();
             row = null;
         }
     }

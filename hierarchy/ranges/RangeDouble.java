@@ -126,15 +126,41 @@ public class RangeDouble {
     }
     
     public boolean contains(Double v){
-        return v >= this.lowerBound && v <= this.upperBound;
+        if((Double.isNaN(v) || v==2147483646.0) && ((this.lowerBound==0 && this.upperBound==0) || (Double.isNaN(this.lowerBound) && Double.isNaN(this.upperBound)))){
+            return true;
+        }
+        else if(Double.isNaN(v)){
+            return false;
+        }
+        else if(v==2147483646.0){
+            return false;
+        }
+        else{
+            return v >= this.lowerBound && v <= this.upperBound;
+        }
     }
     
     public boolean contains2(Double v, boolean FLAG){
+//        System.out.println(" v = " + v + "\tmin = " + this.lowerBound + "\tmax = " + this.upperBound+" boolean "+((!Double.isNaN(v) && v!=2147483646.0) && ((this.lowerBound==0 && this.upperBound==0) || (Double.isNaN(this.lowerBound) && Double.isNaN(this.upperBound))))+" boolean2 "+this.equals(new RangeDouble(Double.NaN,Double.NaN)));
+        if((!Double.isNaN(v) && v!=2147483646.0) && ((this.lowerBound==0 && this.upperBound==0) || (Double.isNaN(this.lowerBound) && Double.isNaN(this.upperBound)))){
+            return false;
+        }
         if ( FLAG == true){
-            return v >= this.lowerBound && v < this.upperBound;
+            if((Double.isNaN(v) || v==2147483646.0) && ((this.lowerBound==0 && this.upperBound==0) || (Double.isNaN(this.lowerBound) && Double.isNaN(this.upperBound)))){
+                return true;
+            }
+            else if(Double.isNaN(v)){
+                return false;
+            }
+            else if(v==2147483646.0){
+                return false;
+            }
+            else{
+                return v >= this.lowerBound && v < this.upperBound;
+            }
         }
         else{
-            //System.out.println(" v = " + v + "\tmin = " + this.lowerBound + "\tmax = " + this.upperBound);
+//            System.out.println(" v = " + v + "\tmin = " + this.lowerBound + "\tmax = " + this.upperBound);
             return v >= this.lowerBound && v <= this.upperBound;
         }
     }

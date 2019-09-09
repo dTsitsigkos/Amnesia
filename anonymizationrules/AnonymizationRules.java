@@ -43,6 +43,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import org.springframework.util.StringUtils;
 
@@ -71,7 +72,7 @@ public class AnonymizationRules {
         Map<String,String> rules = null;
         String columnName = null;
         
-        System.out.println("inputfile = " + inputFile);
+//        System.out.println("inputfile = " + inputFile);
         
         BufferedReader br = new BufferedReader(new FileReader(inputFile));
         String line;
@@ -234,6 +235,9 @@ public class AnonymizationRules {
                         }
                         Double anon = (double)anonymizedData;
                         anonymizedData = hierarchy.getDictionary().getIdToString().get(anon.intValue());
+                        if(anonymizedData==null){
+                            anonymizedData = data.getDictionary().getIdToString().get(anon.intValue());
+                        }
                     }
                 }
                 else{
@@ -244,8 +248,8 @@ public class AnonymizationRules {
                 
                 //Double anon = (double)anonymizedData;
                 //anonymizedData = hierarchy.getDictionary().getIdToString().get(anon.intValue());
-                
-                
+                Double anon = (double)tempData;
+//                System.out.println("double value "+tempData+" original "+data.getDictionary().getIdToString().get(anon.intValue())+" non anonym "+nonAnonymizedData+" anonym "+anonymizedData );
                 map.put(nonAnonymizedData.toString(), anonymizedData.toString());
             }
         }
@@ -362,7 +366,9 @@ public class AnonymizationRules {
                     
                     counter++;
                     writer.println();
+                    writer.flush();
                 }
+                writer.close();
             }
         } catch (FileNotFoundException | UnsupportedEncodingException ex) {
            // Logger.getLogger(AnonymizedDatasetPanel.class.getName()).log(Level.SEVERE, null, ex);
@@ -384,6 +390,8 @@ public class AnonymizationRules {
                 DictionaryString dictionary = dataset.getDictionary();
                 String columnName = dataset.getColumnByPosition(0);
                 writer.println(columnName);
+                Set<Double> visited = new HashSet<Double>();
+                double data[][] = dataset.getDataSet();
                 
                 String del = "->";
                 int counter = 1;
@@ -392,14 +400,29 @@ public class AnonymizationRules {
                     del + dictionary.getIdToString(entry.getValue().intValue()));
                     counter ++;
                 }*/
-                
-                for(Entry<Double, Double> entry : rules.entrySet()){
-                    if(dictionary.getIdToString(entry.getKey().intValue())!=null){
-                        writer.println(dictionary.getIdToString(entry.getKey().intValue()) +
-                        del + qis.get(0).getDictionary().getIdToString(entry.getValue().intValue()));
+                for(int i=0; i<data.length; i++){
+                    for(int j=0; j<data[i].length; j++){
+                        if(!visited.contains(data[i][j])){
+//                            System.out.println(dictionary.getIdToString((int) data[i][j])+" data value "+data[i][j]);
+                            Double numAnonymValue = rules.get(data[i][j]);
+                            if(numAnonymValue==null){
+                                numAnonymValue = data[i][j];
+                            }
+                            
+                            String anonymValue  = qis.get(0).getDictionary().getIdToString(numAnonymValue.intValue()) == null ? dictionary.getIdToString(numAnonymValue.intValue()) : qis.get(0).getDictionary().getIdToString(numAnonymValue.intValue());
+                            writer.println(dictionary.getIdToString((int) data[i][j]) + del + anonymValue);
+                            visited.add(data[i][j]);
+                        }
                     }
-                    counter ++;
                 }
+                
+//                for(Entry<Double, Double> entry : rules.entrySet()){
+//                    if(dictionary.getIdToString(entry.getKey().intValue())!=null){
+//                        writer.println(dictionary.getIdToString(entry.getKey().intValue()) +
+//                        del + qis.get(0).getDictionary().getIdToString(entry.getValue().intValue()));
+//                    }
+//                    counter ++;
+//                }
                 
                 writer.close();
                 
@@ -413,61 +436,280 @@ public class AnonymizationRules {
         RelSetData data = (RelSetData) dataset;
         Map <Integer,String> colNamesType = dataset.getColNamesType();
         DictionaryString dictionary = dataset.getDictionary();
+        Map<Integer,Set<Double>> visited = new HashMap();
+        Set<Double> visitedSet = new HashSet<Double>();
         
         try (PrintWriter writer = new PrintWriter(file, "UTF-8")) {
             writer.println("Anonymization rules:");
+            
             for(Entry<Integer,Map<Object,Object>> entry : rules.entrySet()){
                 String columnName = dataset.getColumnByPosition(entry.getKey());
                 writer.println();
                 writer.println(columnName);
-                
                 String del = "->";
-                
-                for(Entry<Object, Object> entryRules : entry.getValue().entrySet()){
+                double[][] relationalValues = data.getDataSet();
+//                for(Entry<Object, Object> entryRules : entry.getValue().entrySet()){
                     if(colNamesType.get(entry.getKey()).equals("set")){
-                        if(dictionary.getIdToString(((Double)entryRules.getKey()).intValue())!=null){
-                            writer.println(dictionary.getIdToString(((Double)entryRules.getKey()).intValue()) +
-                            del + qis.get(entry.getKey()).getDictionary().getIdToString(((Double)entryRules.getValue()).intValue()));
-                        }
-                    }
-                    else if(colNamesType.get(entry.getKey()).equals("int")){
-                        System.out.println("key "+entryRules.getKey()+" value "+entryRules.getValue());
-                        if(entryRules.getKey()!=null){
-                            if(qis.get(entry.getKey()).getHierarchyType().equals("range")){
-                                writer.println(((Double)entryRules.getKey()).intValue() +
-                                del + ((RangeDouble)entryRules.getValue()).toString());
+                        double[][] setValues = data.getSet();
+                        for(int i=0; i<setValues.length; i++){
+                            for(int j=0; j<setValues[i].length; j++){
+                                if(!visitedSet.contains(setValues[i][j])){
+                                    Double numAnonymValue = (Double) entry.getValue().get(setValues[i][j]);
+                                    if(numAnonymValue == null){
+                                        numAnonymValue = setValues[i][j];
+                                    }
+
+
+                                    String anonymValue = qis.get(entry.getKey()).getDictionary().getIdToString(numAnonymValue.intValue()) == null ? dictionary.getIdToString(numAnonymValue.intValue()) : qis.get(entry.getKey()).getDictionary().getIdToString(numAnonymValue.intValue());
+                                    writer.println(dictionary.getIdToString((int)setValues[i][j]) + del + anonymValue);
+                                    visitedSet.add(setValues[i][j]);
+                                }
+                                
                             }
-                            else{
-                                writer.println(((Double)entryRules.getKey()).intValue() +
-                                del + ((Double)entryRules.getValue()).intValue());
-                            }
                         }
-                    }
-                    else if(colNamesType.get(entry.getKey()).equals("double")){
-                        if(qis.get(entry.getKey()).getHierarchyType().equals("range")){
-                            writer.println(entryRules.getKey() +
-                                del + ((RangeDouble)entryRules.getValue()).toString());
-                        }
-                        else{
-                          writer.println(entryRules.getKey() +
-                            del + entryRules.getValue());  
-                        }
-                        
+//                        if(dictionary.getIdToString(((Double)entryRules.getKey()).intValue())!=null){
+//                            writer.println(dictionary.getIdToString(((Double)entryRules.getKey()).intValue()) +
+//                            del + qis.get(entry.getKey()).getDictionary().getIdToString(((Double)entryRules.getValue()).intValue()));
+//                        }
                     }
                     else{
-                        if(dictionary.getIdToString(((Double)entryRules.getKey()).intValue())!=null){
-                            if(qis.get(entry.getKey()).getHierarchyType().equals("range")){
-                                RangeDate rd = (RangeDate) entryRules.getValue();
-                                writer.println(dictionary.getIdToString(((Double)entryRules.getKey()).intValue()) +
-                                    del + rd.dateToString(qis.get(entry.getKey()).translateDateViaLevel(qis.get(entry.getKey()).getHeight() - qis.get(entry.getKey()).getLevel(rd))));  
+                        for(int i=0; i<relationalValues.length; i++){
+                            if(colNamesType.get(entry.getKey()).equals("int")){
+                                Set<Double> visitedValues = visited.get(entry.getKey());
+                                if(visitedValues == null){
+                                    visitedValues = new HashSet<Double>();
+                                }
+                                if(!visitedValues.contains(relationalValues[i][entry.getKey()])){
+                                    if(qis.get(entry.getKey()).getHierarchyType().equals("range")){
+                                        Object anonymValue =  entry.getValue().get(relationalValues[i][entry.getKey()]);
+                                        if(anonymValue == null){
+                                            writer.println(((int)relationalValues[i][entry.getKey()]) + del + ((int)relationalValues[i][entry.getKey()]));
+                                        }
+                                        else if(anonymValue instanceof Double){
+                                            Double anonymNumValue = (Double) anonymValue;
+                                            if(anonymNumValue == 2147483646.0 || anonymNumValue.isNaN()){
+                                                Object value = entry.getValue().get(new RangeDouble(Double.NaN,Double.NaN));
+                                                if(value instanceof RangeDouble){
+                                                    writer.println("(null)" + del +  ((RangeDouble)entry.getValue().get(new RangeDouble(Double.NaN,Double.NaN))).toString());
+                                                }
+                                                else{
+                                                    writer.println("(null)" + del + "(null)");
+                                                }
+                                            }
+                                            else{
+                                                writer.println(((int)relationalValues[i][entry.getKey()]) + del + ((int)relationalValues[i][entry.getKey()]));
+                                            }
+                                        }
+                                        else{
+                                            writer.println(((int)relationalValues[i][entry.getKey()]) + del + anonymValue.toString());
+                                        }
+                                    }
+                                    else{
+                                        String anonymValue = "";
+                                        Object numanonymValue = entry.getValue().get(relationalValues[i][entry.getKey()]);
+                                        if(numanonymValue == null){
+                                            writer.println(((int) relationalValues[i][entry.getKey()]) + del + ((int) relationalValues[i][entry.getKey()]));
+                                        }
+                                        try{
+                                            anonymValue = Integer.toString(((Double)entry.getValue().get(relationalValues[i][entry.getKey()])).intValue());
+                                        }catch(ClassCastException e){
+                                            anonymValue = Integer.toString(((Integer)entry.getValue().get(relationalValues[i][entry.getKey()])));
+                                        }
+                                        
+                                        if(relationalValues[i][entry.getKey()] == 2147483646.0 || ((Double)relationalValues[i][entry.getKey()]).isNaN()){
+                                            writer.println("(null)" + del + anonymValue);
+                                        }
+                                        else{
+                                            writer.println(((int) relationalValues[i][entry.getKey()]) + del + anonymValue);
+                                        }
+
+                                    }
+                                    visitedValues.contains(relationalValues[i][entry.getKey()]);
+                                    visited.put(entry.getKey(), visitedValues);
+                                }
+                                
+                            }
+                            else if(colNamesType.get(entry.getKey()).equals("double")){
+                                Set<Double> visitedValues = visited.get(entry.getKey());
+                                if(visitedValues == null){
+                                    visitedValues = new HashSet<Double>();
+                                }
+                                if(!visitedValues.contains(relationalValues[i][entry.getKey()])){
+                                    if(qis.get(entry.getKey()).getHierarchyType().equals("range")){
+                                        Object anonymValue =  entry.getValue().get(relationalValues[i][entry.getKey()]);
+                                        if(anonymValue == null){
+                                            writer.println((relationalValues[i][entry.getKey()]) + del + (relationalValues[i][entry.getKey()]));
+                                        }
+                                        else if(anonymValue instanceof Double){
+                                            Double anonymNumValue = (Double) anonymValue;
+                                            if(anonymNumValue == 2147483646.0 || anonymNumValue.isNaN()){
+                                                Object value = entry.getValue().get(new RangeDouble(Double.NaN,Double.NaN));
+                                                if(value instanceof RangeDouble){
+                                                    writer.println("(null)" + del +  ((RangeDouble)entry.getValue().get(new RangeDouble(Double.NaN,Double.NaN))).toString());
+                                                }
+                                                else{
+                                                    writer.println("(null)" + del + "(null)");
+                                                }
+                                            }
+                                            else{
+                                                writer.println(((int)relationalValues[i][entry.getKey()]) + del + ((int)relationalValues[i][entry.getKey()]));
+                                            }
+                                        }
+                                        else{
+                                            writer.println((relationalValues[i][entry.getKey()]) + del + ((RangeDouble)anonymValue).toString());
+                                        }
+                                    }
+                                    else{
+                                        Object anonymValue = entry.getValue().get(relationalValues[i][entry.getKey()]);
+                                        if(anonymValue == null){
+                                            writer.println((relationalValues[i][entry.getKey()]) + del + (relationalValues[i][entry.getKey()]));
+                                        }
+                                        else{
+                                            if(relationalValues[i][entry.getKey()] == 2147483646.0 || ((Double)relationalValues[i][entry.getKey()]).isNaN()){
+                                                writer.println("(null)" + del + anonymValue);
+                                            }
+                                            else{
+                                                writer.println((relationalValues[i][entry.getKey()]) + del + anonymValue);
+                                            }
+                                        }  
+                                    }
+                                    visitedValues.add(relationalValues[i][entry.getKey()]);
+                                    visited.put(entry.getKey(), visitedValues);
+                                }
                             }
                             else{
-                                writer.println(dictionary.getIdToString(((Double)entryRules.getKey()).intValue()) +
-                                    del + qis.get(entry.getKey()).getDictionary().getIdToString(((Double)entryRules.getValue()).intValue()));
+                                Set<Double> visitedValues = visited.get(entry.getKey());
+                                if(visitedValues == null){
+                                    visitedValues = new HashSet<Double>();
+                                }
+                                if(!visitedValues.contains(relationalValues[i][entry.getKey()])){
+                                    if(qis.get(entry.getKey()).getHierarchyType().equals("range")){
+                                        Object anonymValue = entry.getValue().get(relationalValues[i][entry.getKey()]);
+                                        if(anonymValue == null){
+                                            writer.println((dictionary.getIdToString((int)relationalValues[i][entry.getKey()])) + del + dictionary.getIdToString((int)relationalValues[i][entry.getKey()]));
+                                        }
+                                        else{
+                                            if(anonymValue instanceof Double && ((Double)anonymValue) == 2147483646.0){
+                                                RangeDate rd = ((RangeDate)entry.getValue().get(new RangeDate(null,null)));
+                                                writer.println((dictionary.getIdToString((int)relationalValues[i][entry.getKey()])) + del + rd.dateToString(qis.get(entry.getKey()).translateDateViaLevel(qis.get(entry.getKey()).getHeight() - qis.get(entry.getKey()).getLevel(rd))));  
+
+                                            }
+                                            else if(!(anonymValue instanceof RangeDate)){
+                                                writer.println((dictionary.getIdToString((int)relationalValues[i][entry.getKey()])) + del + dictionary.getIdToString((int)relationalValues[i][entry.getKey()]));  
+
+                                            }
+                                            else{
+                                                RangeDate rd = (RangeDate) anonymValue;
+                                                writer.println((dictionary.getIdToString((int)relationalValues[i][entry.getKey()])) + del + rd.dateToString(qis.get(entry.getKey()).translateDateViaLevel(qis.get(entry.getKey()).getHeight() - qis.get(entry.getKey()).getLevel(rd))));  
+                                            }
+                                        }
+                                    }
+                                    else{
+                                        Object anonymValue = entry.getValue().get(relationalValues[i][entry.getKey()]);
+                                        if(anonymValue == null){
+                                            writer.println((dictionary.getIdToString((int)relationalValues[i][entry.getKey()])) + del + dictionary.getIdToString((int)relationalValues[i][entry.getKey()]));
+                                        }
+                                        else{
+                                            Double numanonymValue  = (Double) anonymValue;
+                                            String stranonymValue = qis.get(entry.getKey()).getDictionary().getIdToString(numanonymValue.intValue()) == null ? dictionary.getIdToString(numanonymValue.intValue()) :  qis.get(entry.getKey()).getDictionary().getIdToString(numanonymValue.intValue());
+                                            writer.println((dictionary.getIdToString((int)relationalValues[i][entry.getKey()])) + del + stranonymValue);
+                                        }
+                                    }
+                                    visitedValues.add(relationalValues[i][entry.getKey()]);
+                                    visited.put(entry.getKey(), visitedValues);
+                                }
+                                
+//                                if(dictionary.getIdToString(((Double)entryRules.getKey()).intValue())!=null){
+//                                    if(qis.get(entry.getKey()).getHierarchyType().equals("range")){
+//                                        RangeDate rd = (RangeDate) entryRules.getValue();
+//                                        writer.println(dictionary.getIdToString(((Double)entryRules.getKey()).intValue()) +
+//                                            del + rd.dateToString(qis.get(entry.getKey()).translateDateViaLevel(qis.get(entry.getKey()).getHeight() - qis.get(entry.getKey()).getLevel(rd))));  
+//                                    }
+//                                    else{
+//                                        writer.println(dictionary.getIdToString(((Double)entryRules.getKey()).intValue()) +
+//                                            del + qis.get(entry.getKey()).getDictionary().getIdToString(((Double)entryRules.getValue()).intValue()));
+//                                    }
+//                                }
                             }
                         }
                     }
-                }
+                    
+                    
+                    
+//                    else if(colNamesType.get(entry.getKey()).equals("int")){
+//                        visited.clear();
+////                        System.out.println("key "+entryRules.getKey()+" value "+entryRules.getValue());
+//                        for(int i=0; i<relationalValues.length; i++){
+//                            if(!visited.contains(relationalValues[i][entry.getKey()])){
+//                                if(qis.get(entry.getKey()).getHierarchyType().equals("range")){
+//                                    RangeDouble anonymValue = (RangeDouble) entry.getValue().get(relationalValues[i][entry.getKey()]);
+//                                    if(anonymValue == null){
+//                                        writer.println(((int)relationalValues[i][entry.getKey()]) + del + ((int)relationalValues[i][entry.getKey()]));
+//                                    }
+//                                    else{
+//                                        writer.println(((int)relationalValues[i][entry.getKey()]) + del + anonymValue.toString());
+//                                    }
+//                                }
+//                                else{
+//                                    String anonymValue = "";
+//                                    Object numanonymValue = entry.getValue().get(relationalValues[i][entry.getKey()]);
+//                                    if(numanonymValue == null){
+//                                        writer.println(((int) relationalValues[i][entry.getKey()]) + del + ((int) relationalValues[i][entry.getKey()]));
+//                                    }
+//                                    try{
+//                                        anonymValue = Integer.toString(((Double)entry.getValue().get(relationalValues[i][entry.getKey()])).intValue());
+//                                    }catch(ClassCastException e){
+//                                       anonymValue = Integer.toString(((Integer)entry.getValue().get(relationalValues[i][entry.getKey()])));
+//                                    }
+//                                    writer.println(((int) relationalValues[i][entry.getKey()]) + del + anonymValue);
+//
+//                                }
+//                                visited.contains(relationalValues[i][entry.getKey()]);
+//                            }
+//                        }
+//                        
+////                        if(entryRules.getKey()!=null){
+////                            if(qis.get(entry.getKey()).getHierarchyType().equals("range")){
+////                                writer.println(((Double)entryRules.getKey()).intValue() +
+////                                del + ((RangeDouble)entryRules.getValue()).toString());
+////                            }
+////                            else{
+////                                String value = "";
+////                                try{
+////                                    value = Integer.toString(((Double)entryRules.getValue()).intValue());
+////                                }catch(ClassCastException e){
+////                                    value =  Integer.toString(((Integer)entryRules.getValue()));
+////                                }
+////                                writer.println(((Double)entryRules.getKey()).intValue() +
+////                                del + value);
+////                            }
+////                        }
+//                    }
+//                    else if(colNamesType.get(entry.getKey()).equals("double")){
+//                        if(qis.get(entry.getKey()).getHierarchyType().equals("range")){
+//                            writer.println(entryRules.getKey() +
+//                                del + ((RangeDouble)entryRules.getValue()).toString());
+//                        }
+//                        else{
+//                          writer.println(entryRules.getKey() +
+//                            del + entryRules.getValue());  
+//                        }
+//                        
+//                    }
+//                    else{
+//                        if(dictionary.getIdToString(((Double)entryRules.getKey()).intValue())!=null){
+//                            if(qis.get(entry.getKey()).getHierarchyType().equals("range")){
+//                                RangeDate rd = (RangeDate) entryRules.getValue();
+//                                writer.println(dictionary.getIdToString(((Double)entryRules.getKey()).intValue()) +
+//                                    del + rd.dateToString(qis.get(entry.getKey()).translateDateViaLevel(qis.get(entry.getKey()).getHeight() - qis.get(entry.getKey()).getLevel(rd))));  
+//                            }
+//                            else{
+//                                writer.println(dictionary.getIdToString(((Double)entryRules.getKey()).intValue()) +
+//                                    del + qis.get(entry.getKey()).getDictionary().getIdToString(((Double)entryRules.getValue()).intValue()));
+//                            }
+//                        }
+//                    }
+//                }
                 writer.flush();
             }
             writer.flush();
@@ -484,6 +726,7 @@ public class AnonymizationRules {
        // System.out.println("anonymizedValueeeeeee = " + anonymizedValue + ", value = " + value);
         
         for(int i=0; i<level; i++){
+            h.setLevel(i);
             if(h.getHierarchyType().equals("range")){
                 if(h.getNodesType().equals("double") ||  h.getNodesType().equals("int")){
                     if ( i ==0 ){

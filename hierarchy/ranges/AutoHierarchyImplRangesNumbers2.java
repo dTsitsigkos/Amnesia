@@ -221,7 +221,7 @@ public class AutoHierarchyImplRangesNumbers2 extends HierarchyImplRangesNumbers{
         //parents
         ranNull = new RangeDouble(Double.NaN,Double.NaN);
         ranNull.setNodesType(nodesType);
-        parents.put(root, ranNull);
+        parents.put(ranNull, root);
         //children
         List<RangeDouble> childsTemp = children.get(root);
         ranNull = new RangeDouble(Double.NaN,Double.NaN);

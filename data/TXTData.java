@@ -40,6 +40,7 @@ import javax.swing.table.TableModel;
 import dictionary.DictionaryString;
 import hierarchy.Hierarchy;
 import hierarchy.ranges.RangeDouble;
+import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -56,7 +57,7 @@ import java.util.Date;
  * A class managing text data
  * @author serafeim
  */
-public class TXTData implements Data{
+public class TXTData implements Data,Serializable{
     
     @JsonView(View.GetColumnNames.class)
     private String inputFile = null;
@@ -288,6 +289,7 @@ public class TXTData implements Data{
                             }
                             else if (colNamesType.get(counter1).contains("double")){
                                 if ( !temp[i].equals("")){
+//                                    System.out.println("double "+Double.parseDouble(temp[i]));
                                     dataSet[counter][counter1] = Double.parseDouble(temp[i]);
                                 }
                                 else{
@@ -312,13 +314,22 @@ public class TXTData implements Data{
                                 //var = this.timestampToDate(var);
                                 
                                 if (var != null) {
+                                    
                                 //if string is not present in the dictionary
                                     if (dictionary.containsString(var) == false){
-                                        dictionary.putIdToString(stringCount, var);
-                                        dictionary.putStringToId(var,stringCount);
+                                        if(var.equals("NaN")){
+                                            dictionary.putIdToString(2147483646, var);
+                                            dictionary.putStringToId(var,2147483646);
 //                                        dictionary.put(counter1, tempDict);
-                                        dataSet[counter][counter1] = stringCount;
-                                        stringCount++;
+                                            dataSet[counter][counter1] = 2147483646.0;
+                                        }
+                                        else{
+                                            dictionary.putIdToString(stringCount, var);
+                                            dictionary.putStringToId(var,stringCount);
+    //                                        dictionary.put(counter1, tempDict);
+                                            dataSet[counter][counter1] = stringCount;
+                                            stringCount++;
+                                        }
                                     }
                                     else{
                                         //if string is present in the dictionary, get its id
@@ -337,14 +348,33 @@ public class TXTData implements Data{
                                 else {
                                     var = "NaN";
                                 }
-
+                                
+//                                if(var.equals("A0")){
+//                                    System.out.println("Yparxei sto dataset "+var+"sth grammh "+counter);
+//                                }
+//                                if(var.equals("V402XXD")){
+//                                    System.out.println("V402XXD "+dictionary.getStringToId(var)+dictionary.getStringToId("V402XXD")+dictionary.containsString(var)+dictionary.containsString("V402XXD"));
+//                                    System.out.println("Data dict");
+//                                    for (Object objectName : dictionary.idToString.keySet()) {
+//                                        System.out.print(objectName+" : ");
+//                                        System.out.println(dictionary.idToString.get(objectName));
+//                                    }
+//                                }
                                 //if string is not present in the dictionary
                                 if (dictionary.containsString(var) == false){
-                                    dictionary.putIdToString(stringCount, var);
-                                    dictionary.putStringToId(var,stringCount);
-//                                    dictionary.put(counter1, tempDict);
-                                    dataSet[counter][counter1] = stringCount;
-                                    stringCount++;
+                                     if(var.equals("NaN")){
+                                        dictionary.putIdToString(2147483646, var);
+                                        dictionary.putStringToId(var,2147483646);
+//                                        dictionary.put(counter1, tempDict);
+                                        dataSet[counter][counter1] = 2147483646.0;
+                                    }
+                                    else{
+                                        dictionary.putIdToString(stringCount, var);
+                                        dictionary.putStringToId(var,stringCount);
+    //                                    dictionary.put(counter1, tempDict);
+                                        dataSet[counter][counter1] = stringCount;
+                                        stringCount++;
+                                    }
                                 }
                                 else{
                                     //if string is present in the dictionary, get its id
@@ -902,6 +932,7 @@ public class TXTData implements Data{
                         linkedHashTemp.put(columnNames[j],"");
                     }
                     else{
+//                        System.out.println("double "+dataSet[i][j]);
                         Object a = dataSet[i][j];
                         linkedHashTemp.put(columnNames[j], dataSet[i][j]);
                     }

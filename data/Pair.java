@@ -37,7 +37,8 @@ public class Pair {
         
         if (vartype == null){
             for ( int i = 0 ; i < data.length; i ++){
-                if ( data[i][columnIndex] != 2147483646.0 &&  data[i][columnIndex] != Double.NaN ){
+                if ( data[i][columnIndex] != 2147483646.0 &&  !Double.isNaN(data[i][columnIndex]) ){
+                    System.out.println("i= "+i+" data "+data[i][columnIndex]);
                     min = data[i][columnIndex];
                     max = data[i][columnIndex];
                     counter ++;
@@ -46,7 +47,7 @@ public class Pair {
             }
 
             for( int i=counter; i<data.length; i++){
-                if ( data[i][columnIndex] != 2147483646.0 &&  data[i][columnIndex] != Double.NaN ){
+                if ( data[i][columnIndex] != 2147483646.0 &&  !Double.isNaN(data[i][columnIndex]) ){
                     if(data[i][columnIndex] > max){
                         max = data[i][columnIndex];
                     } 

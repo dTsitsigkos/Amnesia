@@ -117,7 +117,7 @@ public class SolutionCombinations {
                 Arrays.sort(temp);
                 if(trie!=null){
                     TrieNode node = trie.searchNode(temp);
-
+//                    System.out.println("Potential comb "+temp);
                     if(node.getSupport() >= k){
                         double score = ((Apriori)alg).getAddedCost(temp, base);
                         if(!results.containsKey(score)){
@@ -132,7 +132,7 @@ public class SolutionCombinations {
                     for(int l=0; l<temp.length; l++){
                         tempSet.add(temp[l]);
                     }
-//                    System.out.println("Sol Comb: "+Arrays.toString(tempSet.toArray()));
+//                    System.out.println("Sol Comb: "+Arrays.toString(tempSet.toArray())+" score "+score);
                     if(tempSet.contains(-1.0)){
                         tempSet.remove(-1.0);
                     }

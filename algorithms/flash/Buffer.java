@@ -54,6 +54,7 @@ public class Buffer {
     public void compute(LatticeNode node, int[] qidColumns) throws ParseException{
         double[][] dataset = data.getDataSet();
         
+//        System.out.println("node "+node.toString()+" nodeid "+node.id);
         for(int i=0; i<dataset.length; i++){       
             GeneralizedRow generalizedRow = project(node, qidColumns, dataset[i]);
             Integer count;
@@ -62,7 +63,7 @@ public class Buffer {
                 frequencies.put(generalizedRow, ++count);
             }
             else {
-//                 System.out.println("gRow"+generalizedRow.toString()+"Count2="+count);
+//                System.out.println("gRow"+generalizedRow.toString()+"Count2="+count);
                 frequencies.put(generalizedRow, 1);
             }
         }
@@ -76,13 +77,16 @@ public class Buffer {
      */
     private GeneralizedRow project(LatticeNode node, int[] qidColumns, double[] row) throws ParseException{
         GeneralizedRow gRow = new GeneralizedRow(node.getTransformation().length);
-        
+//        System.out.println("level "+node.getLevel());
         int j = 0;
         DictionaryString dict = data.getDictionary();
+//        System.out.println("Transformation Array "+Arrays.toString(node.getTransformation()));
         for(int k=0; k<node.getTransformation().length; k++){
             Hierarchy h = hierarchies.get(qidColumns[k]);
-            
+//            System.out.println("k = "+k+" "+Arrays.toString(node.getTransformation()));
             //get the value of the specified attribute
+//            h.setLevel(node.getLevel());
+//            System.out.println("Level "+node.getLevel());
             Object rowValue = null; 
             if(data.getColNamesType().get(qidColumns[k]).equals("string") ){
 //                DictionaryString dict = data.getDictionary(qidColumns[k]);
@@ -100,8 +104,10 @@ public class Buffer {
             
             //generalize value
             for(int i=0; i<node.getTransformation()[k]; i++){
-
+                h.setLevel(i);
                 if(h.getHierarchyType().equals("range")){
+//                    h.setLevel(i+1);
+                    System.out.print("project");
                     if(h.getNodesType().equals("double") ||  h.getNodesType().equals("int")){
                         if ( i ==0 ){
                             if ( (double) rowValue == 2147483646.0 ||  rowValue.equals(Double.NaN)){
@@ -115,10 +121,12 @@ public class Buffer {
                                 }
                             }
                             else{
+                                
                                 rowValue = h.getParent((Double)rowValue);
                             }    
                         }
                         else{
+                            
                             rowValue = h.getParent(rowValue);
                         }
                     }
@@ -155,6 +163,7 @@ public class Buffer {
                                 }    
                             }
                             else{
+                                
                                 rowValue = h.getParent(rowValue);
                             }
                         }
@@ -185,12 +194,14 @@ public class Buffer {
                     }
                 }
                 else{
-                    //System.out.println("rowValue = " + rowValue);
+//                    System.out.println("i= "+i);
+//                    System.out.println("rowValue original "+rowValue);
+//                    System.out.println("rowValue = " + dict.getIdToString(((Double)rowValue).intValue()));
                     rowValue = h.getParent(rowValue);
                 }
             }
 
-//            System.out.println("rowvalue = " + rowValue);
+//            System.out.println("rowvalue = " + h.getDictionary().getIdToString(((Double)rowValue).intValue()));
             
             gRow.generalizedColumns[j] = rowValue.toString();
             j++;
@@ -239,7 +250,7 @@ public class Buffer {
         
         int[] nodeTransf = node.getTransformation();
         int[] parentNodeTransf = parentNode.getTransformation();
-        
+//        System.out.println("node tranf "+Arrays.toString(nodeTransf)+" parent transf "+Arrays.toString(parentNodeTransf));
         for(GeneralizedRow pRow : parentNodeBuffer.getFrequencies().keySet()){  
             GeneralizedRow gRow = new GeneralizedRow(nodeTransf.length);
             
@@ -254,37 +265,56 @@ public class Buffer {
                     Hierarchy h = hierarchies.get(qidColumns[i]);
                     Object value = pRow.generalizedColumns[i];
                     Object parent = null;
-                    
+//                    h.setLevel(nodeTransf[i]);
+//                    System.out.println("node other "+k);
                     if(h.getHierarchyType().equals("range")){
+                        System.out.print("compute ");
                         if(h.getNodesType().equals("double") ||  h.getNodesType().equals("int")){
                             if(parentNodeTransf[i] == 0 && nodeTransf[i] > 0){
                                 Double doubleValue = Double.parseDouble(value.toString());
+                                int parentLevel = 0;
+                                h.setLevel(parentLevel);
                                 parent = h.getParent(doubleValue);
-
-                                for(int j=0; j<k-1; j++)
+                                parentLevel++;
+                                for(int j=0; j<k-1; j++){
+                                    h.setLevel(parentLevel);
                                     parent = h.getParent(parent);
+                                    parentLevel++;
+                                }
                             }
                             else{
                                 RangeDouble rangeValue = RangeDouble.parseRange(value.toString());
                                 parent = rangeValue;
-                                for(int j=0; j<k; j++)
+                                int parentLevel = parentNodeTransf[i];
+//                                System.out.println("parentLevel "+parentNodeTransf[i]);
+                                for(int j=0; j<k; j++){
+                                    h.setLevel(parentLevel);
                                     parent = h.getParent(parent);
+                                    parentLevel++;
+                                }
                             }
                         }
                         else if (h.getNodesType().equals("date") ){
                             if(parentNodeTransf[i] == 0 && nodeTransf[i] > 0){
                                 SimpleDateFormat sf = new SimpleDateFormat("E MMM dd HH:mm:ss z yyyy" );
                                 Date doubleValue =  sf.parse(value.toString());
+//                                h.setLevel(1);
                                 parent = h.getParent(doubleValue);
 
-                                for(int j=0; j<k-1; j++)
+                                for(int j=0; j<k-1; j++){
+                                    h.setLevel(j+1);
                                     parent = h.getParent(parent);
+                                }
                             }
                             else{
                                 RangeDate rangeValue = RangeDate.parseRange(value.toString());
                                 parent = rangeValue;
-                                for(int j=0; j<k; j++)
+                                int parentLevel = parentNodeTransf[i];
+                                for(int j=0; j<k; j++){
+                                    h.setLevel(parentLevel);
                                     parent = h.getParent(parent);
+                                    parentLevel++;
+                                }
                             }
                         }
                     }
@@ -297,8 +327,12 @@ public class Buffer {
                         else{*/
                             Double doubleValue = Double.parseDouble(value.toString());
                             parent = doubleValue;
-                            for(int j=0; j<k; j++)
+                            int parentLevel = parentNodeTransf[i];
+                            for(int j=0; j<k; j++){
+                                h.setLevel(parentLevel);
                                 parent = h.getParent(parent);  
+                                parentLevel++;
+                            }
                         //}  
                     }
                     

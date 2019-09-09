@@ -53,6 +53,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     RangeDate root = null;
     int months = -1;
     int days = -1;
+    int levelFlash =-1;
     DictionaryString dictData = null;
     
     Map<RangeDate, List<RangeDate>> children = new HashMap<>();
@@ -331,22 +332,35 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     @Override
     public RangeDate getParent(RangeDate node) {
          //System.out.println("GET PARENT Range = " +node.toString());
-        RangeDate r = new RangeDate(null,null);
-        //r.nodesType = "int";
-        //System.out.println("rrrrrrrrrrrrrrrrrrrrrrrrrrrrr = "+ r.toString());
-        for (Map.Entry<RangeDate, RangeDate> entry : parents.entrySet()) {
-            //System.out.println(entry.getKey()+" : "+entry.getValue());
-            RangeDate r1 = entry.getKey();
-           // System.out.println("r1 = " + r1);
-            //System.out.println("r = " + r);
-            //System.out.println("dfsdfsdfsd :" + parents.get(r1));
-            //System.out.println("dfsdfsdfsd :" + parents.get(node));
-            if (r1.equals(r)){
-                //System.out.println("i am hereeeeeeeeeeeeeeeeeeeeeedsfgsfewfe");
+        if(this.levelFlash == -1){
+            RangeDate r = new RangeDate(null,null);
+            //r.nodesType = "int";
+            //System.out.println("rrrrrrrrrrrrrrrrrrrrrrrrrrrrr = "+ r.toString());
+            for (Map.Entry<RangeDate, RangeDate> entry : parents.entrySet()) {
+                //System.out.println(entry.getKey()+" : "+entry.getValue());
+                RangeDate r1 = entry.getKey();
+               // System.out.println("r1 = " + r1);
+                //System.out.println("r = " + r);
+                //System.out.println("dfsdfsdfsd :" + parents.get(r1));
+                //System.out.println("dfsdfsdfsd :" + parents.get(node));
+                if (r1.equals(r)){
+                    //System.out.println("i am hereeeeeeeeeeeeeeeeeeeeeedsfgsfewfe");
+                }
+            }
+
+            return this.parents.get(node);
+        }
+        else{
+            RangeDate rd = this.parents.get(node);
+            int currentLevel = this.height - this.getLevel(node)  ;
+//            System.out.println("flash level Date "+levelFlash+" anon level "+currentLevel+" anon Value "+rd);
+            if(levelFlash == currentLevel){
+               return rd;
+            }
+            else{
+                return node;
             }
         }
-        
-        return this.parents.get(node);
     }
 
     @Override
@@ -683,7 +697,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
         }
         
         for (double[] columnData : data) {
-//            System.out.println("columnData[c] = " + columnData[c]);
+            System.out.println("columnData[c] = " + columnData[c]+" original value "+dataset.getDictionary().getIdToString((int)columnData[c]));
             compute(getRoot(), columnData[c],true,true,dataset);
             if(this.statsDistinct.get(columnData[c])!=null){
                 this.statsDistinct.get(columnData[c]).weight++;
@@ -864,6 +878,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
 
     @Override
     public RangeDate getParent(Double d) {
+       
         String value = this.dictData.getIdToString(d.intValue());
         RangeDate parent = null;
         try {
@@ -873,15 +888,20 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
         }
         
         return parent;
+        
     }
     
     @Override
     public RangeDate getParent(Date d) {
-         //System.out.println("parentssize = " + this.allParents.size() + "\t height = " + height);
+        if(d==null){
+            RangeDate nullDate = new RangeDate(null,null);
+            return this.parents.get(nullDate);
+        }
         List<RangeDate> leafNodes = this.allParents.get(this.height-1);
        // System.out.println("parentssize = " + this.allParents.size());
         //System.out.println("Arrr get parent = " + leafNodes.toString() +"\t d = " + d);
         RangeDate r = binarySearch(leafNodes, d);
+        
         //System.out.println("Find parent of " + d + " is " + r.toString());
         return r;
     }
@@ -1174,7 +1194,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     public String checkHier() {
         String str = null;
         
-        System.out.println("Check Hierarchies RangeDate");
+//        System.out.println("Check Hierarchies RangeDate");
         
         List<RangeDate> firstLabel = allParents.get(0);
         List<RangeDate> lastLabel = allParents.get(allParents.size()-1);
@@ -1404,6 +1424,21 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     @Override
     public void setDictionaryData(DictionaryString dict) {
         dictData = dict;
+    }
+
+    @Override
+    public void setLevel(int l) {
+        this.levelFlash = l;
+    }
+
+    @Override
+    public Map<Integer, Set<RangeDate>> getLeafNodesAndParents() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void syncDictionaries(Integer column, Data data) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     
 }

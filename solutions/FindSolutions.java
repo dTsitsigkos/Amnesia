@@ -180,7 +180,7 @@ public class FindSolutions {
                 else{
 
                     
-                    //data[j] = dictionary.getIdToString((int)dataSet[line][column]);
+                    data[j] = dictionary.getIdToString((int)dataSet[line][column]);
                     
                     if(anonymizeColumn && level > 0){
                         if(colNamesType.get(column).contains("date")){
@@ -188,7 +188,14 @@ public class FindSolutions {
                         }
                         else{
                             data[j] = (double)dataSet[line][column];
-                            data[j] = anonymizeValue(data[j], hierarchy, level);
+                            Double tempValue = (Double) anonymizeValue(data[j], hierarchy, level);
+                            String originalValue = hierarchy.getDictionary().getIdToString(tempValue.intValue());
+                            if(originalValue == null){
+                                data[j] = hierarchy.getDictionaryData().getIdToString(tempValue.intValue());
+                            }
+                            else{
+                                data[j] = originalValue;
+                            }
                         }
                     }
                     j++;
@@ -293,7 +300,7 @@ public class FindSolutions {
                 else{
 //                    DictionaryString dictionary = dictionaries.get(column);
                     
-                    //data[j] = dictionary.getIdToString((int)dataSet[line][column]);
+                    data[j] = dictionary.getIdToString((int)dataSet[line][column]);
                    
                     if(anonymizeColumn && level > 0){
                         if(colNamesType.get(column).contains("date")){
@@ -301,7 +308,14 @@ public class FindSolutions {
                         }
                         else{
                             data[j] = (double)dataSet[line][column];
-                            data[j] = anonymizeValue(data[j], hierarchy, level);
+                            Double tempValue = (Double) anonymizeValue(data[j], hierarchy, level);
+                            String originalValue = hierarchy.getDictionary().getIdToString(tempValue.intValue());
+                            if(originalValue == null){
+                                data[j] = hierarchy.getDictionaryData().getIdToString(tempValue.intValue());
+                            }
+                            else{
+                                data[j] = originalValue;
+                            }
                         }
                         
                     }
@@ -331,6 +345,7 @@ public class FindSolutions {
         Object anonymizedValue = value;
         
         for(int i=0; i<level; i++){
+            h.setLevel(i);
             if(h.getHierarchyType().equals("range")){
                 if(h.getNodesType().equals("double") ||  h.getNodesType().equals("int")){
                     if ( i ==0 ){

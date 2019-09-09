@@ -27,9 +27,12 @@ import graph.Node;
 import hierarchy.Hierarchy;
 import hierarchy.NodeStats;
 import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -58,6 +61,8 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
     public String hierarchyType = "distinct";
     public int height = -1;
     public BufferedReader br = null;
+    
+    int levelFlash = -1;
     
     //@JsonView(View.Hier.class)
     public Double root = null;
@@ -114,11 +119,14 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
     
     public void load(){
         try {
-            br = new BufferedReader(new FileReader(this.inputFile));
+            FileInputStream fstream = new FileInputStream(inputFile);
+            DataInputStream in = new DataInputStream(fstream);
+            br = new BufferedReader(new InputStreamReader(in));
             processingMetadata();
             loadHierarchy();
             findAllParents();
             br.close();
+            in.close();
         } catch (FileNotFoundException ex) {
             Logger.getLogger(HierarchyImplDouble.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
@@ -188,7 +196,7 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
                 this.name = tokens[1];
             }
             else if(tokens[0].equalsIgnoreCase("type")){
-                this.nodesType = tokens[1];
+                this.nodesType = tokens[1].replaceAll("decimal", "double");
             }
             else if(tokens[0].equalsIgnoreCase("height")){
                 this.height = Integer.parseInt(tokens[1]);
@@ -242,7 +250,19 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
     
 
     public Double getParent(Double node){
-        return this.parents.get(node);
+        if(levelFlash == -1){
+            return this.parents.get(node);
+        }
+        else{
+            Double anonValue = this.parents.get(node);
+//            System.out.println("Flash level "+levelFlash+" level anon node "+this.getLevel((double)anonValue)+" anonNode "+anonValue+" level node "+this.getLevel((double)node));
+            if(levelFlash == this.getLevel((double)node)){
+                return anonValue;
+            }
+            else{
+                return node;
+            }
+        }
     }
     
 
@@ -290,7 +310,7 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
         try (PrintWriter writer = new PrintWriter(file, "UTF-8")) {
             writer.println("distinct");
             writer.println("name " + this.name);
-            writer.println("type " + this.nodesType);
+            writer.println("type " + this.nodesType.replace("double", "decimal"));
             writer.println("height " + this.height);
             writer.println();
             
@@ -1407,6 +1427,50 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
 
     @Override
     public void setDictionaryData(DictionaryString dict) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void setLevel(int l) {
+        this.levelFlash = l;
+    }
+
+    @Override
+    public Map<Integer, Set<Double>> getLeafNodesAndParents() {
+        Set<Double> leaves = new HashSet<Double>(),parentLeaves = new HashSet<Double>();
+        boolean isParentLeaf = true;
+        for(Map.Entry<Integer,ArrayList<Double>> entry : this.allParents.entrySet()){
+            List<Double> nodesInLevel = entry.getValue();
+            if(entry.getKey() != height-1){
+                for(Double node : nodesInLevel){
+                    if(this.children.get(node) == null){
+                        leaves.add(node);
+                        List<Double> brothers = this.children.get(this.parents.get(node));
+                        isParentLeaf = true;
+                        for(Double brother : brothers){
+                            if(this.children.containsKey(brother)){
+                                isParentLeaf = false;
+                                break;
+                            }
+                        }
+                        if(isParentLeaf){
+                            parentLeaves.add(this.parents.get(node));
+                        }
+                    }
+                }
+            }
+            else{
+                leaves.addAll(nodesInLevel);
+            }
+        }
+        Map<Integer,Set<Double>> nodesAndParents = new HashMap();
+        nodesAndParents.put(0, leaves);
+        nodesAndParents.put(1, parentLeaves);
+        return nodesAndParents;
+    }
+
+    @Override
+    public void syncDictionaries(Integer column, Data data) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

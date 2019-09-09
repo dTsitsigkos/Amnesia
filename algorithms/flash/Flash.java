@@ -97,7 +97,9 @@ public class Flash implements Algorithm{
         
         //outer loop of Flash algorithm
         for(int level = 0; level <= lattice.getHeight()-1; level++){
+//            System.out.println("Level "+level);
             for(LatticeNode node : sorter.sort(lattice.getLevels()[level])){
+//                System.out.println("node id "+node.id+" node transf "+Arrays.toString(node.getTransformation())+" is tagged "+node.isTagged());
                 if(!node.isTagged()){
                     LatticeNode[] path = findPath(node, maxLevels, distinctValues);
                     try {
@@ -121,7 +123,7 @@ public class Flash implements Algorithm{
                }
             }
         }
-        System.out.println("Results : " + this.resultset);
+//        System.out.println("Results : " + this.resultset);
     }
     
     public void checkPath(LatticeNode[] path, Heap heap) throws ParseException{
@@ -174,7 +176,7 @@ public class Flash implements Algorithm{
     
     public boolean checkAndTag(LatticeNode node) throws ParseException{
         Buffer curBuffer = null;
-
+//        System.out.println("Check and Tag "+node.id+" transf "+Arrays.toString(node.getTransformation()));
         LatticeNode bestNode = this.buffers.findClosestNode(node);
         
         if (bestNode != null){
@@ -233,7 +235,7 @@ public class Flash implements Algorithm{
         int k = 0;
         String[] attrNames = new String[hierarchies.size()];
         for (Map.Entry<Integer, Hierarchy> entry : hierarchies.entrySet()) {
-            System.out.println(entry.getKey()+" : "+dataset.getColumnByPosition(entry.getKey()));
+//            System.out.println(entry.getKey()+" : "+dataset.getColumnByPosition(entry.getKey()));
             attrNames[k] = dataset.getColumnByPosition(entry.getKey());
             k++;
         }

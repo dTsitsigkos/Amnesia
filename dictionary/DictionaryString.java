@@ -19,8 +19,10 @@
 package dictionary;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 /**
@@ -84,6 +86,10 @@ public class DictionaryString {
         return stringToId.containsKey(key);
     }
     
+    public boolean containsId(Integer id){
+        return this.idToString.containsKey(id);
+    }
+    
     /**
      * Checks if this dictionary is subset of another one
      * @param dict2 the other dictionary
@@ -122,7 +128,24 @@ public class DictionaryString {
         if(this.idToString.isEmpty() && this.stringToId.isEmpty()){
             return -1;
         }
-        return Collections.max(this.idToString.keySet());
+        return Collections.max(this.idToString.entrySet(),new Comparator<Map.Entry<Integer, String>>() {
+
+            @Override
+            public int compare(Entry<Integer, String> o1, Entry<Integer, String> o2) {
+                if(o1.getKey() == 2147483646 && o2.getKey()== 2147483646){
+                    return 0;
+                }
+                else if(o1.getKey() == 2147483646){
+                    return 0;
+                }
+                else if(o1.getKey() == 2147483646){
+                    return 1;
+                }
+                else{
+                   return o1.getKey().compareTo(o2.getKey());
+                }
+            }
+        }).getKey();
     }
 
     public Map<Integer, String> getIdToString() {
@@ -137,6 +160,12 @@ public class DictionaryString {
         this.remove(id);
         this.putIdToString(id, newValue);
         this.putStringToId(newValue, id);
+    }
+    
+    public void replace(String value, Integer id, Integer oldId){
+        this.remove(oldId);
+        this.putIdToString(id, value);
+        this.putStringToId(value, id);
     }
     
     
