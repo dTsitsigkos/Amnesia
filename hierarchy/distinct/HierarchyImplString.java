@@ -1862,5 +1862,10 @@ public class HierarchyImplString implements Hierarchy<Double> {
 //            }
 //        }
     }
+
+    @Override
+    public int findCommonHeight(Double n1, Double n2) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
     
 }   

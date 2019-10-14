@@ -76,6 +76,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -159,7 +166,8 @@ public class AppCon extends SpringBootServletInitializer {
 //@RequestMapping("/greeting")
 class AppController {
     
-    private String os = "windows";
+    private String os = "linux";
+    String rootPath = System.getProperty("catalina.home");
 
     
     @RequestMapping(value = "/")
@@ -203,7 +211,7 @@ class AppController {
             if(os.equals("online")){
 //            if (input == null){
 
-                String rootPath = System.getProperty("catalina.home");
+//                String rootPath = System.getProperty("catalina.home");
                 //String rootPath = "/usr/local/apache-tomcat-8.0.15";
 //                String rootPath = "/var/lib/tomcat8";
                 dir = new File(rootPath + File.separator + "amnesia"+ File.separator + session.getId());  
@@ -289,7 +297,6 @@ class AppController {
 
                 return  errMes;
             } catch (Exception e) {
-                    //return "You failed to upload " + file.getOriginalFilename() + " => " + e.getMessage();
                     errMes.setSuccess(false);
                     errMes.setProblem("You failed to upload " + file.getOriginalFilename() + " => " + e.getMessage());
                     return  errMes;
@@ -307,7 +314,7 @@ class AppController {
     public @ResponseBody void errorHandling(@RequestParam("error") String error, HttpSession session) throws IOException{
         if(os.equals("online")){
             System.out.println("Error handling");
-            String rootPath = System.getProperty("catalina.home");
+//            String rootPath = System.getProperty("catalina.home");
 //            String rootPath = "/var/lib/tomcat8";
             File dir = new File(rootPath+File.separator+"amnesia"+File.separator+"errorLog");
             if(!dir.exists()){
@@ -318,7 +325,7 @@ class AppController {
 //                errorFile.createNewFile();
 //            }
             BufferedWriter out = new BufferedWriter(new FileWriter(errorFile.getAbsolutePath(),true));
-            out.write(error+"\n\n\n\n");
+            out.write(error+"\n\n\n\n\n");
             out.close();
         }
     }
@@ -337,7 +344,6 @@ class AppController {
     public @ResponseBody ErrorMessage upload(@RequestParam("file") MultipartFile file,@RequestParam("data") boolean data , HttpSession session) throws Exception{
         
         ErrorMessage errMes = new ErrorMessage();
-        System.out.println("Eimai edwwwwww");
         String message = "memory problem";
         //boolean fileCreate = false;
         boolean problem = false;
@@ -430,7 +436,7 @@ class AppController {
                     
 //                    String rootPath = "/usr/local/apache-tomcat-8.0.15";
                     //System.out.println("session id  = " + session.getId());
-                    String rootPath = System.getProperty("catalina.home");
+//                    String rootPath = System.getProperty("catalina.home");
 //                    String rootPath = "/var/lib/tomcat8";
                     dir = new File(rootPath + File.separator + "amnesia"+ File.separator + session.getId());  
                     
@@ -660,6 +666,19 @@ class AppController {
             
             data.getTypesOfVariables(smallDataset);
         }
+        else if( datatype.equals("Disk")){
+//            data = new DiskData(fullPath,del,dict);
+//            
+//            result = data.findColumnTypes();
+//            
+//            if(result.equals("1")){
+//                return data;
+//            }
+//            
+//            String[][] smallDataset = data.getSmallDataSet();
+//            data.getTypesOfVariables(smallDataset);
+        }
+        
         
         session.setAttribute("data", data);
 
@@ -679,15 +698,33 @@ class AppController {
         }
         
         
+//        File dir = new File(inputPath);
+        
+        
+        
         File  dir = new File(inputPath.substring(0,index));
         
-        File dir2 = new File(inputPath);
-        System.out.println("Dir1 "+dir+" dir2 "+dir2);
-        FileUtils.cleanDirectory(dir2);
+//        File dir2 = new File(inputPath);
+//        System.out.println("Dir1 "+dir+" dir2 "+dir2);
+//        FileUtils.cleanDirectory(dir2);
         for (File file: dir.listFiles()) {
             System.out.println("Filename to delette "+file.getName()+" session "+session.toString());
             if(file.getName().equals(session.getId())){
-                FileUtils.forceDelete(file);
+                boolean deleteDir = true;
+//                FileUtils.forceDelete(file);
+                for(File sessionFile : file.listFiles()){
+//                    System.out.println("Directory session file "+sessionFile.getName());
+                    if(!sessionFile.getName().endsWith(".xml") && !sessionFile.getName().endsWith(".db")){
+                        
+                        sessionFile.delete();
+                    }
+                    else{
+                        deleteDir = false;
+                    }
+                }
+                if(deleteDir){
+                    FileUtils.forceDelete(file);
+                }
                 break;
             }
         }
@@ -1333,6 +1370,7 @@ class AppController {
         String checkHier = null;
         for (Map.Entry<Integer, Hierarchy> entry : quasiIdentifiers.entrySet()) {
             Hierarchy h = entry.getValue();
+//            System.out.println("h "+h+" htype "+h.getHierarchyType());
             if (h.getHierarchyType().equals("range")){
                 checkHier = h.checkHier();
             }
@@ -1367,6 +1405,11 @@ class AppController {
             args.put("k", k);
             algorithm = new ParallelFlash();
             session.setAttribute("algorithm", "flash");
+        }
+        else if(algorithmSelected.equals("Clustering")){
+//            args.put("k", k);
+//            algorithm = new ClusterBasedAlgorithm();
+//            session.setAttribute("algorithm", "clustering");
         }
         else if(algorithmSelected.equals("kmAnonymity") || algorithmSelected.equals("apriori") ||
                 algorithmSelected.equals("AprioriShort") || algorithmSelected.equals("mixedapriori")){
@@ -1420,17 +1463,57 @@ class AppController {
         //long startTime = System.currentTimeMillis();
 //        long startCpuTime = getCpuTime();
 
-        String message = "memory problem";
+        final String message = "memory problem";
+        String resultAlgo="";
+        Future<String> future = null;
         try {
-            
-            algorithm.anonymize();
+            if(os.equals("online")){
+                ExecutorService executor = Executors.newCachedThreadPool();
+                final Algorithm temp = algorithm;
+                future = executor.submit( new Callable<String>() {
+                public String call() throws OutOfMemoryError {
+                    try{
+                    temp.anonymize();
+                    }catch (OutOfMemoryError e) {
+                        return message;
+                    }
+                    
+                    
+                    return "Ok";
+                }});
+                resultAlgo = future.get(3, TimeUnit.MINUTES);
+            }
+            else{
+                algorithm.anonymize();
+            }
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        } catch (OutOfMemoryError e) {
-
+        }catch (TimeoutException e) {
+        // Too long time
+            if(future == null){
+                e.printStackTrace();
+            }
+            else{
+                e.printStackTrace();
+                future.cancel(true);
+                return "outoftime";
+            }
+        }
+        catch (OutOfMemoryError e) {
+            return message;
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+            Logger.getLogger(AppCon.class.getName()).log(Level.SEVERE, null, ex);
+            return "wrong";
+        } catch (ExecutionException ex) {
+            ex.printStackTrace();
+            Logger.getLogger(AppCon.class.getName()).log(Level.SEVERE, null, ex);
+            return "wrong";
+        }
+        
+        if(resultAlgo.equals(message)){
             return message;
         }
+        
 
         hierarchies = new HashMap<>();
         session.setAttribute("quasiIdentifiers", quasiIdentifiers);
@@ -1438,8 +1521,7 @@ class AppController {
 
         if(algorithm.getResultSet() == null){
             result = false;
-            message = "noresults";
-            return null;
+            return "noresults";
         }
         else{
 //            System.out.println("result set = " + algorithm.getResultSet() );
@@ -1879,8 +1961,8 @@ class AppController {
         Map<Integer, ZenodoFile> files = (Map<Integer, ZenodoFile>)session.getAttribute("zenodofiles");
         String inputPath = null;//(String)session.getAttribute("inputpath");
         if ( inputPath == null){
-            String rootPath = System.getProperty("catalina.home");
-            //String rootPath = "/var/lib/tomcat8";
+//            String rootPath = System.getProperty("catalina.home");
+//            String rootPath = "/var/lib/tomcat8";
             dir = new File(rootPath + File.separator + "amnesia"+ File.separator + session.getId());  
             if (!dir.exists()){
                     dir.mkdirs();
@@ -3150,7 +3232,28 @@ System.out.println("url = " + url);
     
     
     @RequestMapping(value="/action/restart", method = RequestMethod.POST) //method = RequestMethod.POST
-    public @ResponseBody void restart ( HttpSession session)  {
+    public @ResponseBody void restart ( HttpSession session) {
+        try{
+            String inputPath = (String) session.getAttribute("inputpath");
+            int index = inputPath.lastIndexOf(File.separator);
+
+            if(os.equals("online")){
+                File  dir = new File(inputPath.substring(0,index));
+                File dir2 = new File(inputPath);
+
+                FileUtils.cleanDirectory(dir2);
+                for (File file: dir.listFiles()) {
+                    if(file.getName().equals(session.getId())){
+                        FileUtils.forceDelete(file);
+                        break;
+                    }
+                }
+
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        
         Enumeration<String> allAttributes = session.getAttributeNames();
         while ( allAttributes.hasMoreElements()){
             String attrName = (String)  allAttributes.nextElement();
@@ -3158,6 +3261,9 @@ System.out.println("url = " + url);
         }
     
         System.gc();
+        
+        
+        
     }
     
     @RequestMapping(value="/action/deletedataset", method = RequestMethod.POST) //method = RequestMethod.POST
@@ -3228,7 +3334,9 @@ System.out.println("url = " + url);
     @RequestMapping(value="/action/createdatabase", method = RequestMethod.GET)
     public @ResponseBody String createDatabase(@RequestParam("name") String name, HttpSession session) throws ClassNotFoundException, InstantiationException, IllegalAccessException{
         Class.forName("org.sqlite.JDBC").newInstance();
-        String rootPath = System.getProperty("catalina.home");
+//        String rootPath = System.getProperty("catalina.home");
+//        String rootPath = "/usr/local/apache-tomcat-8.0.15";
+//                String rootPath = "/var/lib/tomcat8";
         String url = "jdbc:sqlite:"+rootPath+File.separator+name;
         try (Connection conn = DriverManager.getConnection(url)) {
             if (conn != null) {
@@ -3239,6 +3347,7 @@ System.out.println("url = " + url);
  
         } catch (SQLException e) {
             System.out.println(e.getMessage());
+            return e.getMessage();
         }
         return "Database created";
     }

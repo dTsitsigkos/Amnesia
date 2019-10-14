@@ -1074,6 +1074,7 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
 
     @Override
     public Integer getLevel(double nodeId) {
+        System.out.println("value level "+nodeId);
         return (this.height - this.getLevel((Double)nodeId) - 1) ;
     }
 
@@ -1472,6 +1473,45 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
     @Override
     public void syncDictionaries(Integer column, Data data) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public int findCommonHeight(Double n1, Double n2) {
+        int height1 = this.getLevel(n1.doubleValue());
+        int height2 = this.getLevel(n2.doubleValue());
+        System.out.println("Searching common "+n1+" and "+n2);
+        if(n1.equals(n2)){
+            System.out.println("Common "+n1+" with height "+height1);
+            return height1;
+        }
+        else{
+            while(height1 > height2){
+                n2 = this.getParent(n2);
+                height2 = this.getLevel(n2.doubleValue());
+            }
+            
+            while(height2 > height1){
+                n1 = this.getParent(n1);
+                height1 = this.getLevel(n1.doubleValue());
+            }
+            
+            if(n1.equals(n2)){
+                System.out.println("Common "+n1+" with height "+height1);
+                return height2;
+            }
+            
+            while(!n1.equals(n2)){
+                n1 = this.getParent(n1);
+                n2 = this.getParent(n2);
+                height2 = this.getLevel(n2.doubleValue());
+                height1 = this.getLevel(n1.doubleValue());
+            }
+            
+            System.out.println("Common "+n1+" with height "+height1);
+            return height1;
+            
+        }
+        
     }
 
    

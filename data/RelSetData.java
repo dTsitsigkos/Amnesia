@@ -227,13 +227,13 @@ public class RelSetData implements Data {
                                     return tmstmp;
                                 }
                                 else{
-                                    System.out.println("parse = " + parse);
+//                                    System.out.println("parse = " + parse);
                                     //System.out.println("date111111" );
                                     SimpleDateFormat sf = new SimpleDateFormat("dd/MM/yyyy");
 
                                     //Date date = sf.parse(tmstmp); 
                                     //System.out.println("date = " + date );
-                                    System.out.println("return = " +sf.format(d1));
+//                                    System.out.println("return = " +sf.format(d1));
                                     //System.out.println(date.);
                                     tmstmp = null;
                                     tmstmp = sf.format(d1);
@@ -242,13 +242,13 @@ public class RelSetData implements Data {
                             } 
                         }
                         else{
-                            System.out.println("parse = " + parse);
+//                            System.out.println("parse = " + parse);
                             //System.out.println("date111111" );
                             SimpleDateFormat sf = new SimpleDateFormat("dd/MM/yyyy");
 
                             //Date date = sf.parse(tmstmp); 
                             //System.out.println("date = " + date );
-                            System.out.println("return = " +sf.format(d1));
+//                            System.out.println("return = " +sf.format(d1));
                             //System.out.println(date.);
                             tmstmp = null;
                             tmstmp = sf.format(d1);

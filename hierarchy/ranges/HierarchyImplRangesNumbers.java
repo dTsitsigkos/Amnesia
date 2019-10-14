@@ -1759,4 +1759,9 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
     public void syncDictionaries(Integer column, Data data) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
+    @Override
+    public int findCommonHeight(Double n1, Double n2) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

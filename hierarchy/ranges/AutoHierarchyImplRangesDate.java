@@ -434,10 +434,10 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
             yearsMap.put(level, yearsArrTemp);
             */
             
-            System.out.println("mappppppppppppppppppppppppppppp222222222222222222222");
-            for (Map.Entry<Integer, ArrayList<Date>> entry : yearsMap.entrySet()) {
-                System.out.println(entry.getKey()+" : "+entry.getValue());
-            }
+//            System.out.println("mappppppppppppppppppppppppppppp222222222222222222222");
+//            for (Map.Entry<Integer, ArrayList<Date>> entry : yearsMap.entrySet()) {
+//                System.out.println(entry.getKey()+" : "+entry.getValue());
+//            }
             
             
             height = yearsMap.size();
@@ -466,7 +466,7 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
                     d = new RangeDate(yearsArr.get(j-1), yearsArr.get(j));
                     
                     
-                    System.out.println("current = " + currentDate + "/t end = " + dateEnd);
+//                    System.out.println("current = " + currentDate + "/t end = " + dateEnd);
                     
                     while ( currentDate.before(dateEnd)){
                         //System.out.println("currentDate2222 = " + currentDate );
@@ -506,7 +506,7 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
                     }
                     
                     
-                    System.out.println("months = " + monthsArr.toString());
+//                    System.out.println("months = " + monthsArr.toString());
                     
                     childsTemp = new ArrayList<RangeDate>(); 
                     for( int k = firstlimit ; k < monthsArr.size() ; k = k + 2){
@@ -515,7 +515,7 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
                     }
                     children.put(d, childsTemp);
                     
-                    System.out.println("childsTemp = " + childsTemp );
+//                    System.out.println("childsTemp = " + childsTemp );
                     
                     
                     //firstlimit = childsTemp.size() - 1 ;

@@ -36,6 +36,7 @@ import javax.swing.JTable;
 import javax.swing.table.TableModel;
 import dictionary.DictionaryString;
 import hierarchy.Hierarchy;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
@@ -46,9 +47,10 @@ import jsoninterface.View;
  *
  * @author jimakos
  */
-public class SETData implements Data {
+public class SETData implements Data,Serializable {
     @JsonView(View.GetColumnNames.class)
     private double dataSet[][] = null;
+    @JsonView(View.GetColumnNames.class)
     private String inputFile = null;
     private int sizeOfRows = 0;
     private int sizeOfCol = 0;

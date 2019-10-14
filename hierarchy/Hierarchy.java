@@ -97,4 +97,5 @@ public interface Hierarchy <T> {
     
     public String checkHier();
     public int translateDateViaLevel(int level);
+    public int findCommonHeight(Double n1, Double n2);
 }

@@ -205,13 +205,13 @@ public class MixedSolutionCombinations {
                 });
                 
                 Set<Pair<Integer,Object>> tempRelSet = this.pureSet(new HashSet(tempComb));
-                System.out.println("Potential comb "+Arrays.toString(tempComb.toArray())+" k="+trieRelational.get(tempRelSet) +" pure comb "+tempRelSet +" size m "+size);
+//                System.out.println("Potential comb "+Arrays.toString(tempComb.toArray())+" k="+trieRelational.get(tempRelSet) +" pure comb "+tempRelSet +" size m "+size);
                 if((trieRelational.containsKey(tempRelSet) && trieRelational.get(tempRelSet) >= k) || tempRelSet.size()<size){
 //                    double score = trieRelational.get(tempRelSet);
                     double score = ((MixedApriori)alg).getAddedCost(tempComb, base);
                     if(!results.containsKey(score)){
                         results.put(score, tempComb);
-                        System.out.println("Result solution comb comb "+Arrays.toString(tempComb.toArray())+" score "+score);
+//                        System.out.println("Result solution comb comb "+Arrays.toString(tempComb.toArray())+" score "+score);
                     }
                 }
             }

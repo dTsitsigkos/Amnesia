@@ -352,9 +352,9 @@ public class MixedApriori implements Algorithm {
 //                    }
                 }
                 else{
-                    for(Entry<Set<Pair<Integer,Object>>,Integer> entry : this.trieRelational.entrySet()){
-                        System.out.println(this.anonymize_property+Arrays.toString(entry.getKey().toArray())+" support "+entry.getValue());
-                    }
+//                    for(Entry<Set<Pair<Integer,Object>>,Integer> entry : this.trieRelational.entrySet()){
+//                        System.out.println(this.anonymize_property+Arrays.toString(entry.getKey().toArray())+" support "+entry.getValue());
+//                    }
                 }
                 fixAll();  
                 System.out.println("ok with fix "+this.anonymize_property+" m = "+j);
@@ -754,12 +754,12 @@ public class MixedApriori implements Algorithm {
                 
 //                Pair<Integer,Double> nodeValue = getHighestLevelRelational(combNode);
                 Set<Pair<Integer,Object>> translated_comb = this.getTranslateTransactionRelational(combNode);
-                System.out.println("General fix rel"+Arrays.toString(translated_comb.toArray())+" and comb "+combNode+" k = "+trieRelational.get(translated_comb));
+//                System.out.println("General fix rel"+Arrays.toString(translated_comb.toArray())+" and comb "+combNode+" k = "+trieRelational.get(translated_comb));
                     if(!trieRelational.containsKey(translated_comb) || trieRelational.get(translated_comb) >= k)
                         continue;
 
                     if(trieRelational.get(translated_comb) < k){
-                        System.out.println("Run fix rel"+Arrays.toString(combNode.toArray()));
+//                        System.out.println("Run fix rel"+Arrays.toString(combNode.toArray()));
                         List<Pair<Integer,Object>> itemset = new ArrayList<Pair<Integer,Object>>(translated_comb);
                         fixRelational(itemset);
                     }
@@ -1555,8 +1555,8 @@ public class MixedApriori implements Algorithm {
                         continue;
                     }
                     if((!anonItem.equals(prefix.get(i))) && anonItem.equals(this.getTranslation(anonItem)) && !this.vistitedRelational.contains(anonItem)){
-                        System.out.println("Gonna generalized "+Arrays.toString(anonPath.toArray()) +" score "+entry.getKey());
-                        System.out.println("General anon : "+anonItem);
+//                        System.out.println("Gonna generalized "+Arrays.toString(anonPath.toArray()) +" score "+entry.getKey());
+//                        System.out.println("General anon : "+anonItem);
                         generalize(anonItem);  //// TODO
                         this.vistitedRelational.add(anonItem);
                         
@@ -1736,7 +1736,7 @@ public class MixedApriori implements Algorithm {
                 continue;
             }
             if( (!anonItem.equals(base.get(i)))){
-                System.out.println("AnonItem "+anonItem+" comb "+comb);
+//                System.out.println("AnonItem "+anonItem+" comb "+comb);
                 generalizeTest(anonItem);
             }
         }
@@ -1744,7 +1744,7 @@ public class MixedApriori implements Algorithm {
         existingCost = getTotalCost();  //// TODO change relational condition 
         newCost = getTestCost();
         
-        System.out.println("exist cost "+existingCost+" test cost "+newCost+" for "+comb+" sum "+(newCost - existingCost));
+//        System.out.println("exist cost "+existingCost+" test cost "+newCost+" for "+comb+" sum "+(newCost - existingCost));
         return (newCost - existingCost);
     }
     
