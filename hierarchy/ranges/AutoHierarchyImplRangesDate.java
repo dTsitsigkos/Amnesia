@@ -5,6 +5,10 @@
  */
 package hierarchy.ranges;
 
+import exceptions.LimitException;
+import controller.AppCon;
+import static hierarchy.Hierarchy.online_limit;
+import static hierarchy.Hierarchy.online_version;
 import hierarchy.NodeStats;
 import java.math.BigDecimal;
 import java.text.ParseException;
@@ -56,7 +60,7 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
     //children
     
     @Override
-    public void autogenerate() {
+    public void autogenerate() throws LimitException {
         
         ArrayList<RangeDate> initList = new ArrayList<>();
         
@@ -222,6 +226,12 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
             ArrayList<RangeDate> allP2 = new ArrayList<RangeDate>();
             allP.add(root);
             allParents.put(0, allP);
+            
+            counterNodes ++;
+            if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+                throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+            }
+            
             allP = new ArrayList<RangeDate>();
 
             ArrayList<RangeDate> allC = new ArrayList<RangeDate>();
@@ -253,6 +263,12 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
             }
             allParents.put(1, allP);
             allParents.put(2, allP2);
+            
+            counterNodes += allP.size() + allP2.size();
+            if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+                throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+            }
+            
             children.put(root, allC);     
             
             ////////////////////////////////////////////////////////////////////////////////////////
@@ -394,9 +410,15 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
                             p = p + 2;        
                         }
                     
-                    
+                        counterNodes += childsTemp.size() ;
+                        if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+                            throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+                        }
                     
                         children.put(d, childsTemp);
+                        
+                        
+                        
                         childsTemp = new ArrayList<RangeDate>();
                     
                 }
@@ -516,7 +538,10 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
                     children.put(d, childsTemp);
                     
 //                    System.out.println("childsTemp = " + childsTemp );
-                    
+                    counterNodes += childsTemp.size();
+                    if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+                        throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+                    }
                     
                     //firstlimit = childsTemp.size() - 1 ;
                     childsTemp = new ArrayList<RangeDate>();
@@ -597,6 +622,11 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
                             parents.put(new RangeDate(daysArr.get(k-1), daysArr.get(k) ),  new RangeDate(monthsArr.get(i-1), monthsArr.get(i)));
                         }
                         children.put(d, childsTemp);
+                        
+                        counterNodes += childsTemp.size();
+                        if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+                            throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+                        }
 
                         childsTemp = new ArrayList<RangeDate>();
                         firstlimit = daysArr.size() + 1 ;
@@ -620,6 +650,12 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
             ArrayList<RangeDate> allP = new ArrayList<RangeDate>();
             ArrayList<RangeDate> allP2 = new ArrayList<RangeDate>();
             allP.add(tempRoot);
+            
+            counterNodes ++;
+            if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+                throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+            }
+            
             allParents.put(0, allP);
             stats.put(tempRoot, new NodeStats(0));
             root = tempRoot;

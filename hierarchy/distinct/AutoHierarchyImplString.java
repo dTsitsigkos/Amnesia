@@ -18,6 +18,8 @@
  */
 package hierarchy.distinct;
 
+import exceptions.LimitException;
+import controller.AppCon;
 import data.Data;
 import data.RelSetData;
 import data.SETData;
@@ -60,10 +62,33 @@ public class AutoHierarchyImplString extends HierarchyImplString {
     }
     
     @Override
-    public void autogenerate() {
+    public void autogenerate() throws LimitException {
         int column = dataset.getColumnByName(attribute);
         double[][] data = dataset.getDataSet();
-        int strCount = dictData.getMaxUsedId()+1;
+        int strCount;
+        
+        if(dictData.isEmpty() && dict.isEmpty()){
+            System.out.println("Both empty");
+            strCount = 1;
+        }
+        else if(!dictData.isEmpty() && !dict.isEmpty()){
+            System.out.println("Both have values");
+            if(dictData.getMaxUsedId() > dict.getMaxUsedId()){
+                strCount = dictData.getMaxUsedId()+1;
+            }
+            else{
+                strCount = dict.getMaxUsedId()+1;
+            }
+        }
+        else if(dictData.isEmpty()){
+            System.out.println("Dict data empty");
+            strCount = dict.getMaxUsedId()+1;
+        }
+        else{
+            System.out.println("Dict hier empty");
+            strCount = dictData.getMaxUsedId()+1;
+        }
+
 //        DictionaryString dict = dataset.getDictionary();
 
         Set<Double> itemsSet = new HashSet<>();
@@ -151,6 +176,12 @@ public class AutoHierarchyImplString extends HierarchyImplString {
                 curLevelSize = prevLevel.length;
             }
             
+            counterNodes += curLevelSize;
+            if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+                throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+            }
+            
+            
             Double[] curLevel = new Double[curLevelSize];
             int curLevelIndex = 0;
             
@@ -191,23 +222,24 @@ public class AutoHierarchyImplString extends HierarchyImplString {
             }
 
             allParents.put(curHeight, new ArrayList<>(Arrays.asList(curLevel)));
+            
         }
 
         root = allParents.get(0).get(0);
         stats.put(root, new NodeStats(0));
         
         
-        System.out.println("allParents");
-        for (Map.Entry<Integer, ArrayList<Double>> entry : allParents.entrySet()) {
-            System.out.println(entry.getKey()+" : "+ entry.getValue().toString());
-        }
-        
-        System.out.println("parents");
-        for (Map.Entry<Double, Double> entry : parents.entrySet()) {
-            System.out.println(entry.getKey()+" : "+ entry.getValue().toString());
-        }
-        
-        
+//        System.out.println("allParents");
+//        for (Map.Entry<Integer, ArrayList<Double>> entry : allParents.entrySet()) {
+//            System.out.println(entry.getKey()+" : "+ entry.getValue().toString());
+//        }
+//        
+//        System.out.println("parents");
+//        for (Map.Entry<Double, Double> entry : parents.entrySet()) {
+//            System.out.println(entry.getKey()+" : "+ entry.getValue().toString());
+//        }
+
+    
         
         
     }
@@ -223,6 +255,6 @@ public class AutoHierarchyImplString extends HierarchyImplString {
     
     private String randomNumber(){
         return "Random" + randomNumber++;
-    }
+    }  
     
-}
+}      

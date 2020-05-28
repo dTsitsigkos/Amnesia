@@ -6,6 +6,7 @@
 package hierarchy.ranges;
 
 import anonymizeddataset.AnonymizedDataset;
+import java.math.BigInteger;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -118,6 +119,12 @@ public class RangeDate {
         return this.contains(d);
     }
     
+    public void print(){
+        BigInteger total = BigInteger.ZERO;
+        System.out.print(this.toString());
+        System.out.println("Time: "+BigInteger.valueOf(this.lowerBound.getTime())+"    "+BigInteger.valueOf(this.lowerBound.getTime()));
+    }
+    
     public boolean contains(Date v){
         //return v >= this.lowerBound && v <= this.upperBound;
 //        System.out.println("v = "+v);
@@ -187,6 +194,79 @@ public class RangeDate {
         }
     }
     
+    private boolean lastDayOfMonth(int year, int month, int day){
+        if(month == 2){
+            if(year % 4 == 0){
+                if(day == 29){
+                    return true;
+                }
+                else{
+                    return false;
+                }
+            }
+            else if(day == 28){
+                return true;
+            }
+            else{
+                return false;
+            }
+        }
+        else if(month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12){
+            if(day == 31){
+                return true;
+            }
+            else{
+                return false;
+            }
+        }
+        else{
+          if(day == 30){
+                return true;
+            }
+            else{
+                return false;
+            }  
+        }
+    }
+    
+    public String dateToString(){
+        String str = null;
+        Calendar calendar = Calendar.getInstance() ;
+        if(lowerBound!=null){
+            calendar.setTime(lowerBound);
+
+            Calendar calendar2 = Calendar.getInstance() ;
+
+            calendar2.setTime(upperBound);
+            if(calendar.get(Calendar.YEAR) == calendar2.get(Calendar.YEAR)){
+                str = Integer.toString(calendar.get(Calendar.YEAR));
+            }
+            else{
+                str = calendar.get(Calendar.YEAR) + "-" +calendar2.get(Calendar.YEAR);
+            }
+            if((calendar.get(Calendar.YEAR) != calendar2.get(Calendar.YEAR)) && ((calendar.get(Calendar.MONTH) + 1) == 1 && (calendar2.get(Calendar.MONTH) + 1) == 12) &&  (calendar.get(Calendar.DAY_OF_MONTH) == 1 && calendar2.get(Calendar.DAY_OF_MONTH) == 31)){
+                return str; 
+            }
+            else{
+                if(calendar.get(Calendar.DAY_OF_MONTH) == 1 && lastDayOfMonth(calendar2.get(Calendar.YEAR),(calendar2.get(Calendar.MONTH) + 1),calendar2.get(Calendar.DAY_OF_MONTH)) && calendar.get(Calendar.MONTH) != calendar2.get(Calendar.MONTH)){
+                    if(((calendar.get(Calendar.MONTH) + 1) == 1 && (calendar2.get(Calendar.MONTH) + 1) == 12) && calendar.get(Calendar.YEAR) == calendar2.get(Calendar.YEAR)){
+                        str = Integer.toString(calendar.get(Calendar.YEAR));
+                    }
+                    else{
+                        str = (calendar.get(Calendar.MONTH) + 1) + "/" + calendar.get(Calendar.YEAR) + "-" + (calendar2.get(Calendar.MONTH)  + 1) + "/" + calendar2.get(Calendar.YEAR);
+                    }
+                }
+                else{
+                    str = calendar.get(Calendar.DAY_OF_MONTH) + "/" + ( calendar.get(Calendar.MONTH) + 1) + "/" + calendar.get(Calendar.YEAR) + "-" + calendar2.get(Calendar.DAY_OF_MONTH) + "/" + (calendar2.get(Calendar.MONTH) + 1) + "/" + calendar2.get(Calendar.YEAR);
+                }
+            }
+            return str;
+        }
+        else{
+            return "(null)";
+        }
+    }
+    
     public String dateToString(int level){
         String str = null;
         Calendar calendar = Calendar.getInstance() ;
@@ -201,7 +281,12 @@ public class RangeDate {
 
             switch (level) {
                 case 0:
-                    str = calendar.get(Calendar.YEAR) + "-" +calendar2.get(Calendar.YEAR);
+                    if(calendar.get(Calendar.YEAR) == calendar2.get(Calendar.YEAR)){
+                        str = Integer.toString(calendar.get(Calendar.YEAR));
+                    }
+                    else{
+                        str = calendar.get(Calendar.YEAR) + "-" +calendar2.get(Calendar.YEAR);
+                    }
                     break;
                 case 1:
                     str = (calendar.get(Calendar.MONTH) + 1) + "/" + calendar.get(Calendar.YEAR) + "-" + (calendar2.get(Calendar.MONTH)  + 1) + "/" + calendar2.get(Calendar.YEAR);
@@ -218,6 +303,33 @@ public class RangeDate {
         return str;
     }
     
+    public static String dateToString(int level,Date d){
+        String str = null;
+        Calendar calendar = Calendar.getInstance() ;
+        if(d!=null){
+            calendar.setTime(d);
+            switch (level) {
+                case 0:
+                    str = calendar.get(Calendar.YEAR)+"";
+                    break;
+                case 1:
+                    str = (calendar.get(Calendar.MONTH) + 1) + "/" + calendar.get(Calendar.YEAR);
+                    break;
+                default:
+                    str = calendar.get(Calendar.DAY_OF_MONTH) + "/" + ( calendar.get(Calendar.MONTH) + 1) + "/" + calendar.get(Calendar.YEAR) ;
+                    break;
+            }
+        }
+        else{
+            str = "(null)";
+        }
+        
+        
+        return str;
+    }
+    
+    
+    
     public String dateToExportHierString(int level){
         String str = null;
         Calendar calendar = Calendar.getInstance() ;
@@ -232,7 +344,12 @@ public class RangeDate {
 
             switch (level) {
                 case 0:
-                    str = calendar.get(Calendar.YEAR) + "," +calendar2.get(Calendar.YEAR);					
+                    if(calendar.get(Calendar.YEAR) == calendar2.get(Calendar.YEAR)){
+                        str = Integer.toString(calendar.get(Calendar.YEAR));
+                    }
+                    else{
+                        str = calendar.get(Calendar.YEAR) + "-" +calendar2.get(Calendar.YEAR);
+                    }					
                     break;
                 case 1:
                     str = (calendar.get(Calendar.MONTH) + 1) + "/" + calendar.get(Calendar.YEAR) + "," + (calendar2.get(Calendar.MONTH)  + 1) + "/" + calendar2.get(Calendar.YEAR);
@@ -250,8 +367,17 @@ public class RangeDate {
     }
     
     public static RangeDate parseRange(String str) throws ParseException{
+        if(str.contains("null")){
+            return new RangeDate(null,null);
+        }
         SimpleDateFormat sf = new SimpleDateFormat("E MMM dd HH:mm:ss z yyyy" );
         String[] arr = str.split("-");
+        
+        if(arr.length != 2){
+            Date lowBound = sf.parse(str.trim());
+            Date highBound = sf.parse(str.trim());
+            return new RangeDate(lowBound, highBound);
+        }
        
         Date lowBound = sf.parse(arr[0].trim());
         Date highBound = sf.parse(arr[1].trim());

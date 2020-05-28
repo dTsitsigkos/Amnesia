@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * A dictionary for a string attribute
@@ -35,9 +36,14 @@ public class DictionaryString {
     
     
     public DictionaryString(){
-        idToString = new HashMap<Integer,String>();
-        stringToId = new HashMap<String,Integer>();
+        idToString = new TreeMap<Integer,String>();
+        stringToId = new TreeMap<String,Integer>();
        
+    }
+    
+    public DictionaryString(DictionaryString d){
+        this.idToString =  new TreeMap<Integer,String>(d.idToString);
+        this.stringToId = new TreeMap<String,Integer>(d.stringToId);
     }
     
     /**
@@ -166,6 +172,16 @@ public class DictionaryString {
         this.remove(oldId);
         this.putIdToString(id, value);
         this.putStringToId(value, id);
+    }
+    
+    public boolean isEmpty(){
+        return this.idToString.isEmpty() && this.stringToId.isEmpty();
+    }
+    
+    public void print() {
+        for(Entry<Integer,String> entry : this.idToString.entrySet()){
+            System.out.println("Id "+entry.getKey()+" -> "+entry.getValue());
+        }
     }
     
     

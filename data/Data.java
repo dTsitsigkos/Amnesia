@@ -18,10 +18,12 @@
  */
 package data;
 
+import exceptions.LimitException;
 import java.util.Map;
 import java.util.Set;
 import javax.swing.JTable;
 import dictionary.DictionaryString;
+import exceptions.DateParseException;
 import hierarchy.Hierarchy;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -33,15 +35,17 @@ import java.util.LinkedHashMap;
  * @author serafeim
  */
 public interface Data {
+    public int online_rows = 5000;
+    public String online_version = "online";
     public double[][] getDataSet();
     public void setData(double[][] _data);
     public int getDataLenght();
     public int getDataColumns();
     public void print();
     public void exportOriginalData();
-    public String save(boolean[] checkColumns);
-    public void preprocessing();
-    public String readDataset(String[] columnTypes, boolean [] checkColumns);
+    public String save(boolean[] checkColumns) throws LimitException,DateParseException;
+    public void preprocessing() throws LimitException;
+    public String readDataset(String[] columnTypes, boolean [] checkColumns) throws LimitException,DateParseException;
     public void export(String file, Object[][] initialTable, Object[][] anonymizedTable, int[] qids, Map<Integer, Hierarchy> hierarchies, Map<Integer, Set<String>> suppressedValues);
     public Map <Integer,String> getColNamesPosition();
 //    public Map <Integer,DictionaryString> getDictionary();

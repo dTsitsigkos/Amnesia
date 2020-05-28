@@ -18,7 +18,11 @@
  */
 package hierarchy.distinct;
 
+import exceptions.LimitException;
+import controller.AppCon;
 import data.Data;
+import static hierarchy.Hierarchy.online_limit;
+import static hierarchy.Hierarchy.online_version;
 import hierarchy.NodeStats;
 import hierarchy.ranges.RangeDouble;
 import java.util.ArrayList;
@@ -74,7 +78,7 @@ public class AutoHierarchyImplDouble extends HierarchyImplDouble{
      * Automatically generates hierarchy's structures
      */
     @Override
-    public void autogenerate() {
+    public void autogenerate() throws LimitException {
         int column = dataset.getColumnByName(attribute);
         Set<Double> itemsSet = new TreeSet<>();
         
@@ -130,6 +134,11 @@ public class AutoHierarchyImplDouble extends HierarchyImplDouble{
             if(fanout > 0){
                 curLevelSize = prevLevel.length;
             }
+            
+            counterNodes += curLevelSize;
+            if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+                throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+            }
 
             Double[] curLevel = new Double[curLevelSize];
             int curLevelIndex = 0;
@@ -177,6 +186,10 @@ public class AutoHierarchyImplDouble extends HierarchyImplDouble{
         root = allParents.get(0).get(0);
         stats.put(root, new NodeStats(0));
         System.out.println("counter " + count);
+        
+        Double nan = Double.NaN;
+        allParents.get(1).add(nan);
+        
 //        long end = System.currentTimeMillis();
 //        System.out.println("Time: " + (end - start));
 

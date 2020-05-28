@@ -5,6 +5,10 @@
  */
 package hierarchy.ranges;
 
+import exceptions.LimitException;
+import controller.AppCon;
+import static hierarchy.Hierarchy.online_limit;
+import static hierarchy.Hierarchy.online_version;
 import hierarchy.NodeStats;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,7 +42,7 @@ public class AutoHierarchyImplRangesNumbers2 extends HierarchyImplRangesNumbers{
      * Automatically generates hierarchy's structures
      */
     @Override
-    public void autogenerate() {
+    public void autogenerate() throws LimitException {
         Map <Integer, ArrayList<RangeDouble>> numbersMap = new HashMap<Integer,ArrayList<RangeDouble>>();
         
         ArrayList<RangeDouble> initList = new ArrayList<>();
@@ -53,23 +57,33 @@ public class AutoHierarchyImplRangesNumbers2 extends HierarchyImplRangesNumbers{
             
             currentNumber = currentNumber + step;
             if ( currentNumber >= end){
-                if (end-rangeD.lowerBound >= 1){
-                     rangeD.setUpperBound(end);
-                     initList.add(rangeD);
-                }
+//                if (end-rangeD.lowerBound >= 1){
+//                     rangeD.setUpperBound(end);
+//                     initList.add(rangeD);
+//                }
+                
+                rangeD.setUpperBound(end);
+//                rangeD.toFixed(start, end);
+                initList.add(rangeD);
 
                 break;
             }
             
             rangeD.setUpperBound(currentNumber);
+//            rangeD.toFixed(start, end);
             initList.add(rangeD);
             
         }
         System.out.println("Last level init list = " + initList.toString());
         
+        
+        
         numbersMap.put(0, initList);
         
-        
+        counterNodes += initList.size();
+        if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+            throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+        }
         
         
         int numOfRanges = initList.size();
@@ -104,6 +118,7 @@ public class AutoHierarchyImplRangesNumbers2 extends HierarchyImplRangesNumbers{
                     }
                     //else{
                     rangeD.setUpperBound(initList.get(initList.size()-1).upperBound);
+//                    rangeD.toFixed(start, end);
                     initListTemp.add(rangeD);
                         //initList.add(initList.get(initList.size()-1));
                     //}
@@ -113,6 +128,7 @@ public class AutoHierarchyImplRangesNumbers2 extends HierarchyImplRangesNumbers{
 
                 
                 rangeD.setUpperBound(initList.get(i).upperBound);
+//                rangeD.toFixed(start, end);
                 initListTemp.add(rangeD);
                 
                 i++;
@@ -130,6 +146,11 @@ public class AutoHierarchyImplRangesNumbers2 extends HierarchyImplRangesNumbers{
             
             numbersMap.put(level, initListTemp);
             
+            counterNodes += initListTemp.size();
+            if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+                throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+            }
+            
             ArrayList<RangeDouble> prevLevelYear = numbersMap.get(level - 1);
             
             int p = 0;
@@ -143,7 +164,14 @@ public class AutoHierarchyImplRangesNumbers2 extends HierarchyImplRangesNumbers{
                     parents.put(prevLevelYear.get(p), initListTemp.get(k));
                     p = p + 1;        
                 }
-
+                   
+                
+                counterNodes += childsTemp.size();
+                if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+                    throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+                }
+                
+                
                 children.put(initListTemp.get(k), childsTemp);
                 childsTemp = new ArrayList<RangeDouble>();
             }
@@ -174,6 +202,11 @@ public class AutoHierarchyImplRangesNumbers2 extends HierarchyImplRangesNumbers{
         stats.put(tempRoot, new NodeStats(0));
         root = tempRoot;
         root.nodesType = nodesType;
+        
+        counterNodes ++;
+        if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+            throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+        }
         
 //        root = new RangeDouble(start,end);
 //        root.nodesType = nodesType;

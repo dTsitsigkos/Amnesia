@@ -359,6 +359,10 @@ public class MixedApriori implements Algorithm {
                 fixAll();  
                 System.out.println("ok with fix "+this.anonymize_property+" m = "+j);
             }
+            
+            for(Entry<Integer,Hierarchy> entry : this.hierarchies.entrySet()){
+                entry.getValue().clearAprioriStructures();
+            }
         }
     }
     
@@ -613,7 +617,11 @@ public class MixedApriori implements Algorithm {
     
     private double getTranslation(double point){
 //        System.out.println("point "+point+" "+dataset.getDictionary().getIdToString((int)point)+" Hier "+hierarchySet.getDictionary().getIdToString((int)point));
-        return pointMapSet.get(point)[1].doubleValue();
+        if(pointMapSet.get(point) != null)
+            return pointMapSet.get(point)[1].doubleValue();
+        else{
+            return Double.NaN;
+        }
     }
      
      
@@ -986,8 +994,10 @@ public class MixedApriori implements Algorithm {
                             pointMapSet.put(nodeId.doubleValue(), temp);
                             costsSet.put(nodeId.doubleValue(), 0.0);
                             Set<Double> children = this.hierarchySet.getChildrenIds(nodeId);
-                            for(Double child : children){
-                                costsSet.put(nodeId.doubleValue(), costsSet.get(nodeId.doubleValue())+costsSet.get(child));
+                            if(children!=null){
+                                for(Double child : children){
+                                    costsSet.put(nodeId.doubleValue(), costsSet.get(nodeId.doubleValue())+costsSet.get(child));
+                                }
                             }
                         }
                     }

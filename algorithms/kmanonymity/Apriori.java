@@ -95,6 +95,7 @@ public class Apriori implements Algorithm {
             populateTree(i);
             fixAll();           
         }
+        this.hierarchy.clearAprioriStructures();
     }
     
     public void populateTree(int size){
@@ -186,7 +187,12 @@ public class Apriori implements Algorithm {
     private double getTranslation(double point) {
 //        return pointMap[(int)point][1];
 //        System.out.println("point "+point+" "+dataset.getDictionary().getIdToString((int)point));
-        return pointMap.get((int)point)[1];
+        if(pointMap.get((int)point) == null){
+            return Double.NaN;
+        }
+        else{
+            return pointMap.get((int)point)[1];
+        }
     } 
     
     private void fixAll(){
@@ -306,9 +312,9 @@ public class Apriori implements Algorithm {
     public Object getResultSet() {
         Map<Double, Double> rules = new HashMap<>();
         for(Entry<Integer,Integer[]> entry : pointMap.entrySet() ){
-            if(entry.getValue()[0]!= entry.getValue()[1]){
-                rules.put(entry.getValue()[0].doubleValue(), entry.getValue()[1].doubleValue());
-            }
+            
+            rules.put(entry.getValue()[0].doubleValue(), entry.getValue()[1].doubleValue());
+            
         }
 //        for(int i=0; i<pointMap.length; i++){
 //            if(pointMap[i][0] != pointMap[i][1]){
@@ -484,6 +490,7 @@ public class Apriori implements Algorithm {
 //                            System.out.println("Parents ");
                             Set<Double> children = this.hierarchy.getChildrenIds(nodeId);
                             costs.put(nodeId.intValue(), (double)children.size() / (double)domainSize);
+//                            System.out.println("Node id first"+nodeId+" str "+this.hierarchy.getDictionary().getIdToString(nodeId.intValue())+"  "+costs.get(nodeId.intValue()));
 
                         }
                     }
@@ -502,8 +509,11 @@ public class Apriori implements Algorithm {
                         pointMap.put(nodeId, temp);
                         costs.put(nodeId, 0.0);
                         Set<Double> children = this.hierarchy.getChildrenIds(nodeId);
-                        for(Double child : children){
-                            costs.put(nodeId, costs.get(nodeId)+costs.get(child.intValue()));
+                        if(children!=null){
+                            for(Double child : children){
+//                                System.out.println("Node id"+nodeId+" str "+this.hierarchy.getDictionary().getIdToString(nodeId.intValue())+" child "+this.hierarchy.getDictionary().getIdToString(child.intValue())+"  "+costs.get(child.intValue())+" child value "+child.intValue());
+                                costs.put(nodeId, costs.get(nodeId)+costs.get(child.intValue()));
+                            }
                         }
                     }
                 }

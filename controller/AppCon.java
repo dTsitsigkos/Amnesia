@@ -2,6 +2,7 @@ package controller;
 
 
 import algorithms.Algorithm;
+import algorithms.clusterbased.ClusterBasedAlgorithm;
 import algorithms.flash.Flash;
 import algorithms.flash.LatticeNode;
 import algorithms.kmanonymity.Apriori;
@@ -11,14 +12,18 @@ import anonymizationrules.AnonymizationRules;
 import anonymizeddataset.AnonymizedDataset;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.primitives.Ints;
+import static controller.AppCon.os;
 import data.CheckDatasetForKAnomymous;
 import data.Data;
-import data.Pair;
+import data.DiskData;
+import data.MyPair;
 import data.RelSetData;
 import data.SETData;
 import data.TXTData;
 import data.XMLData;
 import dictionary.DictionaryString;
+import exceptions.DateParseException;
+import exceptions.LimitException;
 import graph.DatasetsExistence;
 import graph.Edge;
 import graph.Node;
@@ -67,6 +72,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -97,6 +103,7 @@ import javax.ws.rs.core.MediaType;
 import jsoninterface.View;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -158,6 +165,7 @@ public class AppCon extends SpringBootServletInitializer {
     }
 
     private static Class<AppCon> applicationClass = AppCon.class;
+    public static String os = "windows";
 }
 
 
@@ -165,8 +173,8 @@ public class AppCon extends SpringBootServletInitializer {
 @RestController
 //@RequestMapping("/greeting")
 class AppController {
+    private static String os = AppCon.os;
     
-    private String os = "linux";
     String rootPath = System.getProperty("catalina.home");
 
     
@@ -563,7 +571,7 @@ class AppController {
 
     @JsonView(View.SmallDataSet.class)
     @RequestMapping(value="/action/getsmalldataset", method = RequestMethod.POST)//, method = RequestMethod.POST)
-    public @ResponseBody Data getSmallDataSet ( @RequestParam("del") String del, @RequestParam("datatype") String datatype, @RequestParam("delset") String delset ,HttpSession session) throws FileNotFoundException, IOException {
+    public @ResponseBody Data getSmallDataSet ( @RequestParam("del") String del, @RequestParam("datatype") String datatype, @RequestParam("delset") String delset ,HttpSession session) throws FileNotFoundException, IOException, LimitException, DateParseException {
 
         Data data = null;
         FileInputStream fstream = null;
@@ -585,18 +593,20 @@ class AppController {
         
         String fullPath = dir + "/" + filename;
         
-        dict = new DictionaryString();
-        if(hierarchies!=null){
-            for(Map.Entry<String,Hierarchy> entry : hierarchies.entrySet()){
-                Hierarchy h = entry.getValue();
-                if(h instanceof HierarchyImplString){
-                    if(h.getDictionaryData().getMaxUsedId() > dict.getMaxUsedId()){
-                        dict = h.getDictionaryData();
-                    }
-                }
-                
-            }
+        dict = HierarchyImplString.getWholeDictionary();
+        if(dict == null){
+            dict = new DictionaryString();
         }
+//        if(hierarchies!=null){
+//            for(Map.Entry<String,Hierarchy> entry : hierarchies.entrySet()){
+//                Hierarchy h = entry.getValue();
+//                if(h instanceof HierarchyImplString){
+//                    dict = h.getDictionary();
+//                    break;
+//                }
+//                
+//            }
+//        }
         
         
         if (datatype.equals("tabular")){
@@ -667,16 +677,16 @@ class AppController {
             data.getTypesOfVariables(smallDataset);
         }
         else if( datatype.equals("Disk")){
-//            data = new DiskData(fullPath,del,dict);
-//            
-//            result = data.findColumnTypes();
-//            
-//            if(result.equals("1")){
-//                return data;
-//            }
-//            
-//            String[][] smallDataset = data.getSmallDataSet();
-//            data.getTypesOfVariables(smallDataset);
+            data = new DiskData(fullPath,del,dict);
+            
+            result = data.findColumnTypes();
+            
+            if(result.equals("1")){
+                return data;
+            }
+            
+            String[][] smallDataset = data.getSmallDataSet();
+            data.getTypesOfVariables(smallDataset);
         }
         
         
@@ -691,6 +701,8 @@ class AppController {
         
         String inputPath = (String) session.getAttribute("inputpath");
         String filename = (String)session.getAttribute("filename");
+        long daysBack = 1;
+        long purgeTime = System.currentTimeMillis() - (daysBack * 24 * 60 * 60 * 1000);
 //        System.out.println("inputPAth delete "+inputPath);
         int index=inputPath.lastIndexOf('/');
         if(index==-1){
@@ -709,6 +721,8 @@ class AppController {
 //        FileUtils.cleanDirectory(dir2);
         for (File file: dir.listFiles()) {
             System.out.println("Filename to delette "+file.getName()+" session "+session.toString());
+            long diff = new Date().getTime() - file.lastModified();
+            System.out.println("diff "+diff+" thresehold "+(24 * 60 * 60 * 1000)+ " last mod "+file.lastModified()+" date "+new Date(file.lastModified()).getDay());
             if(file.getName().equals(session.getId())){
                 boolean deleteDir = true;
 //                FileUtils.forceDelete(file);
@@ -725,9 +739,12 @@ class AppController {
                 if(deleteDir){
                     FileUtils.forceDelete(file);
                 }
-                break;
+            }
+            else if(!file.getName().equals("errorLog") && diff > 2 * 60 * 60 * 1000){
+                FileUtils.forceDelete(file);
             }
         }
+        
         
         
 //        if(filename!=null && !filename.endsWith("xml")){
@@ -846,7 +863,7 @@ class AppController {
         
         Data data = (Data) session.getAttribute("data");
         if (data == null){
-            System.out.println("data is null");
+            System.out.println("data is null col");
         }
         
 
@@ -858,7 +875,7 @@ class AppController {
     
     
     @RequestMapping(value="/action/loaddataset", method = RequestMethod.POST)
-    public @ResponseBody String loadDataset (@RequestParam("vartypes") String [] vartypes, @RequestParam("checkColumns") boolean [] checkColumns, HttpSession session) throws IOException   {
+    public @ResponseBody String loadDataset (@RequestParam("vartypes") String [] vartypes, @RequestParam("checkColumns") boolean [] checkColumns, HttpSession session) throws IOException, LimitException, DateParseException   {
         String result = null;
         
         
@@ -915,7 +932,7 @@ class AppController {
     
     //@JsonView(View.Hier.class)
     @RequestMapping(value="/action/loadhierarchy", method = RequestMethod.POST) //method = RequestMethod.POST
-    public @ResponseBody String loadHierarcy (@RequestParam("filename") String filename, HttpSession session) throws IOException  {
+    public @ResponseBody String loadHierarcy (@RequestParam("filename") String filename, HttpSession session) throws IOException, LimitException  {
 //        try{
             Map<String, Hierarchy> hierarchies  = null;
             hierarchies = (Map<String, Hierarchy>) session.getAttribute("hierarchies");
@@ -1088,8 +1105,8 @@ class AppController {
     
     
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    @RequestMapping(value="/action/autogeneratehierarchy", method = RequestMethod.GET) //method = RequestMethod.POST
-    public @ResponseBody String autogeneratehierarchy (@RequestParam("typehier") String typehier, @RequestParam("vartype") String vartype,@RequestParam("onattribute") int onattribute,@RequestParam("step") double step, @RequestParam("sorting") String sorting, @RequestParam("hiername") String hiername, @RequestParam("fanout") int fanout, @RequestParam("limits") String limits, @RequestParam("months") int months, @RequestParam("days") int days, @RequestParam("years") int years, HttpSession session)  {
+    @RequestMapping(value="/action/autogeneratehierarchy", method = RequestMethod.POST) //method = RequestMethod.POST
+    public @ResponseBody String autogeneratehierarchy (@RequestParam("typehier") String typehier, @RequestParam("vartype") String vartype,@RequestParam("onattribute") int onattribute,@RequestParam("step") double step, @RequestParam("sorting") String sorting, @RequestParam("hiername") String hiername, @RequestParam("fanout") int fanout, @RequestParam("limits") String limits, @RequestParam("months") int months, @RequestParam("days") int days, @RequestParam("years") int years, HttpSession session) throws LimitException  {
         Map<String, Hierarchy> hierarchies  = null;
         hierarchies = (Map<String, Hierarchy>) session.getAttribute("hierarchies");
         Hierarchy h = null;
@@ -1127,15 +1144,47 @@ class AppController {
             
             else{
                 String []temp = null;
+                Double start=null,end=null;
                 temp = limits.split("-");
-                Double start = Double.parseDouble(temp[0]);
-                Double end = Double.parseDouble(temp[1]);
+                int count = StringUtils.countMatches(limits, "-");
+                if(count==1){
+                    start = Double.parseDouble(temp[0]);
+                    end = Double.parseDouble(temp[1]);
+                }
+                else if(count==2){
+                    try{
+                        start = Double.parseDouble("-"+temp[1]);
+                        end = Double.parseDouble(temp[2]);
+                        System.out.println("Count "+count+" start "+start+" end "+end);
+                    }catch(Exception e){
+                        e.printStackTrace();
+                        
+                        // TODO exception 
+                    }
+                }
+                else if(count==3){
+                    try{
+                        start = Double.parseDouble("-"+temp[1]);
+                        end = Double.parseDouble("-"+temp[3]);
+                        System.out.println("Count "+count+" start "+start+" end "+end);
+                    }catch(Exception e){
+                         e.printStackTrace();
+                        
+                        // TODO exception 
+                    }
+                }
+                else{
+                    /// TODO exception 
+                    
+                    System.out.println("Count "+count);
+                }
 
                 //h = new AutoHierarchyImplRangesNumbers(hiername, vartype, "range", start, end, step, fanout);
+                System.out.println("info "+hiername+" "+vartype+" start "+start+" end "+end+" step "+step+" "+fanout);
                 h = new AutoHierarchyImplRangesNumbers2(hiername, vartype, "range", start, end, step, fanout);
             }
         }
-        
+       
        h.autogenerate();
         
        
@@ -1370,16 +1419,20 @@ class AppController {
         String checkHier = null;
         for (Map.Entry<Integer, Hierarchy> entry : quasiIdentifiers.entrySet()) {
             Hierarchy h = entry.getValue();
-//            System.out.println("h "+h+" htype "+h.getHierarchyType());
-            if (h.getHierarchyType().equals("range")){
-                checkHier = h.checkHier();
-            }
-            else if(h instanceof HierarchyImplString){
-                h.syncDictionaries(entry.getKey(),data);
-            }
+            System.out.println("h "+h+" htype "+h.getHierarchyType());
+//            if (h.getHierarchyType().equals("range")){
+//                checkHier = h.checkHier(data,entry.getKey());
+//            }
+//            else if(h instanceof HierarchyImplString){
+//                h.syncDictionaries(entry.getKey(),data);
+//            }
             
+//            if(h instanceof HierarchyImplString){
+//                h.syncDictionaries(entry.getKey(),data);
+//            }
             
             //provlima stin  hierarchia
+            checkHier = h.checkHier(data,entry.getKey());
             if(checkHier != null && !checkHier.endsWith("Ok")){
                 return checkHier;
             }
@@ -1406,10 +1459,10 @@ class AppController {
             algorithm = new ParallelFlash();
             session.setAttribute("algorithm", "flash");
         }
-        else if(algorithmSelected.equals("Clustering")){
-//            args.put("k", k);
-//            algorithm = new ClusterBasedAlgorithm();
-//            session.setAttribute("algorithm", "clustering");
+        else if(algorithmSelected.equals("clustering")){
+            args.put("k", k);
+            algorithm = new ClusterBasedAlgorithm();
+            session.setAttribute("algorithm", "clustering");
         }
         else if(algorithmSelected.equals("kmAnonymity") || algorithmSelected.equals("apriori") ||
                 algorithmSelected.equals("AprioriShort") || algorithmSelected.equals("mixedapriori")){
@@ -1466,8 +1519,9 @@ class AppController {
         final String message = "memory problem";
         String resultAlgo="";
         Future<String> future = null;
+        System.out.println("Algorithm starts");
         try {
-            if(os.equals("online")){
+            if(os.equals("")){
                 ExecutorService executor = Executors.newCachedThreadPool();
                 final Algorithm temp = algorithm;
                 future = executor.submit( new Callable<String>() {
@@ -1475,6 +1529,7 @@ class AppController {
                     try{
                     temp.anonymize();
                     }catch (OutOfMemoryError e) {
+                        e.printStackTrace();
                         return message;
                     }
                     
@@ -1499,6 +1554,7 @@ class AppController {
             }
         }
         catch (OutOfMemoryError e) {
+            e.printStackTrace();
             return message;
         } catch (InterruptedException ex) {
             ex.printStackTrace();
@@ -1520,15 +1576,17 @@ class AppController {
         session.setAttribute("k", k);
 
         if(algorithm.getResultSet() == null){
-            result = false;
-            return "noresults";
+            if(!algorithmSelected.equals("clustering")){
+                result = false;
+                return "noresults";
+            }
         }
         else{
 //            System.out.println("result set = " + algorithm.getResultSet() );
 
             session.setAttribute("results", algorithm.getResultSet());
 //            System.out.println("algorithm : "+algorithmSelected);
-            if(!algorithmSelected.equals("apriori") && !algorithmSelected.equals("mixedapriori")){
+            if(!algorithmSelected.equals("apriori") && !algorithmSelected.equals("mixedapriori") ){
                 Graph graph = algorithm.getLattice();
 
                 session.setAttribute("graph", graph);
@@ -1643,9 +1701,8 @@ class AppController {
     
     
     
-    
-    @RequestMapping(value="/action/getanondataset", method = RequestMethod.GET) //method = RequestMethod.POST
-    public @ResponseBody AnonymizedDataset getAnonDataSet (@RequestParam("start") int start , @RequestParam("length") int length, HttpSession session) throws FileNotFoundException, IOException, ParseException {
+    @RequestMapping(value="/action/getanondataset", method = RequestMethod.POST) //method = RequestMethod.POST
+    public @ResponseBody AnonymizedDataset getAnonDataSet (@RequestParam("start") int start , @RequestParam("length") int length, HttpSession session) throws FileNotFoundException, IOException, ParseException, Exception{
         AnonymizedDataset anonData = null;
         String selectedNode = null;
         
@@ -1708,11 +1765,11 @@ class AppController {
                 System.out.println("data is null");
             }
             else{
-                ArrayList<LinkedHashMap> originalData = data.getPage(start, length);
+//                ArrayList<LinkedHashMap> originalData = data.getPage(start, length);
                 //Map<String, Map<String, String>> allRules = (Map<String, Map<String, String>>)session.getAttribute("anonrules");
                 anonData = new AnonymizedDataset(data,start,length,selectedNode,quasiIdentifiers,toSuppress,selectedAttrNames,toSuppressJson);
-                anonData.setDataOriginal(originalData);
-                if (!data.getClass().toString().contains("SET") && !data.getClass().toString().contains("RelSet")){
+//                anonData.setDataOriginal(originalData);
+                if (!data.getClass().toString().contains("SET") && !data.getClass().toString().contains("RelSet") && !data.getClass().toString().contains("Disk")){
                     if ( allRules == null){
                         anonData.renderAnonymizedTable();
                     }
@@ -1732,8 +1789,17 @@ class AppController {
                         anonData.anonymizeSETWithImportedRules(allRules);
                     }
                 }
+                else if(data.getClass().toString().contains("Disk")){
+                    System.out.println("action/getanondataset Disk ===========");
+                    if(allRules == null){
+                        anonData.renderAnonymizedDiskTable();
+                    }
+                    else{
+                        anonData.anonymizeWithImportedRulesForDisk(allRules);
+                    }
+                }
                 else{
-//                    System.out.println("action/getanondataset Mixed ===========");
+                    System.out.println("action/getanondataset Mixed ===========");
                     
                     Map<Integer,Map<Object,Object>> rules = (Map<Integer,Map<Object,Object>>) session.getAttribute("results");
                     if ( allRules == null){
@@ -1892,6 +1958,9 @@ class AppController {
         else if(data.getClass().toString().contains("RelSet")){
             Map<Integer, Map<Object,Object>> results = (Map<Integer, Map<Object,Object>>) session.getAttribute("results"); 
             exportData = anonData.exportRelSetDataset(file.getAbsolutePath(), results, quasiIdentifiers);
+        }
+        else if(data.getClass().toGenericString().contains("Disk")){
+            exportData = anonData.exportDiskDataset(file.getAbsolutePath(),quasiIdentifiers);
         }
         else{
             exportData = anonData.exportDataset(file.getAbsolutePath(), true);
@@ -2187,15 +2256,15 @@ System.out.println("url = " + url);
     
     
     @RequestMapping(value="/action/getpairranges", method = RequestMethod.POST) //method = RequestMethod.POST
-    public @ResponseBody Pair getPairRanges (@RequestParam("columnAttr") int columnAttr,@RequestParam("vartype") String vartype, HttpSession session)  {
+    public @ResponseBody MyPair getPairRanges (@RequestParam("columnAttr") int columnAttr,@RequestParam("vartype") String vartype, HttpSession session)  {
         Data data = (Data) session.getAttribute("data");
-        Pair p = null;
+        MyPair p = null;
                
         if (vartype.equals("date")){
-            p = new Pair(data,vartype);
+            p = new MyPair(data,vartype);
         }
         else{
-            p = new Pair(data,null);
+            p = new MyPair(data,null);
         }
         p.findMin(columnAttr);
 
@@ -2204,7 +2273,7 @@ System.out.println("url = " + url);
     
     
     @RequestMapping(value="/action/addnodehier", method = RequestMethod.POST) //method = RequestMethod.POST
-    public @ResponseBody void addNodeHier (@RequestParam("newnode") String newNode, @RequestParam("parent") String parent, @RequestParam("hiername") String hierName, HttpSession session) throws ParseException  {
+    public @ResponseBody String addNodeHier (@RequestParam("newnode") String newNode, @RequestParam("parent") String parent, @RequestParam("hiername") String hierName, HttpSession session) throws ParseException, LimitException  {
         Map<String, Hierarchy> hierarchies  = null;
         Hierarchy h = null;
         
@@ -2217,63 +2286,98 @@ System.out.println("url = " + url);
         
         
         if ( h.getNodesType().equals("string")){
-            int strCount;
+            int newStrId,parentId;
             
             if(newNode.equals("")){
                 newNode = "NaN";
             }
             DictionaryString dictData = h.getDictionaryData();
             DictionaryString dictHier = h.getDictionary();
-            Double parentVal=null;
-//            System.out.println("Parent "+parent);
-            parentVal = dictHier.getStringToId(parent) == null ? (double) dictData.getStringToId(parent) : (double) dictHier.getStringToId(parent);
             
-            if(h.getDictionaryData().containsString(parent) && h.getHeight()-1==h.getLevel(parentVal)){
-                return;
+            
+            if(dictData.containsString(newNode)){
+                newStrId = dictData.getStringToId(newNode);
+                if(h.getParent((double)newStrId)!=null){
+                    return "Value "+newNode+" is already exists in hierarchy";
+                }
             }
-            else if(h.getDictionaryData().containsString(parent)){
-                
-                strCount = dictData.getMaxUsedId() > h.getDictionary().getMaxUsedId() ? dictData.getMaxUsedId()+1 : dictHier.getMaxUsedId()+1;
-                dictData.putIdToString(strCount, newNode);
-                dictData.putStringToId(newNode, strCount);
+            else if(dictHier.containsString(newNode)){
+                newStrId = dictHier.getStringToId(newNode);
+                if(h.getParent((double)newStrId)!=null){
+                    return "Value "+newNode+" is already exists in hierarchy";
+                }
             }
             else{
-                
-                
-                if(dictHier.containsString(newNode)){
-                    return;
+                if(dictData.isEmpty() && dictHier.isEmpty()){
+                    System.out.println("Both empty");
+                    newStrId = 1;
                 }
-                
-                if(dictData.containsString(newNode)){
-//                    System.out.println("Edvvvvv gia nan add");
-                    strCount = dictData.getStringToId(newNode);
+                else if(!dictData.isEmpty() && !dictHier.isEmpty()){
+                    System.out.println("Both have values");
+                    if(dictData.getMaxUsedId() > dictHier.getMaxUsedId()){
+                        newStrId = dictData.getMaxUsedId()+1;
+                    }
+                    else{
+                        newStrId = dictHier.getMaxUsedId()+1;
+                    }
+                }
+                else if(dictData.isEmpty()){
+                    System.out.println("Dict data empty");
+                    newStrId = dictHier.getMaxUsedId()+1;
                 }
                 else{
-                
-                    parentVal = (double) dictHier.getStringToId(parent);
-                    if(parentVal == null){
-                        parentVal = (double) dictData.getStringToId(parent);
-                    }
-                    strCount = dictData.getMaxUsedId() > h.getDictionary().getMaxUsedId() ? dictData.getMaxUsedId()+1 : dictHier.getMaxUsedId()+1;
-                    dictData.putIdToString(strCount, newNode);
-                    dictData.putStringToId(newNode, strCount);
-                    
-//                    if(h.getLevel(parentVal) == h.getHeight()-2){
-//                        strCount = dictData.getMaxUsedId()+1;
-//                        dictData.putIdToString(strCount, newNode);
-//                        dictData.putStringToId(newNode, strCount);
-//
-//                    }
-//                    else{
-//                        strCount = dictHier.getMaxUsedId()+1;
-//                        dictHier.putIdToString(strCount, newNode);
-//                        dictHier.putStringToId(newNode, strCount);
-//                    }
+                    System.out.println("Dict hier empty");
+                    newStrId = dictData.getMaxUsedId()+1;
                 }
-//                System.out.println("child "+strCount+" parent "+parentVal);
-               
+                
+                h.getDictionary().putIdToString(newStrId, newNode);
+                h.getDictionary().putStringToId(newNode, newStrId);
             }
-            h.add((double)strCount, parentVal);
+            
+            if(dictData.containsString(parent)){
+                parentId = dictData.getStringToId(parent);
+            }
+            else{
+               parentId = dictHier.getStringToId(parent); 
+            }
+//            Double parentVal=null;
+////            System.out.println("Parent "+parent);
+//            parentVal = dictHier.getStringToId(parent) == null ? (double) dictData.getStringToId(parent) : (double) dictHier.getStringToId(parent);
+//            
+//            if(h.getHeight()-1==h.getLevel(parentVal)){
+//                return;
+//            }
+//            else if(h.getDictionaryData().containsString(parent)){
+//                
+//                strCount = dictData.getMaxUsedId() > h.getDictionary().getMaxUsedId() ? dictData.getMaxUsedId()+1 : dictHier.getMaxUsedId()+1;
+//                dictData.putIdToString(strCount, newNode);
+//                dictData.putStringToId(newNode, strCount);
+//            }
+//            else{
+//                
+//                
+//                if(dictHier.containsString(newNode) && h.checkExistance(dictHier.getStringToId(newNode).doubleValue())){
+//                        return;
+//                }
+//                
+//                if(dictData.containsString(newNode)){
+////                    System.out.println("Edvvvvv gia nan add");
+//                    strCount = dictData.getStringToId(newNode);
+//                }
+//                else{
+//                
+//                    parentVal = (double) dictHier.getStringToId(parent);
+//                    if(parentVal == null){
+//                        parentVal = (double) dictData.getStringToId(parent);
+//                    }
+//                    strCount = dictData.getMaxUsedId() > h.getDictionary().getMaxUsedId() ? dictData.getMaxUsedId()+1 : dictHier.getMaxUsedId()+1;
+//                    dictHier.putIdToString(strCount, newNode);
+//                    dictHier.putStringToId(newNode, strCount);
+//                }
+////                System.out.println("child "+strCount+" parent "+parentVal)
+//            }
+            h.add((double)newStrId, (double)parentId);
+            
         }
         else{
             if(h.getHierarchyType().equals("range")){
@@ -2292,46 +2396,117 @@ System.out.println("url = " + url);
                 
                 
                 if(h.getNodesType().equals("date")){
-                    RangeDate newNodeDate = new RangeDate(((HierarchyImplRangesDate) h).getDateFromString(tempNew[0],true),((HierarchyImplRangesDate) h).getDateFromString(tempNew[1],false));
-                    RangeDate parentNodeDate = new RangeDate(((HierarchyImplRangesDate) h).getDateFromString(tempParent[0],true),((HierarchyImplRangesDate) h).getDateFromString(tempParent[1],false));
+                    RangeDate newNodeDate,parentNodeDate;
+                    
+                    if(tempNew.length == 2)
+                        newNodeDate = new RangeDate(((HierarchyImplRangesDate) h).getDateFromString(tempNew[0],true),((HierarchyImplRangesDate) h).getDateFromString(tempNew[1],false));
+                    else
+                        newNodeDate = new RangeDate(((HierarchyImplRangesDate) h).getDateFromString(newNode,true),((HierarchyImplRangesDate) h).getDateFromString(newNode,false));
+                    
+                    if(tempParent.length == 2)
+                        parentNodeDate = new RangeDate(((HierarchyImplRangesDate) h).getDateFromString(tempParent[0],true),((HierarchyImplRangesDate) h).getDateFromString(tempParent[1],false));
+                    else
+                        parentNodeDate = new RangeDate(((HierarchyImplRangesDate) h).getDateFromString(parent,true),((HierarchyImplRangesDate) h).getDateFromString(parent,false));
+                    
+                    
                     h.add(newNodeDate, parentNodeDate);
                 }
                 else{
-                    RangeDouble newNodeRange = new RangeDouble(Double.parseDouble(tempNew[0]),Double.parseDouble(tempNew[1]));
+                    RangeDouble newNodeRange = RangeDouble.parseRange(newNode);
+//                    RangeDouble newNodeRange = new RangeDouble(Double.parseDouble(tempNew[0]),Double.parseDouble(tempNew[1]));
                     newNodeRange.setNodesType(h.getNodesType());
-                    RangeDouble parentNodeRange = new RangeDouble(Double.parseDouble(tempParent[0]),Double.parseDouble(tempParent[1]));
+                    RangeDouble parentNodeRange = RangeDouble.parseRange(parent);
+//                    RangeDouble parentNodeRange = new RangeDouble(Double.parseDouble(tempParent[0]),Double.parseDouble(tempParent[1]));
                     parentNodeRange.setNodesType(h.getNodesType());
                 
                     h.add(newNodeRange, parentNodeRange);
                 }
             }
             else{
+                //// TODO add check intdouble existance
                 h.add(Double.parseDouble(newNode), Double.parseDouble(parent));
             }
         }
+        
+        return "ok";
          
     }
     
     @RequestMapping(value="/action/editnodehier", method = RequestMethod.POST) //method = RequestMethod.POST
-    public @ResponseBody void editNodeHier (@RequestParam("oldnode") String oldNode, @RequestParam("newnode") String newNode, @RequestParam("hiername") String hierName, HttpSession session) throws ParseException  {
+    public @ResponseBody String editNodeHier (@RequestParam("oldnode") String oldNode, @RequestParam("newnode") String newNode, @RequestParam("hiername") String hierName, HttpSession session) throws ParseException  {
         Map<String, Hierarchy> hierarchies  = null;
         Hierarchy h = null;
         
         hierarchies = (Map<String, Hierarchy>) session.getAttribute("hierarchies");
         
         h = hierarchies.get(hierName);
-        int strId;
+        int newStrId,oldStrId;
         
         if ( h.getNodesType().equals("string")){
-            if(h.getDictionary().containsString(oldNode)){
-                strId = h.getDictionary().getStringToId(oldNode);
-                h.getDictionary().update(strId, newNode);
+            
+            if(newNode.trim().isEmpty()){
+                newNode = "NaN";
+            }
+            
+            if(oldNode.trim().equals("(null)")){
+                oldNode = "NaN";
+            }
+//            if(h.getDictionary().containsString(oldNode)){
+//                strId = h.getDictionary().getStringToId(oldNode);
+//                h.getDictionary().update(strId, newNode);
+//            }
+//            else{
+//                strId = h.getDictionaryData().getStringToId(oldNode);
+//                h.getDictionaryData().update(strId, newNode);
+//            }
+            
+            if(h.getDictionaryData().containsString(newNode)){
+                newStrId = h.getDictionaryData().getStringToId(newNode);
+                if(h.getParent((double)newStrId)!=null){
+                    return "Value "+newNode+" is already exists in hierarchy";
+                }
+            }
+            else if(h.getDictionary().containsString(newNode)){
+                newStrId = h.getDictionary().getStringToId(newNode);
+                if(h.getParent((double)newStrId)!=null){
+                    return "Value "+newNode+" is already exists in hierarchy";
+                }
             }
             else{
-                strId = h.getDictionaryData().getStringToId(oldNode);
-                h.getDictionaryData().update(strId, newNode);
+                if(h.getDictionaryData().isEmpty() && h.getDictionary().isEmpty()){
+                    System.out.println("Edit Both empty edit");
+                    newStrId = 1;
+                }
+                else if(!h.getDictionaryData().isEmpty() && !h.getDictionary().isEmpty()){
+                    System.out.println("Both have values edit");
+                    if(h.getDictionaryData().getMaxUsedId() > h.getDictionary().getMaxUsedId()){
+                        newStrId = h.getDictionaryData().getMaxUsedId()+1;
+                    }
+                    else{
+                        newStrId = h.getDictionary().getMaxUsedId()+1;
+                    }
+                }
+                else if(h.getDictionaryData().isEmpty()){
+                    System.out.println("Dict data empty edit");
+                    newStrId = h.getDictionaryData().getMaxUsedId()+1;
+                }
+                else{
+                    System.out.println("Dict hier empty edit");
+                    newStrId = h.getDictionaryData().getMaxUsedId()+1;
+                }
+                
+                h.getDictionary().putIdToString(newStrId, newNode);
+                h.getDictionary().putStringToId(newNode, newStrId);
             }
-//            h.edit(oldNode, newNode);
+            
+            if(h.getDictionaryData().containsString(oldNode)){
+                oldStrId = h.getDictionaryData().getStringToId(oldNode);
+            }
+            else{
+                oldStrId = h.getDictionary().getStringToId(oldNode);
+            }
+            
+            h.edit((double)oldStrId, (double)newStrId);
         }
         else{
             if(h.getHierarchyType().equals("range")){
@@ -2353,15 +2528,25 @@ System.out.println("url = " + url);
 //                    if(tempNew[0] || tempNew[1]){
 //                        
 //                    }
-                    RangeDate newDateNode = new RangeDate(((HierarchyImplRangesDate) h).getDateFromString(tempNew[0],true), ((HierarchyImplRangesDate) h).getDateFromString(tempNew[1],false));
-                    RangeDate oldDateNode = new RangeDate(((HierarchyImplRangesDate) h).getDateFromString(tempOld[0],true), ((HierarchyImplRangesDate) h).getDateFromString(tempOld[1],false));
+                    RangeDate newDateNode,oldDateNode;
+                    
+                    if(tempNew.length == 2)
+                        newDateNode = new RangeDate(((HierarchyImplRangesDate) h).getDateFromString(tempNew[0],true), ((HierarchyImplRangesDate) h).getDateFromString(tempNew[1],false));
+                    else
+                        newDateNode = new RangeDate(((HierarchyImplRangesDate) h).getDateFromString(newNode,true), ((HierarchyImplRangesDate) h).getDateFromString(newNode,false));
+                    
+                    if(tempOld.length == 2)
+                        oldDateNode = new RangeDate(((HierarchyImplRangesDate) h).getDateFromString(tempOld[0],true), ((HierarchyImplRangesDate) h).getDateFromString(tempOld[1],false));
+                    else
+                        oldDateNode = new RangeDate(((HierarchyImplRangesDate) h).getDateFromString(oldNode,true), ((HierarchyImplRangesDate) h).getDateFromString(oldNode,false));
                     
                     h.edit(oldDateNode, newDateNode);
                 }
                 else{ // range double
-
-                    RangeDouble newNodeRange = new RangeDouble(Double.parseDouble(tempNew[0]),Double.parseDouble(tempNew[1]));
-                    RangeDouble oldNodeRange = new RangeDouble(Double.parseDouble(tempOld[0]),Double.parseDouble(tempOld[1]));
+                    RangeDouble newNodeRange = RangeDouble.parseRange(newNode);
+                    RangeDouble oldNodeRange = RangeDouble.parseRange(oldNode);
+//                    RangeDouble newNodeRange = new RangeDouble(Double.parseDouble(tempNew[0]),Double.parseDouble(tempNew[1]));
+//                    RangeDouble oldNodeRange = new RangeDouble(Double.parseDouble(tempOld[0]),Double.parseDouble(tempOld[1]));
                     newNodeRange.setNodesType(h.getNodesType());
                     oldNodeRange.setNodesType(h.getNodesType());
 
@@ -2370,9 +2555,12 @@ System.out.println("url = " + url);
                 }
             }
             else{ // distinct
+                //// TODO edit check intdouble existance 
                 h.edit(Double.parseDouble(oldNode), Double.parseDouble(newNode));
             }
-        }   
+        }
+        
+        return "ok";
     }
     
     
@@ -2401,7 +2589,7 @@ System.out.println("url = " + url);
                 return "You can not delete root";
             }
             h.remove(nodeId);
-            dict.remove((int) nodeId);
+//            dict.remove((int) nodeId);
         }
         else{
             if(h.getHierarchyType().equals("range")){
@@ -2414,7 +2602,13 @@ System.out.println("url = " + url);
                 String []temp = delnode.split(del);
                 
                 if(h.getNodesType().equals("date")){
-                    RangeDate delDate = new RangeDate(((HierarchyImplRangesDate) h).getDateFromString(temp[0], true),((HierarchyImplRangesDate) h).getDateFromString(temp[1], false));
+                    RangeDate delDate;
+                    
+                    if(temp.length == 2)
+                        delDate = new RangeDate(((HierarchyImplRangesDate) h).getDateFromString(temp[0], true),((HierarchyImplRangesDate) h).getDateFromString(temp[1], false));
+                    else
+                        delDate = new RangeDate(((HierarchyImplRangesDate) h).getDateFromString(delnode, true),((HierarchyImplRangesDate) h).getDateFromString(delnode, false));
+                    
                     RangeDate root = (RangeDate) h.getRoot();
                     if(root.equals(delDate)){
                         return "You can not delete root";
@@ -2422,8 +2616,8 @@ System.out.println("url = " + url);
                     h.remove(delDate);
                 }
                 else{
-                
-                    RangeDouble delRange = new RangeDouble(Double.parseDouble(temp[0]),Double.parseDouble(temp[1]));
+                    RangeDouble delRange = RangeDouble.parseRange(delnode);
+//                    RangeDouble delRange = new RangeDouble(Double.parseDouble(temp[0]),Double.parseDouble(temp[1]));
                     RangeDouble root = (RangeDouble) h.getRoot();
                     if(root.equals(delRange)){
                         return "You can not delete root";
@@ -3232,7 +3426,7 @@ System.out.println("url = " + url);
     
     
     @RequestMapping(value="/action/restart", method = RequestMethod.POST) //method = RequestMethod.POST
-    public @ResponseBody void restart ( HttpSession session) {
+    public static @ResponseBody void restart ( HttpSession session) {
         try{
             String inputPath = (String) session.getAttribute("inputpath");
             int index = inputPath.lastIndexOf(File.separator);
@@ -3250,6 +3444,8 @@ System.out.println("url = " + url);
                 }
 
             }
+            
+            HierarchyImplString.setWholeDictionary(null);
         }catch(Exception e){
             e.printStackTrace();
         }
@@ -3451,7 +3647,11 @@ System.out.println("url = " + url);
         resultArr[0] = Double.parseDouble(results.getNonAnonymizeOccurrences());
         resultArr[1] = Double.parseDouble(results.getAnonymizedOccurrences());
         resultArr[2] = Double.parseDouble(results.getPossibleOccurences());
-        resultArr[3] = Double.parseDouble(results.getEstimatedRate());
+        try{
+            resultArr[3] = Double.parseDouble(results.getEstimatedRate());
+        }catch(Exception e){
+            resultArr[3] = Double.parseDouble(results.getEstimatedRate().split(",")[0]);
+        }
         
         /*resultsToJson = new ResultsToJson("nonAnonymizeOccurrences",results.getNonAnonymizeOccurrences());
         resultList.add(resultsToJson);
@@ -3477,6 +3677,9 @@ System.out.println("url = " + url);
         }
         else if(data instanceof RelSetData){
             return "relset";
+        }
+        else if(data instanceof DiskData){
+            return "disk";
         }
         else{
             return"txt";
@@ -3620,15 +3823,17 @@ System.out.println("url = " + url);
 //        System.out.println("algorithmmmmmmmmmmm = " + algorithm);
         
 //        System.out.println("checkdatasetsexistence");
+        check.setAlgorithm(algorithm);
+        check.setDiskData(data);
         if(data!=null && allRules!=null){
             check.setOriginalExists("true");
             check.setAnonExists("true");
         }
         else if(data!=null && algorithm==null){
-            check.setOriginalExists("noalgo");
-            check.setAnonExists("true");
+            check.setOriginalExists("true");
+            check.setAnonExists("noalgo");
         }
-        else if(data!=null && hierarchies!=null && algorithm!=null && (algorithm.equals("kmAnonymity") || algorithm.equals("apriori") ||algorithm.equals("AprioriShort")) && selectednode==null){
+        else if(data!=null && hierarchies!=null && algorithm!=null && (algorithm.equals("kmAnonymity") || algorithm.equals("apriori") ||algorithm.equals("AprioriShort") || algorithm.equals("clustering")) && selectednode==null){
             check.setOriginalExists("true");
             check.setAnonExists("true");
         }
@@ -3951,7 +4156,7 @@ System.out.println("url = " + url);
     
     
     //amnesia/anonymize
-     @RequestMapping(value="/anonymize",  method = RequestMethod.POST) //method = RequestMethod.POST
+    @RequestMapping(value="/anonymize",  method = RequestMethod.POST) //method = RequestMethod.POST
     public @ResponseBody String anonymize (@RequestParam("k") int k, @RequestParam("m") int m, @RequestParam("algo") String algo , @RequestParam("relations") String[] relations , HttpSession session)  {
         
         
@@ -3990,12 +4195,15 @@ System.out.println("url = " + url);
         String checkHier = null;
         for (Map.Entry<Integer, Hierarchy> entry : quasiIdentifiers.entrySet()) {
             Hierarchy h = entry.getValue();
-            if (h.getHierarchyType().equals("range")){
-                checkHier = h.checkHier();
+//            if (h.getHierarchyType().equals("range")){
+//                checkHier = h.checkHier(data,entry.getKey());
+//            }
+            if(h instanceof HierarchyImplString){
+                h.syncDictionaries(entry.getKey(),data);
             }
             
-            
             //provlima stin  hierarchia
+            checkHier = h.checkHier(data,entry.getKey());
             if(checkHier != null && !checkHier.endsWith("Ok")){
                 return checkHier;
             }
@@ -4164,3 +4372,5 @@ System.out.println("url = " + url);
     }
     
 }
+
+

@@ -18,6 +18,7 @@
  */
 package hierarchy;
 
+import exceptions.LimitException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -33,13 +34,15 @@ import java.util.Date;
  * @param <T>
  */
 public interface Hierarchy <T> {
+    public int online_limit = 1000;
+    public String online_version = "online";
     public int[][] getHierarchy();
     public void setHierarchy();
     public void setDictionaryData(DictionaryString dict);
     public int getHierarchyLength();
     public void print();
     
-    public void load();
+    public void load() throws LimitException;
     public List<T> getChildren(T parent);
     public Integer getLevel(T node);
     public Integer getLevel(double nodeId);
@@ -59,19 +62,21 @@ public interface Hierarchy <T> {
 //    public void setHierachyType(String type);
     public String getHierarchyType();
     
-    public void add(T newObj, T parent);
+    public void add(T newObj, T parent) throws LimitException;
     public void clear();
+    public void clearAprioriStructures();
     public void edit(T oldValue, T newValue);
     public Map<Integer, Set<T>> remove(T obj);
     public Map<Integer,Set<T>> dragAndDrop(T firstObj,T lastObj);
     public Map<Integer,Set<T>> BFS(T firstnode,T lastNode);
+    public boolean checkExistance(Double d);
     
     public void computeWeights(Data dataset, String column);
     public Integer getWeight(T node);
     public Integer getWeight(double nodeId);
     public int getLevelSize(int level);
     
-    public void autogenerate();
+    public void autogenerate() throws LimitException;
     
     public T checkColumn(int column, Data dataset);
     public DictionaryString getDictionary();
@@ -95,7 +100,8 @@ public interface Hierarchy <T> {
     public void syncDictionaries(Integer column, Data data);
     public Graph getGraph(String node,int level);
     
-    public String checkHier();
+    public String checkHier(Data d,int col);
     public int translateDateViaLevel(int level);
     public int findCommonHeight(Double n1, Double n2);
+    public Double findCommon(Double n1, Double n2);
 }

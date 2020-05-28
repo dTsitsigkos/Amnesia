@@ -110,7 +110,7 @@ public class Buffer {
                     System.out.print("project");
                     if(h.getNodesType().equals("double") ||  h.getNodesType().equals("int")){
                         if ( i ==0 ){
-                            if ( (double) rowValue == 2147483646.0 ||  rowValue.equals(Double.NaN)){
+                            if (rowValue!=null && ((double) rowValue == 2147483646.0 ||  rowValue.equals(Double.NaN))){
                                 Map<Integer, ArrayList<RangeDouble>> x = h.getAllParents();
                                 ArrayList<RangeDouble> newList = x.get(x.size()-1);
                                 if(newList.size() != 1){
@@ -130,13 +130,14 @@ public class Buffer {
                             rowValue = h.getParent(rowValue);
                         }
                     }
-                    else if (h.getNodesType().equals("date") ){
+                    else if (rowValue!=null && h.getNodesType().equals("date") ){
                         Date d = null;
                         RangeDate rd = null;
                         
-                        //System.out.println("rowValueeeeeeeee = " + rowValue);
-                        if (!rowValue.toString().contains("-")){
+//                        System.out.println("rowValueeeeeeeee = " + rowValue);
+                        if ( !rowValue.toString().contains("-")){
                             if (rowValue.toString().equals("NaN")){
+                                System.out.println("Mpainei ");
                                 d = null;
                             }
                             else{
@@ -149,14 +150,8 @@ public class Buffer {
                         if (d != null){
                             if ( i ==0 ){
                                 if ( d == null ){
-                                    Map<Integer, ArrayList<RangeDate>> x = h.getAllParents();
-                                    ArrayList<RangeDate> newList = x.get(x.size()-1);
-                                    if(newList.size() != 1){
-                                        rowValue = newList.get(0);
-                                    }
-                                    else{
-                                        rowValue = x.get(0).get(0);//h.getParent((Double)anonymizedValue);
-                                    }
+                                    rowValue = h.getParent(new RangeDate(null,null));
+                                    System.out.println("Row value null "+rowValue);
                                 }
                                 else{
                                     rowValue = h.getParent(d);
@@ -171,13 +166,7 @@ public class Buffer {
                             if ( i ==0 ){
                                 if ( rd == null){
                                     Map<Integer, ArrayList<RangeDate>> x = h.getAllParents();
-                                    ArrayList<RangeDate> newList = x.get(x.size()-1);
-                                    if(newList.size() != 1){
-                                        rowValue = newList.get(0);
-                                    }
-                                    else{
-                                        rowValue = x.get(0).get(0);//h.getParent((Double)anonymizedValue);
-                                    }
+                                    rowValue = h.getParent(new RangeDate(null,null));
                                 }
                                 
                                 else{
@@ -202,8 +191,13 @@ public class Buffer {
             }
 
 //            System.out.println("rowvalue = " + h.getDictionary().getIdToString(((Double)rowValue).intValue()));
-            
-            gRow.generalizedColumns[j] = rowValue.toString();
+//            System.out.println("rowValue  "+rowValue);
+            if(rowValue != null){
+                gRow.generalizedColumns[j] = rowValue.toString();
+            }
+            else{
+                gRow.generalizedColumns[j] = null;
+            }
             j++;
         }
         
@@ -295,6 +289,7 @@ public class Buffer {
                             }
                         }
                         else if (h.getNodesType().equals("date") ){
+                            System.out.println("Value "+value);
                             if(parentNodeTransf[i] == 0 && nodeTransf[i] > 0){
                                 SimpleDateFormat sf = new SimpleDateFormat("E MMM dd HH:mm:ss z yyyy" );
                                 Date doubleValue =  sf.parse(value.toString());

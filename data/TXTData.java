@@ -18,9 +18,12 @@
 */
 package data;
 
+import exceptions.LimitException;
+import exceptions.NotFoundValueException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
+import controller.AppCon;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
@@ -38,12 +41,15 @@ import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.table.TableModel;
 import dictionary.DictionaryString;
+import exceptions.DateParseException;
 import hierarchy.Hierarchy;
 import hierarchy.ranges.RangeDouble;
+import java.io.IOException;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import javax.persistence.Column;
@@ -74,6 +80,7 @@ public class TXTData implements Data,Serializable{
     private Map <Integer,String> colNamesPosition = null;
 //    private Map <Integer,DictionaryString> dictionary = null;
     private DictionaryString dictionary = null;
+    private DictionaryString dictHier = null;
     @JsonView(View.SmallDataSet.class)
     private String[][] smallDataSet;
     @JsonView(View.DataSet.class)
@@ -88,6 +95,7 @@ public class TXTData implements Data,Serializable{
     private int recordsFiltered;
     @JsonView(View.SmallDataSet.class)
     private String errorMessage = null;
+    private String[] formatsDate = null;
     
     private static final String[] formats = { 
                 "yyyy-MM-dd'T'HH:mm:ss'Z'",   "yyyy-MM-dd'T'HH:mm:ssZ",
@@ -98,7 +106,7 @@ public class TXTData implements Data,Serializable{
                 "MM/dd/yyyy'T'HH:mm:ssZ",     "MM/dd/yyyy'T'HH:mm:ss", 
                 "yyyy:MM:dd HH:mm:ss",        "yyyy/MM/dd", 
                 "yyyy:MM:dd HH:mm:ss.SS",      "dd/MM/yyyy",
-                "dd MMM yyyy"};  
+                "dd MMM yyyy",                "dd-MMM-yyy"};  
                                                 
                                                 
     
@@ -109,7 +117,8 @@ public class TXTData implements Data,Serializable{
         colNamesType = new TreeMap<Integer,String>();
         colNamesPosition = new HashMap<Integer,String>();
         chVar = new CheckVariables();
-        dictionary = dict;
+        dictHier = dict;
+        dictionary = new DictionaryString();
         
         this.inputFile = inputFile;
         if ( del == null ){
@@ -194,7 +203,7 @@ public class TXTData implements Data,Serializable{
      * Executes a preprocessing of the dataset
      */
     @Override
-    public void preprocessing() {
+    public void preprocessing() throws LimitException {
         FileInputStream fstream = null;
         DataInputStream in = null;
         BufferedReader br = null;
@@ -211,6 +220,9 @@ public class TXTData implements Data,Serializable{
             //counts lines of the dataset
             while ((strLine = br.readLine()) != null)   {
                 counter++;
+                if(AppCon.os.equals(online_version) && counter > online_rows){
+                    throw new LimitException("Dataset is too large, the limit is "+online_rows+" rows, please download desktop version, the online version is only for simple execution.");
+                }
             }
             
             //System.out.println("counter = " + counter);
@@ -218,7 +230,8 @@ public class TXTData implements Data,Serializable{
             sizeOfRows = counter;
             in.close();
             
-        }catch (Exception e){
+        }catch (IOException e){
+            e.printStackTrace();
             System.err.println("Error: " + e.getMessage());
         }
     }
@@ -228,7 +241,7 @@ public class TXTData implements Data,Serializable{
      */
     
     @Override
-    public String save(boolean[] checkColumns) {
+    public String save(boolean[] checkColumns) throws DateParseException{
         
         FileInputStream fstream = null;
         DataInputStream in = null;
@@ -236,9 +249,21 @@ public class TXTData implements Data,Serializable{
         String strLine = null;
         String []temp = null;
         String []colNames = null;
+        SimpleDateFormat sdf[] = new SimpleDateFormat[this.columnNames.length];
+        SimpleDateFormat sdfDefault = new SimpleDateFormat("dd/MM/yyyy");
         ArrayList<String> columns = new ArrayList<String>();
+        int counterSdf = 0;
+        
         int counter = 0;
-        int stringCount = dictionary.getMaxUsedId()+1;
+        int stringCount;
+        if(dictionary.isEmpty() && dictHier.isEmpty()){
+            System.out.println("Both empy load data");
+            stringCount = 1;
+        }
+        else {
+            System.out.println("Hier not empty load data");
+            stringCount = dictHier.getMaxUsedId()+1;
+        }
         boolean FLAG = true;
         int counter1 = 0 ;
         
@@ -248,23 +273,27 @@ public class TXTData implements Data,Serializable{
             br = new BufferedReader(new InputStreamReader(in));
             
             while ((strLine = br.readLine()) != null){
-                
+//                System.out.println("Edw mpainei");
                 //do not read the fist line
                 if (FLAG == true){
                     temp = strLine.split(delimeter,-1);
                     for ( int i = 0 ; i < temp.length ; i ++){
                         if (checkColumns[i] == true){
                             columns.add(temp[i]);
+                            if(colNamesType.get(counterSdf).contains("date")){
+                                sdf[counterSdf] = new SimpleDateFormat(this.formatsDate[counterSdf]);
+                            }
+                            counterSdf++;
                         }
                     }
                     colNames = new String[columns.size()];
                     colNames = columns.toArray(new String[0]);
                     this.setColumnNames(colNames);
                     FLAG = false;
+                    System.out.println("Size "+sizeOfRows+ " and "+columnNames.length);
                     dataSet = new double[sizeOfRows][columnNames.length];
                 }
                 else{
-                    
                     temp = strLine.split(delimeter,-1);
                     counter1 = 0;
                     for (int i = 0; i < temp.length ; i ++ ){
@@ -290,6 +319,7 @@ public class TXTData implements Data,Serializable{
                             else if (colNamesType.get(counter1).contains("double")){
                                 if ( !temp[i].equals("")){
 //                                    System.out.println("double "+Double.parseDouble(temp[i]));
+                                    temp[i] = temp[i].replaceAll(",", ".");
                                     dataSet[counter][counter1] = Double.parseDouble(temp[i]);
                                 }
                                 else{
@@ -303,7 +333,25 @@ public class TXTData implements Data,Serializable{
 //                                System.out.println("date= "+temp[i]+" counter= "+counter+" counter1= "+counter1+" ");
                                 if ( !temp[i].equals("")){
                                     var = temp[i];
-                                    var = this.timestampToDate(var);
+//                                    var = this.timestampToDate(var);
+//                                    sdf.parse(var);
+//                                    System.out.println("Format Date "+this.columnNames[counter1]+" format "+this.formatsDates[counter1]);
+                                    try{
+                                        if(this.formatsDate[counter1].equals("dd/MM/yyyy")){
+                                            var = sdf[counter1].parse(var) == null ? null : var;
+                                        }
+                                        else{
+                                            Date d = sdf[counter1].parse(var);
+                                            var = sdfDefault.format(d);
+                                        }
+
+                                        if(var == null){
+                                            var = "NaN";
+                                        }
+                                    }catch(ParseException ep){
+                                        throw new DateParseException(ep.getMessage()+"\nDate format must be the same in column "+this.columnNames[counter1]);
+                                    }
+                                    
                                 }
                                 else {
                                     var = "NaN";
@@ -316,7 +364,7 @@ public class TXTData implements Data,Serializable{
                                 if (var != null) {
                                     
                                 //if string is not present in the dictionary
-                                    if (dictionary.containsString(var) == false){
+                                    if (!dictionary.containsString(var) && !this.dictHier.containsString(var)){
                                         if(var.equals("NaN")){
                                             dictionary.putIdToString(2147483646, var);
                                             dictionary.putStringToId(var,2147483646);
@@ -333,8 +381,14 @@ public class TXTData implements Data,Serializable{
                                     }
                                     else{
                                         //if string is present in the dictionary, get its id
-                                        int stringId = dictionary.getStringToId(var);
-                                        dataSet[counter][counter1] = stringId;
+                                        if(dictionary.containsString(var)){
+                                            int stringId = dictionary.getStringToId(var);
+                                            dataSet[counter][counter1] = stringId;
+                                        }
+                                        else{
+                                            int stringId = this.dictHier.getStringToId(var);
+                                            dataSet[counter][counter1] = stringId;
+                                        }
                                     }
                                 }
                             }
@@ -349,6 +403,7 @@ public class TXTData implements Data,Serializable{
                                     var = "NaN";
                                 }
                                 
+                                
 //                                if(var.equals("A0")){
 //                                    System.out.println("Yparxei sto dataset "+var+"sth grammh "+counter);
 //                                }
@@ -361,7 +416,7 @@ public class TXTData implements Data,Serializable{
 //                                    }
 //                                }
                                 //if string is not present in the dictionary
-                                if (dictionary.containsString(var) == false){
+                                if (!dictionary.containsString(var) && !this.dictHier.containsString(var)){
                                      if(var.equals("NaN")){
                                         dictionary.putIdToString(2147483646, var);
                                         dictionary.putStringToId(var,2147483646);
@@ -378,9 +433,16 @@ public class TXTData implements Data,Serializable{
                                 }
                                 else{
                                     //if string is present in the dictionary, get its id
-                                    int stringId = dictionary.getStringToId(var);
-                                    dataSet[counter][counter1] = stringId;
+                                    if(dictionary.containsString(var)){
+                                        int stringId = dictionary.getStringToId(var);
+                                        dataSet[counter][counter1] = stringId;
+                                    }
+                                    else{
+                                        int stringId = this.dictHier.getStringToId(var);
+                                        dataSet[counter][counter1] = stringId;
+                                    }
                                 }
+//                                System.out.println("String value "+var+" id "+dataSet[counter][counter1]+" row "+counter+"col "+counter1);
                             }
                             counter1++;
                         }
@@ -401,7 +463,11 @@ public class TXTData implements Data,Serializable{
             }*/
             
             
-        }catch (Exception e){//Catch exception if any
+        }catch(DateParseException de){
+            throw new DateParseException(de);
+        }
+        catch(Exception e){//Catch exception if any
+            e.printStackTrace();
             System.err.println("Error: " + e.getMessage());
             return null;
         }
@@ -413,7 +479,7 @@ public class TXTData implements Data,Serializable{
      * Reads dataset from file (preprocessing and load)
      */
     @Override
-    public String readDataset(String[] columnTypes, boolean[] checkColumns) {
+    public String readDataset(String[] columnTypes, boolean[] checkColumns) throws LimitException, DateParseException {
         SaveClmnsAndTypeOfVar(columnTypes,checkColumns);
         preprocessing();
         String result = save(checkColumns);
@@ -690,7 +756,10 @@ public class TXTData implements Data,Serializable{
         String strLine = null;
         String []temp = null;
         String []colNames = null;
+        String [] newFormatDate = null;
+        
         boolean FLAG = true;
+        boolean removedColumn = false;
         
         try {
             fstream = new FileInputStream(inputFile);
@@ -710,12 +779,18 @@ public class TXTData implements Data,Serializable{
                             counter++;
                         }
                     }
+                    
+                    if(counter != columnNames.length){
+                        newFormatDate = new String[counter];
+                        removedColumn = true;
+                    }
                     FLAG = false;
                 }
             }
             
             counter = 0 ;
             //save column types
+//            System.out.println("Column Types from user "+Arrays.toString(columnTypes));
             for ( int i = 0 ; i < columnTypes.length ; i ++ ){
                 //System.out.println("columnnnnnnnnnnnnnn = " + colNamesType.size());
                 if ( checkColumns[i] == true){
@@ -727,6 +802,9 @@ public class TXTData implements Data,Serializable{
                     }
                     else if (columnTypes[i].equals("date")){
                         colNamesType.put(counter, "date");
+                        if(removedColumn){
+                            newFormatDate[counter] = this.formatsDate[i]; 
+                        }
 //                        dictionary.put(counter, new DictionaryString());
                     }
                     else{
@@ -738,7 +816,12 @@ public class TXTData implements Data,Serializable{
                 }
             }
             
-            sizeOfCol = columnTypes.length;
+            if(counter!=columnTypes.length){
+                this.columnNames =  colNamesPosition.values().toArray(new String[this.colNamesPosition.size()]);
+                this.formatsDate = newFormatDate;
+            }
+            sizeOfCol = columnNames.length;
+            System.out.println("new Names "+Arrays.toString(this.columnNames));
             in.close();
         }catch (Exception e){
             System.err.println("Error: " + e.getMessage());
@@ -768,6 +851,7 @@ public class TXTData implements Data,Serializable{
                     temp = strLine.split(delimeter,-1);
                     columnNames = new String[temp.length];
                     smallDataSet = new String[6][temp.length];
+                    this.formatsDate = new String[temp.length];
                     for ( int i = 0 ; i < temp.length ; i ++){
                         columnNames[i] = temp[i];
                     }
@@ -805,6 +889,7 @@ public class TXTData implements Data,Serializable{
                                 }
                                 else if(chVar.isDate(temp[i])){
                                     smallDataSet[counter][i] = "date";
+                                    this.formatsDate[i] = chVar.lastFormat;
                                 }
                                 else{  
                                     smallDataSet[counter][i] = "string";
@@ -849,6 +934,7 @@ public class TXTData implements Data,Serializable{
                                     }
                                     else if(chVar.isDate(temp[i])){
                                         smallDataSet[0][i] ="date";
+                                        this.formatsDate[i] = chVar.lastFormat;
                                     }
                                     else{  
                                         smallDataSet[0][i] = "string";
@@ -926,7 +1012,7 @@ public class TXTData implements Data,Serializable{
         for ( int i = start ; i < max ; i ++){
             linkedHashTemp = new LinkedHashMap<>();
             for (int j = 0 ; j < colNamesType.size() ; j ++){
-                //System.out.println("data = " + dataSet[i][j]);
+//                System.out.println(" row "+i+" col "+j+" type "+colNamesType.get(j));
                 if (colNamesType.get(j).equals("double")){
                     if (Double.isNaN(dataSet[i][j])){
                         linkedHashTemp.put(columnNames[j],"");
@@ -946,7 +1032,11 @@ public class TXTData implements Data,Serializable{
                     }
                 }
                 else{
+//                    System.out.println("Value "+dataSet[i][j]+" row "+i+" col "+j+" type "+colNamesType.get(j));
                     String str = dictionary.getIdToString((int)dataSet[i][j]);
+                    if(str == null){
+                        str = this.dictHier.getIdToString((int)dataSet[i][j]);
+                    }
 //                    DictionaryString dict = dictionary.get(j);
 //                    String str = dict.getIdToString((int)dataSet[i][j]);
 
@@ -1145,6 +1235,9 @@ public class TXTData implements Data,Serializable{
                     }
                     else{
                         String str = dictionary.getIdToString((int)dataSet[i][j]);
+                        if(str == null){
+                            str = this.dictHier.getIdToString((int)dataSet[i][j]);
+                        }
     //                    DictionaryString dict = dictionary.get(j);
     //                    String str = dict.getIdToString((int)dataSet[i][j]);
 

@@ -18,6 +18,11 @@
  */
 package hierarchy.ranges;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import org.apache.commons.lang.StringUtils;
+
 /**
  *
  * @author serafeim
@@ -26,6 +31,7 @@ public class RangeDouble {
     public Double lowerBound; 
     public Double upperBound;
     public String nodesType;
+    public DecimalFormat newFormat = new DecimalFormat("#.##");
     
     
     public RangeDouble(){
@@ -39,7 +45,7 @@ public class RangeDouble {
     }
     
     public void print(){
-        System.out.println(lowerBound + ", " + upperBound);
+        System.out.println(lowerBound + "-" + upperBound);
     }
     
     @Override
@@ -67,8 +73,11 @@ public class RangeDouble {
      @Override 
      public String toString(){
         StringBuilder sb = new StringBuilder();
-
-        if (this.nodesType.equals("double")){
+        
+        if(this.lowerBound.equals(Double.NaN)){
+            return "Nan-Nan";
+        }
+        if (this.nodesType!=null && this.nodesType.equals("double")){
             sb.append(this.lowerBound);
             sb.append("-");
             sb.append(this.upperBound);
@@ -205,15 +214,60 @@ public class RangeDouble {
     
     public static RangeDouble parseRange(String str){
         String[] arr = str.split("-");
-        double lowBound = Double.parseDouble(arr[0].trim());
-        double highBound = Double.parseDouble(arr[1].trim());
+        Double start=null,end=null;
+        int count = StringUtils.countMatches(str, "-");
+        if(count==1){
+            start = Double.parseDouble(arr[0]);
+            end = Double.parseDouble(arr[1]);
+        }
+        else if(count==2){
+            try{
+                start = Double.parseDouble("-"+arr[1]);
+                end = Double.parseDouble(arr[2]);
+                System.out.println("Count "+count+" start "+start+" end "+end);
+            }catch(Exception e1){
+                e1.printStackTrace();
+
+                // TODO exception 
+            }
+        }
+        else if(count==3){
+            try{
+                start = Double.parseDouble("-"+arr[1]);
+                end = Double.parseDouble("-"+arr[3]);
+                System.out.println("Count "+count+" start "+start+" end "+end);
+            }catch(Exception e2){
+                 e2.printStackTrace();
+
+                // TODO exception 
+            }
+        }
+        else{
+            /// TODO exception 
+
+            System.out.println("Count "+count);
+        }
+//        double lowBound = Double.parseDouble(arr[0].trim());
+//        double highBound = Double.parseDouble(arr[1].trim());
         
-        return new RangeDouble(lowBound, highBound);
+        return new RangeDouble(start, end);
     }
 
     public void setNodesType(String nodesType) {
         this.nodesType = nodesType;
     }
+    
+//    public void toFixed(Double start, Double end){
+//        if(!start.equals(this.lowerBound)){
+//           this.lowerBound =  BigDecimal.valueOf(lowerBound).setScale(7, RoundingMode.HALF_UP)
+//            .doubleValue();
+//        }
+//        
+//        if(!end.equals(this.upperBound)){
+//            this.upperBound =  BigDecimal.valueOf(upperBound).setScale(7, RoundingMode.HALF_UP)
+//            .doubleValue();
+//        }
+//    }
 
     
 }

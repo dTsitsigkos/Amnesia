@@ -33,9 +33,11 @@ public class CheckVariables {
                 "MM/dd/yyyy HH:mm:ss",        "MM/dd/yyyy'T'HH:mm:ss.SSS'Z'", 
                 "MM/dd/yyyy'T'HH:mm:ss.SSSZ", "MM/dd/yyyy'T'HH:mm:ss.SSS", 
                 "MM/dd/yyyy'T'HH:mm:ssZ",     "MM/dd/yyyy'T'HH:mm:ss", 
-                "yyyy:MM:dd HH:mm:ss",       //"yyyy/MM/dd",
-                "yyyy:MM:dd HH:mm:ss.SS",     "dd/MM/yyyy",
-                "dd MMM yyyy"};    
+                "yyyy:MM:dd HH:mm:ss",         "dd/MM/yyyy",
+                "yyyy:MM:dd HH:mm:ss.SS",     "yyyy/MM/dd",
+                "dd MMM yyyy",                "dd-MMM-yyy",
+                "dd-MM-yyyy"};   
+    public String lastFormat;
                                                 
                                                 
     
@@ -66,7 +68,8 @@ public class CheckVariables {
      */
     public boolean isDouble(String s){
         try{ 
-            double d = Double.parseDouble(s); 
+            String temp = s.replaceAll(",", ".");
+            double d = Double.parseDouble(temp); 
             return true; 
         }
         catch(NumberFormatException er){ 
@@ -80,6 +83,7 @@ public class CheckVariables {
                 SimpleDateFormat sdf = new SimpleDateFormat(parse);
                 try {
                     if (sdf.parse(s)!= null){
+                        this.lastFormat = parse;
                         return true;
                     }
                     System.out.println("Printing the value of " + parse);

@@ -18,8 +18,11 @@
  */
 package hierarchy.distinct;
 
+import exceptions.LimitException;
 import com.fasterxml.jackson.annotation.JsonView;
+import controller.AppCon;
 import data.Data;
+import data.DiskData;
 import data.RelSetData;
 import data.SETData;
 import dictionary.DictionaryString;
@@ -27,6 +30,8 @@ import graph.Edge;
 import graph.Graph;
 import graph.Node;
 import hierarchy.Hierarchy;
+import static hierarchy.Hierarchy.online_limit;
+import static hierarchy.Hierarchy.online_version;
 import hierarchy.NodeStats;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -64,7 +69,8 @@ public class HierarchyImplString implements Hierarchy<Double> {
     BufferedReader br = null;
     //@JsonView(View.Hier.class)
     Double root = null;
-    DictionaryString dict = null;
+    static DictionaryString dict = null;
+    int counterNodes = 0;
     DictionaryString dictData = null;
     
     int levelFlash = -1;
@@ -90,7 +96,9 @@ public class HierarchyImplString implements Hierarchy<Double> {
         stats = new HashMap<>();
         parents = new HashMap<>();
 //    Map<String, List<String>> siblings = new HashMap<>();
-        dict = new DictionaryString();
+        if(dict == null){
+            dict = new DictionaryString();
+        }
         allParents = new HashMap<>();
         allParentIds = new HashMap<>();
         parentsInteger = null;
@@ -107,7 +115,9 @@ public class HierarchyImplString implements Hierarchy<Double> {
         stats = new HashMap<>();
         parents = new HashMap<>();
 //    Map<String, List<String>> siblings = new HashMap<>();
-        dict = new DictionaryString();
+        if(dict == null){
+            dict = new DictionaryString();
+        }
         allParents = new HashMap<>();
         allParentIds = new HashMap<>();
         parentsInteger = null;
@@ -118,7 +128,7 @@ public class HierarchyImplString implements Hierarchy<Double> {
     }
     
     @Override
-    public void load(){
+    public void load() throws LimitException{
         try {
             br = new BufferedReader(new FileReader(this.inputFile));
             processingMetadata();
@@ -134,44 +144,84 @@ public class HierarchyImplString implements Hierarchy<Double> {
         findAllParents();
     }
     
-    private void loadHierarchy() throws IOException{
+    public static DictionaryString getWholeDictionary(){
+        return dict;
+    }
+    
+    public static void setWholeDictionary(DictionaryString d){
+        dict = d;
+    }
+    
+    private void loadHierarchy() throws IOException, LimitException{
         String line;
         int curLevel = this.height - 1;
-        int strCount = dictData.getMaxUsedId()+1;
+        int strCount;
+        if(dictData.isEmpty() && dict.isEmpty()){
+            System.out.println("Both empty");
+            strCount = 1;
+        }
+        else if(!dictData.isEmpty() && !dict.isEmpty()){
+            System.out.println("Both have values");
+            if(dictData.getMaxUsedId() > dict.getMaxUsedId()){
+                strCount = dictData.getMaxUsedId()+1;
+            }
+            else{
+                strCount = dict.getMaxUsedId()+1;
+            }
+        }
+        else if(dictData.isEmpty()){
+            System.out.println("Dict data empty");
+            strCount = dict.getMaxUsedId()+1;
+        }
+        else{
+            System.out.println("Dict hier empty");
+            strCount = dictData.getMaxUsedId()+1;
+        }
+//        int strCount = dictData.getMaxUsedId()+1;
         System.out.println("strCount starts: "+strCount);
         List<String> lastParents = new ArrayList<String>();
         Map<String,List<Double>> childrenLast = new HashMap<String,List<Double>>();
         List<Double> lastLevelChilds;
-        double strId=-1;
+        Double strId= -1.0;
 
         
         while ((line = br.readLine()) != null) {
             String tokens[] = line.split(" ");
             if(line.trim().isEmpty()){
-                
+                System.out.println("Line "+line);
                 if(curLevel==this.height -1 ){
                     for(String tkn : lastParents){
                         
                         
                         if(dictData.containsString(tkn)){
-                            strId = dictData.getStringToId(tkn);
+                            strId = dictData.getStringToId(tkn).doubleValue();
                         }
                         else{
                             if(!dict.containsString(tkn)){
                                 dict.putIdToString(strCount, tkn);
                                 dict.putStringToId(tkn, strCount++);
                             }
-                            strId = dict.getStringToId(tkn);
+                            strId = dict.getStringToId(tkn).doubleValue();
                         }
                         
                         this.stats.put(strId, new NodeStats(curLevel-1));
                         lastLevelChilds = childrenLast.get(tkn);
                         this.children.put(strId, lastLevelChilds);
                         
+                        counterNodes += lastLevelChilds.size();
+                        if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+                            throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+                        }
+                        
                         for(Double chId : lastLevelChilds){
                             this.parents.put(chId, strId);
                             this.stats.put(chId, new NodeStats(curLevel));
 
+                        }
+                        
+                        if(curLevel - 1 == 0 && lastParents.size()==1){
+                            root = strId;
+                            
                         }
                         
                     }
@@ -195,14 +245,14 @@ public class HierarchyImplString implements Hierarchy<Double> {
                     
                     
                     if(dictData.containsString(token)){
-                        strId = dictData.getStringToId(token);
+                        strId = dictData.getStringToId(token).doubleValue();
                     }
                     else{
                         if(!dict.containsString(token)){
                             dict.putIdToString(strCount, token);
                             dict.putStringToId(token, strCount++);
                         }
-                        strId = dict.getStringToId(token);
+                        strId = dict.getStringToId(token).doubleValue();
                     }
                     if(!isChild){
                         idParent = strId;
@@ -211,12 +261,16 @@ public class HierarchyImplString implements Hierarchy<Double> {
                     if(isChild){
                         //System.out.println(token);
                         ch.add(strId);
+                        counterNodes ++;
+                        if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+                            throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+                        }
                         this.stats.put(strId, new NodeStats(curLevel));
                         this.parents.put(strId, idParent);
-                        if(!this.children.containsKey(strId) && !this.dictData.containsString(token) && !this.dictData.containsId((int)strId)){
-                            this.dictData.putIdToString((int)strId, token);
-                            dictData.putStringToId(token, (int)strId);
-                        }
+//                        if(!this.children.containsKey(strId) && !this.dictData.containsString(token) && !this.dictData.containsId((int)strId)){
+//                            this.dict.putIdToString((int)strId, token);
+//                            dict.putStringToId(token, (int)strId);
+//                        }
                     }
                     else{
                         this.stats.put(strId, new NodeStats(curLevel-1));
@@ -224,22 +278,35 @@ public class HierarchyImplString implements Hierarchy<Double> {
                         //level 0 and isChild == false then set as root
                         if(curLevel - 1 == 0){
                             root = idParent;
+                            this.stats.put(root, new NodeStats(0));
+                            counterNodes ++;
+                            if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+                                throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+                            }
                         }
                     }
                 }
                 else{
-                    if(isChild && !dictData.containsString(token)){
-                        dictData.putIdToString(strCount, token);
-                        dictData.putStringToId(token, strCount++);
+                    if(isChild && !dictData.containsString(token) && !dict.containsString(token)){
+                        
+                        dict.putIdToString(strCount, token);
+                        dict.putStringToId(token, strCount++);
                         ch.add((double)strCount-1);
                     }
                     else if(isChild){
-                        strId = dictData.getStringToId(token);
+                        if(dictData.containsString(token)){
+                            strId = dictData.getStringToId(token).doubleValue();
+                        }
+                        else {
+                             strId = dict.getStringToId(token).doubleValue();
+                        }
+                        
                         ch.add(strId);
                     }
-                    else if(!dict.containsString(token)){
+                    else if(token.equals(tokens[0])){
                        lastParents.add(token);
                     }
+                    
                 }
                 
                 
@@ -273,7 +340,7 @@ public class HierarchyImplString implements Hierarchy<Double> {
 //            System.out.println(objectName);
 //            System.out.println(dict.idToString.get(objectName));
 //        }
-        
+        System.out.println("Num Nodes "+this.counterNodes);
         
     }
     
@@ -340,11 +407,21 @@ public class HierarchyImplString implements Hierarchy<Double> {
     public Integer getLevel(Double node){
         NodeStats nodeStats = this.stats.get(node);
         if(nodeStats == null){
-            System.out.println("Error: stats for node " + node + "value dictionary data "+dictData.getIdToString(node.intValue())+" value dictionary hierarvhy "+dict.getIdToString(node.intValue())+ " cannot be found!");
+//            System.out.println("Error: stats for node " + node + "value dictionary data "+dictData.getIdToString(node.intValue())+" value dictionary hierarvhy "+dict.getIdToString(node.intValue())+ " cannot be found!");
             return null;
         }
         
         return nodeStats.getLevel();
+    }
+    
+    @Override
+    public boolean checkExistance(Double d){
+        if(d.doubleValue() != root.doubleValue()){
+            return this.parents.get(d) != null;
+        }
+        else{
+            return true;
+        }
     }
     
     
@@ -486,11 +563,15 @@ public class HierarchyImplString implements Hierarchy<Double> {
     
     
     @Override
-    public void add(Double newObj, Double parent) {
+    public void add(Double newObj, Double parent) throws LimitException {
         System.out.println("add () newItem: "  + newObj.toString() + " parentItem: " + parent.toString());
         
         
-        
+        counterNodes ++;
+        if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+            counterNodes--;
+            throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.",false);
+        }
         
         if(parent != null){
             this.stats.put(newObj, new NodeStats(this.stats.get(parent).getLevel()+1));
@@ -594,16 +675,18 @@ public class HierarchyImplString implements Hierarchy<Double> {
             
             for(Double itemToDelete : nodesMap.get(i)){
                 
-                if(this.getLevel(itemToDelete)!=this.height-1){
-                    dict.remove(itemToDelete.intValue());
-                }
+//                if(this.getLevel(itemToDelete)!=this.height-1){
+//                    dict.remove(itemToDelete.intValue());
+//                }
                 //System.out.println(itemToDelete.toString());
                 if(itemToDelete.equals(root)){
                     System.out.println("Cannot remove root");
                     return null;
                 }
+                
+                this.counterNodes--;
                 children.remove(itemToDelete);
-                children.get(getParent(itemToDelete)).remove(itemToDelete);
+                children.get(this.parents.get(itemToDelete)).remove(itemToDelete);
                 parents.remove(itemToDelete);
 //                List<String> sibs = siblings.get(itemToDelete);
 //                if(sibs != null){
@@ -657,6 +740,7 @@ public class HierarchyImplString implements Hierarchy<Double> {
         Double parent = null;
         ArrayList parentsList = null;
         List<Double> childrenListNew = null;
+        boolean changeRoot = false;
         
         /*System.out.println(this.stats.get(oldValue).getLevel());
         System.out.println("before");
@@ -673,6 +757,8 @@ public class HierarchyImplString implements Hierarchy<Double> {
                 this.children.put(newValue, childrenList);
                 this.children.remove(oldValue);
                 
+                changeRoot = true;
+                
                 //parents
                 for ( int i = 0; i < childrenList.size() ; i ++ ){
                     this.parents.remove(childrenList.get(i));
@@ -684,6 +770,9 @@ public class HierarchyImplString implements Hierarchy<Double> {
                 parentsList.remove(0);
                 parentsList.add(newValue);
                 allParents.put(0,parentsList);
+                this.stats.remove(root);
+                this.root = newValue;
+                this.stats.put(root, new NodeStats(0));
             }
             else{
                 // System.out.println("node");
@@ -733,7 +822,7 @@ public class HierarchyImplString implements Hierarchy<Double> {
         else{//leaf
             
             //children
-            parent = this.getParent(oldValue);
+            parent = this.parents.get(oldValue);
             childrenListNew = this.children.get(parent);
             for ( int i = 0 ; i < childrenListNew.size() ; i++ ){
                 if ( childrenListNew.get(i).equals(oldValue)){
@@ -762,8 +851,10 @@ public class HierarchyImplString implements Hierarchy<Double> {
             
         }
         
-        this.stats.put(newValue, this.stats.get(oldValue));
-        this.stats.remove(oldValue);
+        if(!changeRoot){
+            this.stats.put(newValue, this.stats.get(oldValue));
+            this.stats.remove(oldValue);
+        }
         
         /*System.out.println("after");
         for (Map.Entry<Double, List<Double>> entry : this.children.entrySet()) {
@@ -1237,7 +1328,7 @@ public class HierarchyImplString implements Hierarchy<Double> {
     }
     
     @Override
-    public void autogenerate() {
+    public void autogenerate() throws LimitException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     
@@ -1436,11 +1527,11 @@ public class HierarchyImplString implements Hierarchy<Double> {
         String nodeChild;
         
         System.out.println("roottttttttttttttttttttttttttt = " + root);
-        
+        System.out.println("nodeeeeeeeeeeeeeeeeeeeeee = " + node);
         
       
         
-        if ( !node.equals("null") && !node.equals("") && nodeLevel != 0 ){
+        if ( !node.equals("(null)") && !node.equals("") && nodeLevel != 0 ){
             
             if(dict.containsString(node)){
                 nodeId = (double) dict.getStringToId(node);
@@ -1464,6 +1555,9 @@ public class HierarchyImplString implements Hierarchy<Double> {
                             if (this.getLevel(nodeChilds.get(j)) == this.height -1){
                                 color = "red";
                                 nodeChild = dictData.getIdToString(nodeChilds.get(j).intValue());
+                                if(nodeChild == null){
+                                    nodeChild = dict.getIdToString(nodeChilds.get(j).intValue()); 
+                                }
                             }
                             else{
                                 color = null;
@@ -1523,6 +1617,9 @@ public class HierarchyImplString implements Hierarchy<Double> {
                             if (this.getLevel(nodeChilds.get(j)) == this.height -1){
                                 color = "red";
                                 nodeChild = dictData.getIdToString(nodeChilds.get(j).intValue());
+                                if(nodeChild == null){
+                                    nodeChild = dict.getIdToString(nodeChilds.get(j).intValue());
+                                }
                             }
                             else{
                                 color = null;
@@ -1579,6 +1676,9 @@ public class HierarchyImplString implements Hierarchy<Double> {
                             if (this.getLevel(nodeChilds.get(j)) == this.height -1){
                                 color = "red";
                                 nodeChild = dictData.getIdToString(nodeChilds.get(j).intValue());
+                                if(nodeChild == null){
+                                    nodeChild = dict.getIdToString(nodeChilds.get(j).intValue());
+                                }
                             }
                             else{
                                 color = null;
@@ -1588,7 +1688,7 @@ public class HierarchyImplString implements Hierarchy<Double> {
                                 }
                             }
                             
-                            if (nodeChilds.get(j).equals("NaN")){
+                            if (nodeChild.equals("NaN")){
                                 label = "(null)";
                             }
                             else{
@@ -1608,6 +1708,7 @@ public class HierarchyImplString implements Hierarchy<Double> {
                     
                     //System.out.println("nodeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee = " + node);
                 }
+                System.out.println("Root "+root+" dictionary ");
                 n = new Node(dict.getIdToString(root.intValue()),dict.getIdToString(root.intValue()),0,null,this.hierarchyType + "," +this.nodesType);
                 graph.setNode(n);
             
@@ -1641,8 +1742,99 @@ public class HierarchyImplString implements Hierarchy<Double> {
     }
 
     @Override
-    public String checkHier() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public String checkHier(Data d,int col) {
+        String str = "Ok";
+        if(d instanceof DiskData){
+            DiskData diskData = (DiskData) d;
+            Set<Double> values = new HashSet();
+            for(int i=0; i<this.height; i++){
+                values.addAll(this.allParents.get(i));
+            }
+            List<Double> missingValues = diskData.checkValues(values, col);
+            if(!missingValues.isEmpty()){
+                String originalValues = "";
+                String realValue = "";
+                if(missingValues.size() == 1){
+                    realValue = this.dictData.getIdToString(missingValues.get(0).intValue());
+                    if(realValue == null){
+                        realValue = this.dict.getIdToString(missingValues.get(0).intValue());
+                    }
+                    return "Value \""+realValue+"\" are not defined in hierarchy \""+this.name+"\"";
+                }
+                else{
+                    
+                    for(Double missingValue : missingValues) {
+                        realValue = this.dictData.getIdToString(missingValue.intValue());
+                        if(realValue == null){
+                            realValue = this.dict.getIdToString(missingValue.intValue());
+                        }
+                        originalValues += realValue +", ";
+                    }
+                    return "Values \""+originalValues.substring(0, originalValues.length() - 1)+"\" are not defined in hierarchy \""+this.name+"\"";
+                }
+            }
+        }
+        else if(d instanceof SETData){
+            double[][] dataset = d.getDataSet();
+            for(int i=0; i<dataset.length; i++){
+                for(int j=0; j<dataset[i].length; j++){
+                    Double parent = this.parents.get(dataset[i][j]);
+                    if(parent == null && root.doubleValue()!=dataset[i][j]){
+                        String value = d.getDictionary().getIdToString((int)dataset[i][j]);
+                        if(value == null){
+                            value = dict.getIdToString((int)dataset[i][j]);
+                        }
+                        return "Value \""+value+"\" is not defined in the hierarchy \""+this.name+"\"";
+                    }
+                }
+            }
+            
+        }
+        else if(d instanceof RelSetData){
+            RelSetData relsetData = (RelSetData) d;
+            double[][] dataset;
+            if(relsetData.getSetColumn() == col){
+                dataset = relsetData.getSet();
+                for(int i=0; i<dataset.length; i++){
+                    for(int j=0; j<dataset[i].length; j++){
+                        Double parent = this.parents.get(dataset[i][j]);
+                        if(parent == null && root.doubleValue()!=dataset[i][j]){
+                            String value = relsetData.getDictionary().getIdToString((int)dataset[i][j]);
+                            if(value == null){
+                                value = dict.getIdToString((int)dataset[i][j]);
+                            }
+                            return "Value \""+value+"\" in "+d.getColumnByPosition(col)+" column is not defined in the hierarchy \""+this.name+"\"";
+                        }
+                    }
+                }
+            }
+            else{
+                dataset = relsetData.getDataSet();
+                for(int i=0; i<dataset.length; i++){
+                    Double parent = this.parents.get(dataset[i][col]);
+                    if(parent == null && root.doubleValue()!=dataset[i][col]){
+                        return "Value \""+relsetData.getDictionary().getIdToString((int)dataset[i][col])+"\"  in "+d.getColumnByPosition(col)+" column is not defined in the hierarchy \""+this.name+"\"";
+                    }
+                }
+            }
+        }
+        else{
+            double[][] dataset = d.getDataSet();
+            for(int i=0; i<dataset.length; i++){
+                Double parent = this.parents.get(dataset[i][col]);
+                if(parent==null){
+                    String value = d.getDictionary().getIdToString((int)dataset[i][col]);
+                    if(value == null){
+                        value = dict.getIdToString((int)dataset[i][col]);
+                    }
+                    if(dataset[i][col]!= root.doubleValue()){
+                        return "Value "+d.getDictionary().getIdToString((int)dataset[i][col])+" in "+d.getColumnByPosition(col)+" column is not defined in the hierarchy \""+this.name+"\"";
+                    }
+                }
+            }
+        }
+        
+        return str;
     }
 
     @Override
@@ -1693,9 +1885,14 @@ public class HierarchyImplString implements Hierarchy<Double> {
                             parentLeaves.add(this.parents.get(node));
                         }
                     }
+                    
                 }
             }
-            else{
+            
+            if(entry.getKey() == height-2){
+                parentLeaves.addAll(nodesInLevel); 
+            }
+            else if(entry.getKey() == height-1){
                 leaves.addAll(nodesInLevel);
             }
         }
@@ -1706,7 +1903,8 @@ public class HierarchyImplString implements Hierarchy<Double> {
     }
     
     public void replaceHierValues(Integer id, Integer oldId){
-        /// chuldren stats parents allParents
+        /// children stats parents allParents
+//        System.out.println("Edv mpainei gia sync");
         if(this.children.containsKey(oldId.doubleValue())){
             List<Double> childrenList = this.children.get(oldId.doubleValue());
             this.children.remove(oldId.doubleValue());
@@ -1748,6 +1946,8 @@ public class HierarchyImplString implements Hierarchy<Double> {
             this.stats.remove(oldId.doubleValue());
             this.stats.put(id.doubleValue(), tempStats);
         }
+        
+//        System.out.println("Edw vgainei gia sync");
         
     }
     
@@ -1794,9 +1994,12 @@ public class HierarchyImplString implements Hierarchy<Double> {
                 dataset = relData.getDataSet();
             }
         }
-        else if(data instanceof Set){
+        else if(data instanceof SETData){
             dataset = data.getDataSet();
             set = true;
+        }
+        else if(data instanceof DiskData){
+            return;
         }
         else{
             dataset = data.getDataSet();
@@ -1808,11 +2011,11 @@ public class HierarchyImplString implements Hierarchy<Double> {
                 double value = dataset[i][column];
                 String strValue = idToStringData.get((int)value);
                 if(!newValues.containsKey(strValue)){
-                    if(this.dict.containsString(strValue) && value != this.dict.getStringToId(strValue).doubleValue()){
-                        Integer newId = this.dictData.getMaxUsedId() > this.dict.getMaxUsedId() ? this.dictData.getMaxUsedId()+1 : this.dict.getMaxUsedId()+1;
+                    if(dict.containsString(strValue) && value != dict.getStringToId(strValue).doubleValue()){
+                        Integer newId = this.dictData.getMaxUsedId() > this.dict.getMaxUsedId() ? this.dictData.getMaxUsedId()+1 : dict.getMaxUsedId()+1;
                         this.dictData.replace(strValue, newId, (int)value); 
                         replaceHierValues(newId,this.dict.getStringToId(strValue));
-                        this.dict.replace(strValue, newId, this.dict.getStringToId(strValue));
+                        dict.replace(strValue, newId, this.dict.getStringToId(strValue));
                         dataset[i][column] = newId;
                         newValues.put(strValue, newId);
                     }
@@ -1865,7 +2068,91 @@ public class HierarchyImplString implements Hierarchy<Double> {
 
     @Override
     public int findCommonHeight(Double n1, Double n2) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if(n1.equals(root)){
+            return this.getLevel(root.doubleValue());
+        }
+        int height1 = this.getLevel(n1.doubleValue());
+        int height2 = this.getLevel(n2.doubleValue());
+//        System.out.println("Searching common str "+n1+" and "+n2);
+        if(n1.equals(n2)){
+//            System.out.println("Common str "+n1+" with height "+height1);
+            return height1;
+        }
+        else{
+            while(height1 > height2){
+                n2 = this.getParent(n2);
+                height2 = this.getLevel(n2.doubleValue());
+            }
+            
+            while(height2 > height1){
+                n1 = this.getParent(n1);
+                height1 = this.getLevel(n1.doubleValue());
+            }
+            
+            if(n1.equals(n2)){
+//                System.out.println("Common str "+n1+" with height "+height1);
+                return height2;
+            }
+            
+            while(!n1.equals(n2)){
+                n1 = this.getParent(n1);
+                n2 = this.getParent(n2);
+                height2 = this.getLevel(n2.doubleValue());
+                height1 = this.getLevel(n1.doubleValue());
+            }
+            
+//            System.out.println("Common str "+n1+" with height "+height1);
+            return height1;
+            
+        }
+    }
+
+    @Override
+    public Double findCommon(Double n1, Double n2) {
+        if(n1.equals(root) || n2.equals(root)){
+            return root;
+        }
+        int height1 = this.getLevel(n1.doubleValue());
+        int height2 = this.getLevel(n2.doubleValue());
+        
+//        System.out.println("Searching common anc str "+n1+" and "+n2);
+        if(n1.equals(n2)){
+//            System.out.println("Common anc str "+n1+" with height "+height1);
+            return n1;
+        }
+        else{
+            while(height1 > height2){
+                n2 = this.getParent(n2);
+                height2 = this.getLevel(n2.doubleValue());
+            }
+            
+            while(height2 > height1){
+                n1 = this.getParent(n1);
+                height1 = this.getLevel(n1.doubleValue());
+            }
+            
+            if(n1.equals(n2)){
+//                System.out.println("Common anc str "+n1+" with height "+height1);
+                return n1;
+            }
+            
+            while(!n1.equals(n2)){
+                n1 = this.getParent(n1);
+                n2 = this.getParent(n2);
+                height2 = this.getLevel(n2.doubleValue());
+                height1 = this.getLevel(n1.doubleValue());
+            }
+            
+//            System.out.println("Common anc str "+n1+" with height "+height1);
+            return n1;
+            
+        }
+    }
+
+    @Override
+    public void clearAprioriStructures() {
+        allParentIds = new HashMap();
+        parentsInteger = null;
     }
     
 }   

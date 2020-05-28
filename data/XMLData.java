@@ -87,7 +87,7 @@ public class XMLData implements Data {
                 "MM/dd/yyyy'T'HH:mm:ssZ",     "MM/dd/yyyy'T'HH:mm:ss", 
                 "yyyy:MM:dd HH:mm:ss",        "yyyy/MM/dd", 
                 "yyyy:MM:dd HH:mm:ss.SS",      "dd/MM/yyyy",
-                "dd MMM yyyy"};
+                "dd MMM yyyy",                "dd-MMM-yyy"};
     
     public XMLData(String inputFile,DictionaryString dict){
         recordsTotal = 0;

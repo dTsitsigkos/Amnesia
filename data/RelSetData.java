@@ -5,13 +5,19 @@
  */
 package data;
 
+import exceptions.LimitException;
 import com.fasterxml.jackson.annotation.JsonView;
+import controller.AppCon;
+import static data.Data.online_rows;
+import static data.Data.online_version;
 import dictionary.DictionaryString;
+import exceptions.DateParseException;
 import hierarchy.Hierarchy;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
@@ -51,6 +57,7 @@ public class RelSetData implements Data {
     private CheckVariables chVar = null;
     private Map <Integer,String> colNamesPosition = null;
     private DictionaryString dictionary = null;
+    private DictionaryString dictHier = null;
     @JsonView(View.GetColumnNames.class)
     private String []columnNames = null;
     @JsonView(View.SmallDataSet.class)
@@ -61,6 +68,7 @@ public class RelSetData implements Data {
     private int recordsFiltered;
     private int columnSetData;
     private int selectedColumn;
+    private String[] formatsDate = null;
     
     
     private static final String[] formats = { 
@@ -72,7 +80,7 @@ public class RelSetData implements Data {
                 "MM/dd/yyyy'T'HH:mm:ssZ",     "MM/dd/yyyy'T'HH:mm:ss", 
                 "yyyy:MM:dd HH:mm:ss",        "yyyy/MM/dd", 
                 "yyyy:MM:dd HH:mm:ss.SS",      "dd/MM/yyyy",
-                "dd MMM yyyy"};  
+                "dd MMM yyyy",                "dd-MMM-yyy"};  
     
     
     public RelSetData(String inputFile, String del,String delSet,DictionaryString dict){
@@ -82,7 +90,8 @@ public class RelSetData implements Data {
         colNamesType = new TreeMap<Integer,String>();
         colNamesPosition = new HashMap<Integer,String>();
         chVar = new CheckVariables();
-        dictionary = dict;
+        dictionary = new DictionaryString();
+        this.dictHier = dict;
         selectedColumn=-1;
         
         
@@ -174,6 +183,9 @@ public class RelSetData implements Data {
                     else if(colNamesType.get(j).equals("set")){
                         for(int l=0; l<setData[i].length; l++){
                             String str = dictionary.getIdToString((int) setData[i][l]);
+                            if(str == null){
+                                str = dictHier.getIdToString((int) setData[i][l]);
+                            }
                             writer.print(str);
                             if(l!=setData[i].length-1){    
                                 writer.print(this.delimeterSet);
@@ -183,6 +195,9 @@ public class RelSetData implements Data {
                     }
                     else{
                         String str = dictionary.getIdToString((int)relationalData[i][j]);
+                        if( str == null){
+                             str = dictHier.getIdToString((int) setData[i][j]);
+                        }
     //                    DictionaryString dict = dictionary.get(j);
     //                    String str = dict.getIdToString((int)dataSet[i][j]);
 
@@ -267,7 +282,7 @@ public class RelSetData implements Data {
     }
 
     @Override
-    public String save(boolean[] checkColumns) {
+    public String save(boolean[] checkColumns) throws DateParseException {
 //        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         FileInputStream fstream = null;
         DataInputStream in = null;
@@ -277,8 +292,17 @@ public class RelSetData implements Data {
         String tempSet[] = null;
         String []colNames = null;
         ArrayList<String> columns = new ArrayList<String>();
+        SimpleDateFormat sdf[] = new SimpleDateFormat[this.columnNames.length];
+        SimpleDateFormat sdfDefault = new SimpleDateFormat("dd/MM/yyyy");
         int counter = 0;
-        int stringCount = dictionary.getMaxUsedId()+1;
+        int counterSdf = 0;
+        int stringCount;
+        if(dictionary.isEmpty() && dictHier.isEmpty()){
+            stringCount = 1;
+        }
+        else {
+            stringCount = dictHier.getMaxUsedId()+1;
+        }
         boolean FLAG = true;
         int counter1 = 0 ;
         
@@ -295,6 +319,10 @@ public class RelSetData implements Data {
                     for ( int i = 0 ; i < temp.length ; i ++){
                         if (checkColumns[i] == true){
                             columns.add(temp[i]);
+                            if(colNamesType.get(counterSdf).contains("date")){
+                                sdf[counterSdf] = new SimpleDateFormat(this.formatsDate[counterSdf]);
+                            }
+                            counterSdf++;
                         }
                     }
                     colNames = new String[columns.size()];
@@ -330,6 +358,7 @@ public class RelSetData implements Data {
                             }
                             else if (colNamesType.get(counter1).contains("double")){
                                 if ( !temp[i].equals("")){
+                                    temp[i] = temp[i].replaceAll(",", ".");
                                     relationalData[counter][counter1] = Double.parseDouble(temp[i]);
                                 }
                                 else{
@@ -343,7 +372,22 @@ public class RelSetData implements Data {
 //                                System.out.println("date= "+temp[i]+" counter= "+counter+" counter1= "+counter1+" ");
                                 if ( !temp[i].equals("")){
                                     var = temp[i];
-                                    var = this.timestampToDate(var);
+//                                    var = this.timestampToDate(var);
+                                    try{
+                                    if(this.formatsDate[counter1].equals("dd/MM/yyyy")){
+                                        var = sdf[counter1].parse(var) == null ? null : var;
+                                    }
+                                    else{
+                                        Date d = sdf[counter1].parse(var);
+                                        var = sdfDefault.format(d);
+                                    }
+                                    }catch(ParseException pe){
+                                        throw new DateParseException(pe.getMessage()+"\nDate format must be the same in column "+this.columnNames[counter1]+"\nFormat recognised is: "+formatsDate[counter1]);
+                                    }
+                                    
+                                    if(var == null){
+                                        var = "NaN";
+                                    }
                                 }
                                 else {
                                     var = "NaN";
@@ -354,8 +398,9 @@ public class RelSetData implements Data {
                                 //var = this.timestampToDate(var);
                                 
                                 if (var != null) {
+                                    
                                 //if string is not present in the dictionary
-                                    if (dictionary.containsString(var) == false){
+                                    if (!dictionary.containsString(var) && !this.dictHier.containsString(var)){
                                         if(var.equals("NaN")){
                                             dictionary.putIdToString(2147483646, var);
                                             dictionary.putStringToId(var,2147483646);
@@ -372,8 +417,14 @@ public class RelSetData implements Data {
                                     }
                                     else{
                                         //if string is present in the dictionary, get its id
-                                        int stringId = dictionary.getStringToId(var);
-                                        relationalData[counter][counter1] = stringId;
+                                        if(dictionary.containsString(var)){
+                                            int stringId = dictionary.getStringToId(var);
+                                            relationalData[counter][counter1] = stringId;
+                                        }
+                                        else{
+                                            int stringId = this.dictHier.getStringToId(var);
+                                            relationalData[counter][counter1] = stringId;
+                                        }
                                     }
                                 }
                             }
@@ -391,7 +442,7 @@ public class RelSetData implements Data {
                                     }
 
                                     //if string is not present in the dictionary
-                                    if (dictionary.containsString(var) == false){
+                                    if (!dictionary.containsString(var) && !this.dictHier.containsString(var)){
                                         if(var.equals("NaN")){
                                             dictionary.putIdToString(2147483646, var);
                                             dictionary.putStringToId(var,2147483646);
@@ -408,8 +459,15 @@ public class RelSetData implements Data {
                                     }
                                     else{
                                         //if string is present in the dictionary, get its id
-                                        int stringId = dictionary.getStringToId(var);
-                                        setData[counter][j] = stringId;
+                                        if(dictionary.containsString(var)){
+                                            int stringId = dictionary.getStringToId(var);
+                                            setData[counter][j] = stringId;
+                                        }
+                                        else{
+                                            int stringId = dictHier.getStringToId(var);
+                                            setData[counter][j] = stringId;
+                                        }
+                                        
                                     }
                                 }
                                 
@@ -428,8 +486,8 @@ public class RelSetData implements Data {
                                 }
 
                                 //if string is not present in the dictionary
-                                if (dictionary.containsString(var) == false){
-                                    if(var.equals("NaN")){
+                                if (!dictionary.containsString(var) && !this.dictHier.containsString(var)){
+                                     if(var.equals("NaN")){
                                         dictionary.putIdToString(2147483646, var);
                                         dictionary.putStringToId(var,2147483646);
 //                                        dictionary.put(counter1, tempDict);
@@ -445,8 +503,14 @@ public class RelSetData implements Data {
                                 }
                                 else{
                                     //if string is present in the dictionary, get its id
-                                    int stringId = dictionary.getStringToId(var);
-                                    relationalData[counter][counter1] = stringId;
+                                    if(dictionary.containsString(var)){
+                                        int stringId = dictionary.getStringToId(var);
+                                        relationalData[counter][counter1] = stringId;
+                                    }
+                                    else{
+                                        int stringId = this.dictHier.getStringToId(var);
+                                        relationalData[counter][counter1] = stringId;
+                                    }
                                 }
                             }
                             counter1++;
@@ -467,8 +531,12 @@ public class RelSetData implements Data {
                 System.out.println();
             }*/
             
-        }catch(Exception e){
-            
+        }catch(DateParseException dpe){
+            throw new DateParseException(dpe);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            System.err.println("Error: "+e.getMessage());
         }
         return "OK";
     }
@@ -486,7 +554,7 @@ public class RelSetData implements Data {
     }
 
     @Override
-    public void preprocessing() {
+    public void preprocessing() throws LimitException  {
 //        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         FileInputStream fstream = null;
         DataInputStream in = null;
@@ -504,6 +572,9 @@ public class RelSetData implements Data {
             //counts lines of the dataset
             while ((strLine = br.readLine()) != null)   {
                 counter++;
+                if(AppCon.os.equals(online_version) && counter > online_rows){
+                    throw new LimitException("Dataset is too large, the limit is "+online_rows+" rows, please download desktop version, the online version is only for simple execution.");
+                }
             }
             
             //System.out.println("counter = " + counter);
@@ -511,13 +582,13 @@ public class RelSetData implements Data {
             sizeOfRows = counter;
             in.close();
             
-        }catch (Exception e){
+        }catch (IOException e){
             System.err.println("Error: " + e.getMessage());
         }
     }
 
     @Override
-    public String readDataset(String[] columnTypes, boolean[] checkColumns) {
+    public String readDataset(String[] columnTypes, boolean[] checkColumns) throws LimitException, DateParseException {
 //        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         SaveClmnsAndTypeOfVar(columnTypes,checkColumns);
         preprocessing();
@@ -618,6 +689,8 @@ public class RelSetData implements Data {
         String []temp = null;
         String []colNames = null;
         boolean firstLineNames = true;
+        String [] newFormatDate = null;
+        boolean removedColumn = false;
         
         try{
             fstream = new FileInputStream(inputFile);
@@ -635,6 +708,12 @@ public class RelSetData implements Data {
                             counter++;
                         }
                     }
+                    
+                    if(counter != columnNames.length){
+                        newFormatDate = new String[counter];
+                        removedColumn = true;
+                    }
+                    
                     firstLineNames = false;
                     
                     
@@ -654,6 +733,9 @@ public class RelSetData implements Data {
                     else if (columnTypes[i].equals("date")){
                         colNamesType.put(counter, "date");
     //                        dictionary.put(counter, new DictionaryString());
+                        if(removedColumn){
+                            newFormatDate[counter] = this.formatsDate[i]; 
+                        }
                     }
                     else if(columnTypes[i].equals("set")){
                         colNamesType.put(counter, "set");
@@ -667,8 +749,12 @@ public class RelSetData implements Data {
                     counter++;
                 }
             }
-
-            sizeOfCol = columnTypes.length;
+            
+            if(counter!=columnTypes.length){
+                this.columnNames =  colNamesPosition.values().toArray(new String[this.colNamesPosition.size()]);
+                this.formatsDate = newFormatDate;
+            }
+            sizeOfCol = columnNames.length;
             in.close();
         }catch(Exception e){
             System.err.println("Error: "+e.getMessage());
@@ -698,8 +784,10 @@ public class RelSetData implements Data {
                     temp = strLine.split(delimeter,-1);
                     columnNames = new String[temp.length];
                     smallDataSet = new String[6][temp.length];
+                    this.formatsDate = new String[temp.length];
                     for ( int i = 0 ; i < temp.length ; i ++){
                         columnNames[i] = temp[i];
+                        
                     }
                     firstLine = false;
                 }
@@ -728,6 +816,7 @@ public class RelSetData implements Data {
                                 }
                                 else if(chVar.isDate(temp[i])){
                                     smallDataSet[counter][i] = "date";
+                                    this.formatsDate[i] = chVar.lastFormat;
                                 }
                                 else if(temp[i].contains(this.delimeterSet)){
                                  
@@ -765,7 +854,7 @@ public class RelSetData implements Data {
                                     }
                                     else if(smallDataSet[0][i].equals("double")){
                                         if(temp[i].contains(this.delimeterSet)){
-                                             smallDataSet[0][i] = "set";
+                                            smallDataSet[0][i] = "set";
                                         }
                                         else if (!chVar.isInt(temp[i]) && !chVar.isDouble(temp[i])){
                                             smallDataSet[0][i] = "string";
@@ -782,6 +871,7 @@ public class RelSetData implements Data {
                                     }
                                     else if(chVar.isDate(temp[i])){
                                         smallDataSet[0][i] = "date";
+                                        this.formatsDate[i] = chVar.lastFormat;
                                     }
                                     else if(temp[i].contains(this.delimeterSet)){
                                         smallDataSet[0][i] = "set";
@@ -913,13 +1003,21 @@ public class RelSetData implements Data {
 //                DictionaryString dict = dictionary.get(0);
                 //System.out.println()
                         if (firstValSet){
-                            linkedHashTemp.put(columnNames[j], dictionary.getIdToString((int)setData[i][l]));
+                            String value = dictionary.getIdToString((int)setData[i][l]);
+                            if(value == null){
+                                value = dictHier.getIdToString((int)setData[i][l]);
+                            }
+                            linkedHashTemp.put(columnNames[j], value);
                         //System.out.println( dict.getIdToString((int)dataSet[i][j]));
                         //linkedHashTemp.put(columnNames[0], null);
                             firstValSet = false;
                         }
                         else{
-                            linkedHashTemp.put(columnNames[j], linkedHashTemp.get(columnNames[j]) +this.delimeterSet+dictionary.getIdToString((int)setData[i][l]));
+                            String value = dictionary.getIdToString((int)setData[i][l]);
+                            if(value == null){
+                                value = dictHier.getIdToString((int)setData[i][l]);
+                            }
+                            linkedHashTemp.put(columnNames[j], linkedHashTemp.get(columnNames[j]) +this.delimeterSet+value);
                         }
 
                     }
@@ -937,6 +1035,9 @@ public class RelSetData implements Data {
                 }
                 else{
                     String str = dictionary.getIdToString((int)relationalData[i][j]);
+                    if(str == null){
+                        str = dictHier.getIdToString((int)relationalData[i][j]);
+                    }
 //                    DictionaryString dict = dictionary.get(j);
 //                    String str = dict.getIdToString((int)dataSet[i][j]);
 

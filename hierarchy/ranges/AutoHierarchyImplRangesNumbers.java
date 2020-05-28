@@ -18,6 +18,7 @@
  */
 package hierarchy.ranges;
 
+import exceptions.LimitException;
 import hierarchy.NodeStats;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -70,7 +71,7 @@ public class AutoHierarchyImplRangesNumbers extends HierarchyImplRangesNumbers{
      * Automatically generates hierarchy's structures
      */
     @Override
-    public void autogenerate() {
+    public void autogenerate() throws LimitException {
         
         System.out.println("nodesTypesssssssssssssssssss = " + nodesType);
         

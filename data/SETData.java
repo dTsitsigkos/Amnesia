@@ -18,7 +18,9 @@
  */
 package data;
 
+import exceptions.LimitException;
 import com.fasterxml.jackson.annotation.JsonView;
+import controller.AppCon;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
@@ -36,6 +38,7 @@ import javax.swing.JTable;
 import javax.swing.table.TableModel;
 import dictionary.DictionaryString;
 import hierarchy.Hierarchy;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -61,6 +64,7 @@ public class SETData implements Data,Serializable {
     private Map <Integer,String> colNamesPosition = null;
 //    private Map <Integer,DictionaryString> dictionary = null;
     private DictionaryString dictionary = null;
+    private DictionaryString dictHier = null;
     @JsonView(View.DataSet.class)
     private ArrayList<LinkedHashMap> data;
     @JsonView(View.GetColumnNames.class)
@@ -80,7 +84,8 @@ public class SETData implements Data,Serializable {
         colNamesPosition = new HashMap<Integer,String>();
         chVar = new CheckVariables();
 //        dictionary = new HashMap <Integer,DictionaryString>();
-        dictionary = dict;
+        dictionary = new DictionaryString();
+        dictHier = dict;
         
         
         this.inputFile = inputFile;
@@ -178,7 +183,13 @@ public class SETData implements Data,Serializable {
         String []temp = null;
         String colNames = null;
         int counter = 0;
-        int stringCount = dictionary.getMaxUsedId()+1;
+        int stringCount;
+        if(dictionary.isEmpty() && dictHier.isEmpty()){
+            stringCount = 1;
+        }
+        else {
+            stringCount = dictHier.getMaxUsedId()+1;
+        }
         boolean FLAG = true;
         smallDataSet = new String[6][1];
         
@@ -198,7 +209,8 @@ public class SETData implements Data,Serializable {
                 }
                 else{
 //                    System.out.println("strLine = " + strLine);
-                    
+  
+                   
                     temp = strLine.split("\\"+delimeter,-1);
 //                    System.out.println("Set Data "+temp[0]);
                     
@@ -211,20 +223,54 @@ public class SETData implements Data,Serializable {
                     for (int i = 0; i < temp.length ; i ++ ){
 //                        System.out.println("Set Data "+temp[i]);
 //                        DictionaryString tempDict = dictionary.get(0);
+                        String var = null;
+
+                        if ( !temp[i].equals("")){
+                            var = temp[i];
+                        }
+                        else {
+                            var = "NaN";
+                        }
+                        if (!dictionary.containsString(var) && !this.dictHier.containsString(var)){
+                            if(var.equals("NaN")){
+                               dictionary.putIdToString(2147483646, var);
+                               dictionary.putStringToId(var,2147483646);
+//                                        dictionary.put(counter1, tempDict);
+                               dataSet[counter][i] = 2147483646.0;
+                           }
+                           else{
+                               dictionary.putIdToString(stringCount, var);
+                               dictionary.putStringToId(var,stringCount);
+//                                    dictionary.put(counter1, tempDict);
+                               dataSet[counter][i] = stringCount;
+                               stringCount++;
+                           }
+                       }
+                       else{
+                           //if string is present in the dictionary, get its id
+                           if(dictionary.containsString(var)){
+                               int stringId = dictionary.getStringToId(var);
+                               dataSet[counter][i] = stringId;
+                           }
+                           else{
+                               int stringId = this.dictHier.getStringToId(var);
+                               dataSet[counter][i] = stringId;
+                           }
+                       }
                         
                         //if string is not present in the dictionary
-                        if (dictionary.containsString(temp[i]) == false){
-                            dictionary.putIdToString(stringCount, temp[i]);
-                            dictionary.putStringToId(temp[i],stringCount);
-//                            dictionary.put(i, tempDict);
-                            dataSet[counter][i] = stringCount;
-                            stringCount++;
-                        }
-                        else{
-                            //if string is present in the dictionary, get its id
-                            int stringId = dictionary.getStringToId(temp[i]);
-                            dataSet[counter][i] = stringId;
-                        }
+//                        if (dictionary.containsString(temp[i]) == false){
+//                            dictionary.putIdToString(stringCount, temp[i]);
+//                            dictionary.putStringToId(temp[i],stringCount);
+////                            dictionary.put(i, tempDict);
+//                            dataSet[counter][i] = stringCount;
+//                            stringCount++;
+//                        }
+//                        else{
+//                            //if string is present in the dictionary, get its id
+//                            int stringId = dictionary.getStringToId(temp[i]);
+//                            dataSet[counter][i] = stringId;
+//                        }
                     }
                     counter++;
                 }
@@ -239,7 +285,7 @@ public class SETData implements Data,Serializable {
     }
     
     @Override
-    public void preprocessing() {
+    public void preprocessing() throws LimitException {
         FileInputStream fstream = null;
         DataInputStream in = null;
         BufferedReader br = null;
@@ -256,19 +302,22 @@ public class SETData implements Data,Serializable {
             //counts lines of the dataset
             while ((strLine = br.readLine()) != null)   {
                 counter++;
+                if(AppCon.os.equals(online_version) && counter > online_rows){
+                    throw new LimitException("Dataset is too large, the limit is "+online_rows+" rows, please download desktop version, the online version is only for simple execution.");
+                }
             }
             
             //System.out.println("counter = " + counter);
             sizeOfRows = counter;
             in.close();
             
-        }catch (Exception e){
+        }catch (IOException e){
             System.err.println("Error: " + e.getMessage());
         }
     }
     
     @Override
-    public String readDataset(String []nothing, boolean[] nothing1) {
+    public String readDataset(String []nothing, boolean[] nothing1) throws LimitException {
         SaveClmnsAndTypeOfVar(nothing,nothing1);
         preprocessing();
         String result = save(nothing1);
@@ -576,17 +625,26 @@ public class SETData implements Data,Serializable {
         for ( int i = start ; i < max ; i ++){
             linkedHashTemp = new LinkedHashMap<>();
             FLAG = false;
+            String var;
             for (int j = 0 ; j < dataSet[i].length ; j ++){
 //                DictionaryString dict = dictionary.get(0);
                 //System.out.println()
                 if (FLAG == false){
-                    linkedHashTemp.put(columnNames[0], dictionary.getIdToString((int)dataSet[i][j]));
+                    var = dictionary.getIdToString((int)dataSet[i][j]);
+                    if(var == null){
+                        var = dictHier.getIdToString((int)dataSet[i][j]);
+                    }
+                    linkedHashTemp.put(columnNames[0], var );
                 //System.out.println( dict.getIdToString((int)dataSet[i][j]));
                 //linkedHashTemp.put(columnNames[0], null);
                     FLAG = true;
                 }
                 else{
-                    linkedHashTemp.put(columnNames[0], linkedHashTemp.get(columnNames[0]) +delimeter+dictionary.getIdToString((int)dataSet[i][j]));
+                    var = dictionary.getIdToString((int)dataSet[i][j]);
+                    if(var == null){
+                        var = dictHier.getIdToString((int)dataSet[i][j]);
+                    }
+                    linkedHashTemp.put(columnNames[0], linkedHashTemp.get(columnNames[0]) +delimeter+var);
                 }
                 
             }
@@ -651,6 +709,7 @@ public class SETData implements Data,Serializable {
             for(int i=0; i<this.sizeOfRows; i++){
                 linkedHashTemp = new LinkedHashMap<>();
                 FLAG = false;
+                String var;
                 for (int j = 0 ; j < dataSet[i].length ; j ++){
     //                DictionaryString dict = dictionary.get(0);
                     //System.out.println()
@@ -666,7 +725,11 @@ public class SETData implements Data,Serializable {
 //                        linkedHashTemp.put(columnNames[0], linkedHashTemp.get(columnNames[0]) +","+dictionary.getIdToString((int)dataSet[i][j]));
 //                        
 //                    }
-                    writer.print(dictionary.getIdToString((int)dataSet[i][j]));
+                    var = dictionary.getIdToString((int)dataSet[i][j]);
+                    if(var == null){
+                        var = dictHier.getIdToString((int)dataSet[i][j]);
+                    }
+                    writer.print(var);
                     if(j!= dataSet[i].length-1){
                         writer.print(",");
                     }

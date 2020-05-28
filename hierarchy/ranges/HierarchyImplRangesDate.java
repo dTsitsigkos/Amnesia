@@ -5,13 +5,18 @@
  */
 package hierarchy.ranges;
 
+import exceptions.LimitException;
 import anonymizeddataset.AnonymizedDataset;
+import controller.AppCon;
 import data.Data;
+import data.DiskData;
 import dictionary.DictionaryString;
 import graph.Edge;
 import graph.Graph;
 import graph.Node;
 import hierarchy.Hierarchy;
+import static hierarchy.Hierarchy.online_limit;
+import static hierarchy.Hierarchy.online_version;
 import hierarchy.NodeStats;
 import hierarchy.distinct.HierarchyImplDouble;
 import java.io.BufferedReader;
@@ -54,7 +59,9 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     int months = -1;
     int days = -1;
     int levelFlash =-1;
+    int counterNodes = 0;
     DictionaryString dictData = null;
+    DictionaryString dictResults = null;
     
     Map<RangeDate, List<RangeDate>> children = new HashMap<>();
     Map<RangeDate, NodeStats> stats = new HashMap<>();
@@ -84,6 +91,10 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     public void setHierarchy() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+    
+    public DictionaryString getDictResults(){
+        return this.dictResults;
+    }
 
     @Override
     public int getHierarchyLength() {
@@ -101,7 +112,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     }
 
     @Override
-    public void load() {
+    public void load() throws LimitException {
         try {
             br = new BufferedReader(new FileReader(this.inputFile));
             processingMetadata();
@@ -139,7 +150,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
         }   
     }
     
-    private void loadHierarchy() throws IOException, ParseException{
+    private void loadHierarchy() throws IOException, ParseException, LimitException{
         String line;
         int curLevel = this.height - 1;
         
@@ -154,8 +165,14 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
             //split parent
             RangeDate pDate = new RangeDate();
             String bounds[] = tokens[0].split(",");
-            pDate.lowerBound = this.getDateFromString(bounds[0], true);
-            pDate.upperBound = this.getDateFromString(bounds[1], false);
+            if(bounds.length == 2){
+                pDate.lowerBound = this.getDateFromString(bounds[0], true);
+                pDate.upperBound = this.getDateFromString(bounds[1], false);
+            }
+            else{
+               pDate.lowerBound = this.getDateFromString(tokens[0], true);
+               pDate.upperBound = this.getDateFromString(tokens[0], false); 
+            }
             //pDate.nodesType = nodesType;
             
             boolean isChild = false;
@@ -169,8 +186,14 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                 bounds = token.split(",");
                 if (!bounds[0].equals("null")){
                     newDate = new RangeDate();
-                    newDate.lowerBound = this.getDateFromString(bounds[0], true);
-                    newDate.upperBound = this.getDateFromString(bounds[1], false);
+                    if(bounds.length == 2){
+                        newDate.lowerBound = this.getDateFromString(bounds[0], true);
+                        newDate.upperBound = this.getDateFromString(bounds[1], false);
+                    }
+                    else{
+                        newDate.lowerBound = this.getDateFromString(token, true);
+                        newDate.upperBound = this.getDateFromString(token, false);
+                    }
                 }
                 else{
                     newDate = new RangeDate(null,null);
@@ -181,7 +204,11 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                 if(isChild){
                     ch.add(newDate);
                     
-                    
+                    counterNodes ++;
+                    if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+                        System.out.println("Nodes num "+counterNodes);
+                        throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+                    }
                     this.stats.put(newDate, new NodeStats(curLevel));
                     
                     this.parents.put(newDate, pDate);  
@@ -191,7 +218,13 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                     
                     if(curLevel - 1 == 0){
                         root = pDate;
+                        counterNodes ++;
+                        if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+                            throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+                        }
                     }
+                    
+                    
                 }
             }
             
@@ -432,8 +465,14 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     }
 
     @Override
-    public void add(RangeDate newObj, RangeDate parent) {
+    public void add(RangeDate newObj, RangeDate parent) throws LimitException {
         System.out.println("add new "+newObj.toString()+"root "+root+" parent "+parent+"\n List "+this.stats.toString());
+        
+        counterNodes ++;
+        if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+            counterNodes--;
+            throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.",false);
+        }
         
         if(parent!=null){
             this.stats.put(newObj, new NodeStats(this.stats.get(parent).getLevel()+1));
@@ -485,8 +524,8 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
         boolean changeRoot = false;
         
         System.out.println("before");
-            for (Map.Entry<Integer, ArrayList<RangeDate>> entry : this.allParents.entrySet()) {
-                System.out.println(entry.getKey()+" : "+entry.getValue());
+        for (Map.Entry<Integer, ArrayList<RangeDate>> entry : this.allParents.entrySet()) {
+            System.out.println(entry.getKey()+" : "+entry.getValue());
         }
         System.out.println("Old Value"+oldValue);
         childrenListNew = this.children.get(oldValue);
@@ -595,9 +634,9 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                     System.out.println("Cannot remove root");
                     return null;
                 }
-                
+                this.counterNodes--;
                 children.remove(itemToDelete);
-                children.get(getParent(itemToDelete)).remove(itemToDelete);
+                children.get(this.parents.get(itemToDelete)).remove(itemToDelete);
                 this.parents.remove(itemToDelete);
                 
                 parentsList = this.allParents.get(this.stats.get(itemToDelete).getLevel());
@@ -847,7 +886,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     }
 
     @Override
-    public void autogenerate() {
+    public void autogenerate() throws LimitException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -858,7 +897,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
 
     @Override
     public DictionaryString getDictionary() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return this.dictData;
     }
 
     @Override
@@ -889,6 +928,17 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
         
         return parent;
         
+    }
+    
+    public RangeDate getParent(String d){
+        RangeDate parent = null;
+        try {
+            parent = this.getParent(AnonymizedDataset.getDateFromString(d));
+        } catch (ParseException ex) {
+            Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return parent;
     }
     
     @Override
@@ -1028,17 +1078,34 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
 
             String []temp = null;
             temp = nodeInput.split("-");
-            try {        
-                if (!nodeInput.equals("(null)")){
-                    node  = new RangeDate( this.getDateFromString(temp[0],true), this.getDateFromString(temp[1],false));
+//            System.out.println("Lenght "+temp.length);
+            if(temp.length == 2){
+                try {        
+                    if (!nodeInput.equals("(null)")){
+                        node  = new RangeDate( this.getDateFromString(temp[0],true), this.getDateFromString(temp[1],false));
+                    }
+                    else{
+                        node = new RangeDate(null,null);
+                    }
+
+                } catch (ParseException ex) {
+                    Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);
                 }
-                else{
-                    node = new RangeDate(null,null);
-                }
-                
-            } catch (ParseException ex) {
-                Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);
             }
+            else{
+                try {        
+                    if (!nodeInput.equals("(null)")){
+                        node  = new RangeDate( this.getDateFromString(nodeInput,true), this.getDateFromString(nodeInput,false));
+                    }
+                    else{
+                        node = new RangeDate(null,null);
+                    }
+
+                } catch (ParseException ex) {
+                    Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            
         }
         
         int counter = 0;
@@ -1191,7 +1258,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     }
 
     @Override
-    public String checkHier() {
+    public String checkHier(Data d,int col) {
         String str = null;
         
 //        System.out.println("Check Hierarchies RangeDate");
@@ -1266,24 +1333,61 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                     }
                     
                     if(!plusOneDay.equals(next.lowerBound)){
-                        str = "Hierarchy Name: " + this.name + "\nLevel: " + entry.getKey() +"\nNot continuous values between ranges: " + current.toString() + " and " + next.toString();
+                        
+                        str = "Hierarchy Name: " + this.name + "\nLevel: " + (entry.getKey()+1) +"\nNot continuous values between ranges: " + current.dateToString(this.translateDateViaLevel(entry.getKey())) + " and " + next.dateToString(this.translateDateViaLevel(entry.getKey()));
                         return str;
                     }
                     
                     if(i==0){
                         if(!current.lowerBound.equals(lowerLimit)){
-                           str = "Hierarchy Name: " + this.name + "\nLevel: " + entry.getKey() +"\nFirst node of the last level must have the same lower bound as the root node. Problem in range:" + current.toString() + ". Root range is :" + lowerLimit + "-" + upperLimit;
-                                return str;
+                   
+                            str = "Hierarchy Name: " + this.name + "\nLevel: " + (entry.getKey()+1) +"\nFirst node of the level must have the same lower bound as the root node. Problem in range:" + current.dateToString(this.translateDateViaLevel(entry.getKey())) + ". Root range is :" + root.dateToString(this.translateDateViaLevel(0));
+                            return str;
                         }
                     }
                     else if(i == tempArr.size()-2){
                         if(!next.upperBound.equals(upperLimit)){
-                             str = "Hierarchy Name: " + this.name + "\nLevel: " + entry.getKey() +"\nLast node of the last level must have the same upper bound as the root node. Problem in range:" + next.toString() + ". Root range is :" + lowerLimit + "-" + upperLimit;
-                             return str;
+                            str = "Hierarchy Name: " + this.name + "\nLevel: " + (entry.getKey()+1) +"\nLast node of the level must have the same upper bound as the root node. Problem in range:" + next.dateToString(this.translateDateViaLevel(entry.getKey())) + ". Root range is :" + root.dateToString(this.translateDateViaLevel(0));
+                            return str;
                         }
                     }
                 }
             }
+        }
+        
+        if(d instanceof DiskData){
+            DiskData diskData = (DiskData) d;
+            List<Double> missingValues = diskData.checkRange(new Long(root.upperBound.getTime()).doubleValue(), new Long(root.lowerBound.getTime()).doubleValue(), col);
+            if(!missingValues.isEmpty()){
+                SimpleDateFormat df2 = new SimpleDateFormat("dd/MM/yyyy");
+                String originalDates = "";
+                Date realDate = null;
+                if(missingValues.size() == 1){
+                    realDate = new Date(missingValues.get(0).longValue());
+                    return "Value \""+df2.format(realDate)+"\" are not defined in hierarchy \""+this.name+"\"";
+                }
+                else{
+                    for(Double dateVal : missingValues){
+                        realDate = new Date(dateVal.longValue());
+                        originalDates += df2.format(realDate) +", ";
+                    }
+                    return "Values \""+originalDates.substring(0, originalDates.length() - 1)+"\" are not defined in hierarchy \""+this.name+"\"";
+                }
+            }
+        }
+        else{
+           double[][] dataset = d.getDataSet();
+           DictionaryString dictionary =  d.getDictionary();
+           for(int i=0; i<dataset.length; i++){
+               try {
+                   if(!root.contains(dictionary.getIdToString((int)dataset[i][col]))){
+                      return "Value \""+dictionary.getIdToString((int)dataset[i][col])+"\" is not defined in the hierarchy \""+this.name+"\""; 
+                   }
+                } catch (ParseException ex) {
+                   Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);
+                   return "Value \""+dictionary.getIdToString((int)dataset[i][col])+" is not a supported Date";
+               }
+           }
         }
 
         return str;
@@ -1425,6 +1529,10 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     public void setDictionaryData(DictionaryString dict) {
         dictData = dict;
     }
+    
+    public void setDictionaryResults(DictionaryString dict){
+        this.dictResults = dict;
+    }
 
     @Override
     public void setLevel(int l) {
@@ -1445,5 +1553,310 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     public int findCommonHeight(Double n1, Double n2) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+    
+    public int findCommonHeight(Date n1, Double n2){
+        RangeDate parent1 = this.getParent(n1);
+        RangeDate parent2 = this.getParent(n2);
+        int height1 = this.getLevel(parent1);
+        int height2 = this.getLevel(parent2);
+        
+        while(height1 > height2){
+            parent1 = this.getParent(parent1);
+            height1 = this.getLevel(parent1);
+        }
+
+        while(height2 > height1){
+            parent2 = this.getParent(parent2);
+            height2 = this.getLevel(parent2);
+        }
+        
+        while(!parent2.equals(parent1)){
+            parent1 = this.getParent(parent1);
+            parent2 = this.getParent(parent2);
+        }
+        
+        return this.getLevel(parent1);
+        
+    }
+    
+    public int findCommonHeight(RangeDate n1, Object n2){
+        if(n1.equals(root)){
+            return this.getLevel(root);
+        }
+        RangeDate parent1 = this.getParent(n1);
+        RangeDate parent2;
+        if(n2 instanceof Double){
+            parent2 = this.getParent((Double)n2);
+        }
+        else{
+           parent2 =  this.getParent((RangeDate)n2);
+        }
+        int height1 = this.getLevel(parent1);
+        int height2 = this.getLevel(parent2);
+        
+        while(height1 > height2){
+            parent1 = this.getParent(parent1);
+            height1 = this.getLevel(parent1);
+        }
+
+        while(height2 > height1){
+            parent2 = this.getParent(parent2);
+            height2 = this.getLevel(parent2);
+        }
+        
+        while(!parent2.equals(parent1)){
+            parent1 = this.getParent(parent1);
+            parent2 = this.getParent(parent2);
+        }
+        
+        return this.getLevel(parent1);
+        
+    }
+    
+    
+
+    @Override
+    public Double findCommon(Double n1, Double n2) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    public RangeDate findCommonRange(String n, String n2){
+        if(n.equals(n2)){
+            return null;
+        }
+        else{
+            RangeDate parent1 = this.getParent(n);
+            RangeDate parent2 = this.getParent(n2);
+            if(parent1.equals(parent2)){
+                return parent1;
+            }
+
+            int height1 = this.getLevel(parent1);
+            int height2 = this.getLevel(parent2);
+
+            while(height1 > height2){
+                parent1 = this.getParent(parent1);
+                height1 = this.getLevel(parent1);
+            }
+
+            while(height2 > height1){
+                parent2 = this.getParent(parent2);
+                height2 = this.getLevel(parent2);
+            }
+
+            while(!parent2.equals(parent1)){
+                parent1 = this.getParent(parent1);
+                parent2 = this.getParent(parent2);
+            }
+
+            return parent1;
+        }
+    }
+    
+    public RangeDate findCommonRange(Object n, Double n2){
+        if(n instanceof Double){
+            Double n1 = (Double) n;
+            if(n1.equals(n2)){
+                return null;
+            }
+            else{
+                RangeDate parent1 = this.getParent(n1);
+                RangeDate parent2 = this.getParent(n2);
+                if(parent1.equals(parent2)){
+                    return parent1;
+                }
+
+                int height1 = this.getLevel(parent1);
+                int height2 = this.getLevel(parent2);
+
+                while(height1 > height2){
+                    parent1 = this.getParent(parent1);
+                    height1 = this.getLevel(parent1);
+                }
+
+                while(height2 > height1){
+                    parent2 = this.getParent(parent2);
+                    height2 = this.getLevel(parent2);
+                }
+
+                while(!parent2.equals(parent1)){
+                    parent1 = this.getParent(parent1);
+                    parent2 = this.getParent(parent2);
+                }
+
+                return parent1;
+            }
+        }
+        else if(n instanceof Date){
+            RangeDate n1 = this.getParent((Date)n);
+            RangeDate parent = this.getParent(n2);
+            int height1 = this.getLevel(n1);
+            int height2 = this.getLevel(parent);
+
+            while(height1 > height2){
+                n1 = this.getParent(n1);
+                height1 = this.getLevel(n1);
+            }
+
+            while(height2 > height1){
+                parent = this.getParent(parent);
+                height2 = this.getLevel(parent);
+            }
+
+            while(!parent.equals(n1)){
+                n1 = this.getParent(n1);
+                parent = this.getParent(parent);
+            }
+
+            return n1;
+        }
+        else{
+            RangeDate n1 = (RangeDate) n;
+            RangeDate parent = this.getParent(n2);
+            try {
+                if(n1.contains(this.dictData.getIdToString(n2.intValue()))){
+                    return n1;
+                }
+            } catch (ParseException ex) {
+                Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
+            
+            if(n1.equals(root)){
+                return root;
+            }
+            else if(n.equals(parent)){
+                return n1;
+            }
+            else{
+                int height1 = this.getLevel(n1);
+                int height2 = this.getLevel(parent);
+                
+                while(height1 > height2){
+                    n1 = this.getParent(n1);
+                    height1 = this.getLevel(n1);
+                }
+
+                while(height2 > height1){
+                    parent = this.getParent(parent);
+                    height2 = this.getLevel(parent);
+                }
+                
+                while(!parent.equals(n1)){
+                    n1 = this.getParent(n1);
+                    parent = this.getParent(parent);
+                }
+                
+                return n1;
+                
+            }
+            
+        }
+    }
+    
+    public int findCommonHeight(Object n, Object n2){
+        if(n.equals(n2) && n instanceof RangeDate){
+            return this.getLevel((RangeDate)n);
+        }
+        else{
+            RangeDate n1 = n instanceof RangeDate ? (RangeDate) n : this.getParent((Date)n);
+            RangeDate n3 = n2 instanceof RangeDate ? (RangeDate) n2 : this.getParent((Date)n2);
+            int height1 = this.getLevel(n1);
+            int height2 = this.getLevel(n3);
+            
+            if(n1.equals(root) || n3.equals(root)){
+                return this.getLevel(root);
+            }
+
+            while(height1 > height2){
+                n1 = this.getParent(n1);
+                height1 = this.getLevel(n1);
+            }
+
+            while(height2 > height1){
+                n3 = this.getParent(n3);
+                height2 = this.getLevel(n3);
+            }
+
+            while(!n3.equals(n1)){
+                n1 = this.getParent(n1);
+                n3 = this.getParent(n3);
+            }
+
+            return this.getLevel(n3);
+        }
+    }
+    
+    public RangeDate findCommonRange(Object n, Object n2){
+        if(n.equals(n2) && n instanceof RangeDate){
+            return (RangeDate)n;
+        }
+        else if(n instanceof RangeDate && n2 instanceof String){
+            RangeDate n1 = (RangeDate) n;
+            RangeDate n3 = this.getParent((String)n2);
+            int height1 = this.getLevel(n1);
+            int height2 = this.getLevel(n3);
+            
+            if(n1.equals(root) || n2.equals(root)){
+                return root;
+            }
+
+            while(height1 > height2){
+                n1 = this.getParent(n1);
+                height1 = this.getLevel(n1);
+            }
+
+            while(height2 > height1){
+                n3 = this.getParent(n3);
+                height2 = this.getLevel(n3);
+            }
+
+            while(!n1.equals(n3)){
+                n1 = this.getParent(n1);
+                n3 = this.getParent(n3);
+            }
+
+            return n1;
+            
+        }
+        else{
+            RangeDate n1 = n instanceof RangeDate ? (RangeDate) n : this.getParent((Date)n);
+            RangeDate n3 = n2 instanceof RangeDate ? (RangeDate) n2 : this.getParent((Date)n2);
+            int height1 = this.getLevel(n1);
+            int height2 = this.getLevel(n3);
+            
+            if(n1.equals(root) || n2.equals(root)){
+                return root;
+            }
+
+            while(height1 > height2){
+                n1 = this.getParent(n1);
+                height1 = this.getLevel(n1);
+            }
+
+            while(height2 > height1){
+                n3 = this.getParent(n3);
+                height2 = this.getLevel(n3);
+            }
+
+            while(!n1.equals(n3)){
+                n1 = this.getParent(n1);
+                n3 = this.getParent(n3);
+            }
+
+            return n1;
+        }
+    }
+
+    @Override
+    public boolean checkExistance(Double d) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void clearAprioriStructures() {
+        statsDistinct = new HashMap<>();
+    }
+    
     
 }
