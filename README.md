@@ -2,7 +2,7 @@
 https://amnesia.openaire.eu/
 
 
-version: 1.2.1 (release date: 11/07/2020).
+version: 1.2.1 (release date: 11/07/2020):
 Optimized clustering disk based algorithm.
 Better handling for "(null)" hierarchy node for unspecified values e.g. empty cells.
 Bug fixed in km-anonymity algorithm.
