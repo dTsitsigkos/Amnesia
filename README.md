@@ -3,102 +3,113 @@ https://amnesia.openaire.eu/
 
 
 version: 1.2.1 (release date: 11/07/2020):
-Optimized clustering disk based algorithm.
 
-Better handling for "(null)" hierarchy node for unspecified values e.g. empty cells.
+-Optimized clustering disk based algorithm.
 
-Bug fixed in km-anonymity algorithm.
+-Better handling for "(null)" hierarchy node for unspecified values e.g. empty cells.
 
-Bug fixed in online version.
+-Bug fixed in km-anonymity algorithm.
 
-Bug fixed for non-english character set.
+-Bug fixed in online version.
 
-Bug fixed for parsing dates with specific localization.
+-Bug fixed for non-english character set.
+
+-Bug fixed for parsing dates with specific localization.
 
 version: 1.2.0
-Checked values existence in hierarchy tree.
 
-Fixed bug on Safari browser.
+-Checked values existence in hierarchy tree.
 
-Fixed bugs on hierarchy's operations (add, edit, delete).
+-Fixed bug on Safari browser.
 
-Fixed bug on suppression functionality.
+-Fixed bugs on hierarchy's operations (add, edit, delete).
 
-Better handling of the empty cells for range type of hierarchy.
+-Fixed bug on suppression functionality.
 
-Fixed bug for windows OS related on java version.
+-Better handling of the empty cells for range type of hierarchy.
 
-New clustering disk based algorithm.
+-Fixed bug for windows OS related on java version.
 
-Setted limits on dataset's records and on hierarchy's nodes for on-line version.
+-New clustering disk based algorithm.
 
-Faster loading of date values in dataset.
+-Setted limits on dataset's records and on hierarchy's nodes for on-line version.
 
-Fixed bug for decimal values with comma.
+-Faster loading of date values in dataset.
 
-Changed loading data-types.
+-Fixed bug for decimal values with comma.
 
-Fixed bug on rage date type with the same bounds.
+-Changed loading data-types.
+
+-Fixed bug on rage date type with the same bounds.
 
 version: 1.1.1
-Increased the Java heap size.
 
-Fixed a bug causing crushed in the windows' version of Amnesia.
+-Increased the Java heap size.
 
-The on-line version of Amnesia is restricted to 3 minutes of processing time per anonymization task.
+-Fixed a bug causing crushed in the windows' version of Amnesia.
 
-Fixed bug with characher encoding on several Linux distributions.
+-The on-line version of Amnesia is restricted to 3 minutes of processing time per anonymization task.
+
+-Fixed bug with characher encoding on several Linux distributions.
 
 version: 1.1.0
-New algorithm for Object-relational dataset (combination between relational dataset and set-valued dataset).
 
-Update error handling.
+-New algorithm for Object-relational dataset (combination between relational dataset and set-valued dataset).
 
-Bugs fixed in hierarchy editing.
+-Update error handling.
 
-Hierarchy removing.
+-Bugs fixed in hierarchy editing.
 
-Bugs fixed when the results are appeared.
+-Hierarchy removing.
+
+-Bugs fixed when the results are appeared.
 
 version: 1.0.7
-Updated interface.
 
-Several bugs fixed.
+-Updated interface.
+
+-Several bugs fixed.
 
 version: 1.0.6
-Template implementation via terminal.
+-Template implementation via terminal.
 
-Template implementation via rest service.
+-Template implementation via rest service.
 
 version: 1.0.5
-Date hierarchy editing.
 
-Updated interface.
+-Date hierarchy editing.
 
-Several bugs fixed.
+-Updated interface.
+
+-Several bugs fixed.
 
 version: 1.0.4
-Wizard for numeric ranges has been updated.
 
-Upgraded scalability capabilities (Bigger files, can now be uploaded).
+-Wizard for numeric ranges has been updated.
+
+-Upgraded scalability capabilities (Bigger files, can now be uploaded).
 
 version: 1.0.3
-Bugs fixed in suppressing and km-anonymity algorithm.
 
-Changes in text descriptions.
+-Bugs fixed in suppressing and km-anonymity algorithm.
+
+-Changes in text descriptions.
 
 version: 1.0.2
-Bugs fixed in front-end and back-end.
+
+-Bugs fixed in front-end and back-end.
 
 version: 1.0.1
-Better inteface in pie graph.
 
-Changes in suppressing.
+-Better inteface in pie graph.
 
-Hierarchy editing.
+-Changes in suppressing.
 
-Bugs fixed.
+-Hierarchy editing.
+
+-Bugs fixed.
 
 version: 1.0.0
-Initial release.
+
+-Initial release.
 
