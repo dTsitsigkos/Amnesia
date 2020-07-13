@@ -64,8 +64,13 @@ public class RangeDouble {
         //if ( this.lowerBound != null && this.upperBound != null ){
             //System.out.println("lower= " + this.lowerBound);
             //System.out.println("upper= " + this.upperBound);
-            hash = 59 * hash + (int) (Double.doubleToLongBits(this.lowerBound) ^ (Double.doubleToLongBits(this.lowerBound) >>> 32));
-            hash = 59 * hash + (int) (Double.doubleToLongBits(this.upperBound) ^ (Double.doubleToLongBits(this.upperBound) >>> 32));
+            if(this.lowerBound !=null && this.upperBound!=null){
+                hash = 59 * hash + (int) (Double.doubleToLongBits(this.lowerBound) ^ (Double.doubleToLongBits(this.lowerBound) >>> 32));
+                hash = 59 * hash + (int) (Double.doubleToLongBits(this.upperBound) ^ (Double.doubleToLongBits(this.upperBound) >>> 32));
+            }
+            else{
+                return 0;
+            }
         //}
         return hash;
     }
@@ -75,7 +80,7 @@ public class RangeDouble {
         StringBuilder sb = new StringBuilder();
         
         if(this.lowerBound.equals(Double.NaN)){
-            return "Nan-Nan";
+            return "(null)";
         }
         if (this.nodesType!=null && this.nodesType.equals("double")){
             sb.append(this.lowerBound);
@@ -244,7 +249,9 @@ public class RangeDouble {
         }
         else{
             /// TODO exception 
-
+            if(str.equals("(null)")){
+                return new RangeDouble(Double.NaN,Double.NaN);
+            }
             System.out.println("Count "+count);
         }
 //        double lowBound = Double.parseDouble(arr[0].trim());

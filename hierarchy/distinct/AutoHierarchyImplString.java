@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -144,6 +145,13 @@ public class AutoHierarchyImplString extends HierarchyImplString {
 
         //build leaf level 
         ArrayList<Double> initList = new ArrayList<>(itemsSet);
+        
+//        if ( initList.get(initList.size()-1) == 2147483646.0 ||  initList.get(initList.size()-1).isNaN() ){
+//            randomNumber = initList.get(initList.size()-2).intValue();
+//        }
+//        else{
+//            randomNumber = initList.get(initList.size()-1).intValue();
+//        }
 
         System.out.println("sorting = " + sorting);
         
@@ -227,6 +235,18 @@ public class AutoHierarchyImplString extends HierarchyImplString {
 
         root = allParents.get(0).get(0);
         stats.put(root, new NodeStats(0));
+        
+        if(this.getParent(2147483646.0) == null){
+            Double nan = 2147483646.0;
+            allParents.get(1).add(nan);
+            parents.put(nan, root);
+            List<Double> childsTemp = (ArrayList<Double>) children.get(root);
+            childsTemp.add(nan);
+            children.put(nan,null);
+            stats.put(nan,new NodeStats(1));
+            dict.putIdToString(2147483646, "NaN");
+            dict.putStringToId("NaN", 2147483646);
+        }
         
         
 //        System.out.println("allParents");

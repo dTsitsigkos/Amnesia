@@ -5,6 +5,7 @@
  */
 package algorithms.clusterbased;
 
+import controller.AppCon;
 import data.DiskData;
 import hierarchy.Hierarchy;
 import java.sql.Connection;
@@ -20,10 +21,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,28 +45,48 @@ public class Clusters {
     private int k;
     private Map<Integer,Integer> currentSizeCl;
     private Connection conn;
-//    private Map<Integer,List<Integer>> deleteQueries;
-    private int[][] deleteQueries;
+    private Map<Integer,List<Integer>> deleteQueries;
+    private Map<Integer,List<Pair<Integer,Double>>> updateQueries;
     private int[] deleteClusterPainter;
-//    private Map<Integer,Set<Pair<Integer,Double>>> insertQueries;
-    private Pair<Integer,Double>[][] insertQueries;
-    int[] insertClusterPointer;
+    private Map<Integer,Set<Pair<Integer,Double>>> insertQueries;
+    private int counterUpdates;
     private int counterInserts;
     private int counterDeletions;
-    private int anonymizedPointer;
+    private int threshold = 8000;
+    private int computedSmallSize = 0;
+    private boolean withSplits;
+    private double recordsProportion = 0.1;
     
     public Clusters(String urlDatabase, int maxclusters, int k){
         this.urlDb = urlDatabase;
         this.lastClusterId = 0;
         this.counterDeletions = 0;
-        anonymizedPointer = 0;
         this.maxClusters = maxclusters;
         this.size = 2*k-1;
-        this.currentSizeCl = new HashMap();
+        this.currentSizeCl = new Hashtable();
         this.k = k;
-        this.insertQueries = new Pair[2*maxClusters+1][this.size+1];
-        this.insertClusterPointer = new int[2*maxClusters+1];
-        this.deleteQueries = new int [2*maxClusters+1][this.size+1];
+        this.withSplits = true;
+        
+        System.out.println("Thresehold "+this.threshold);
+        int possible_thresehold = ((Double)((maxclusters*k)*recordsProportion)).intValue();
+        if(possible_thresehold > this.threshold){
+            this.threshold = possible_thresehold;
+            System.out.println("Thresehold New"+this.threshold);
+            long heapFreeSize = Runtime.getRuntime().maxMemory() - (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory());
+            long mapSize = 40 * this.threshold + this.threshold*(Integer.BYTES+Double.BYTES);
+            System.out.println("Heap "+heapFreeSize+" Map "+mapSize);
+            if(mapSize > heapFreeSize){
+                long availableSize = ((Long)(heapFreeSize*5/100));
+                this.threshold = ((Long)(availableSize/((Integer.BYTES+Double.BYTES) + 40))).intValue();
+                System.out.println("New Thresehold "+this.threshold);
+            }
+        }
+            
+        
+        this.insertQueries = new TreeMap();
+        this.updateQueries = new TreeMap();
+        this.counterUpdates = 0;
+        this.deleteQueries = new TreeMap();
         this.deleteClusterPainter = new int [2*maxClusters+1];
         this.counterInserts = 0;
         
@@ -78,6 +101,10 @@ public class Clusters {
             System.err.println("Error opening database in clusters!");
         }
         
+    }
+    
+    public void setSplit(boolean ws){
+        this.withSplits = ws;
     }
     
     private void reconnect(){
@@ -97,44 +124,17 @@ public class Clusters {
     
     
     public void createCluster(){
-        String sqlCreate = "";/*CREATE TABLE cluster"+clusterId+" (id_cl integer PRIMARY KEY, distance real,  FOREIGN KEY (id_cl) REFERENCES dataset (id))";*/
-//        String sqlInsert = "INSERT INTO cluster"+clusterId+"(id_cl,distance) VALUES(?,?)";
+        String sqlCreate = "";
         Statement stm = null;
         PreparedStatement pstm = null;
+        this.daleteClusterTable();
         
         try{
             conn.setAutoCommit(false);
             stm = this.conn.createStatement();
-            
-//            for(Integer clusterId : clusterids){
-//                sqlCreate = "CREATE TABLE cluster"+clusterId+" (id_cl integer PRIMARY KEY, distance real,  FOREIGN KEY (id_cl) REFERENCES dataset (id))";
-//                stm.executeUpdate("drop table if exists cluster"+clusterId+";");
-//                stm.execute(sqlCreate);
-//                this.lastClusterId = clusterId;
-//            }
-            
-//            sqlCreate = "CREATE TABLE cluster"+clusterids.get(0)+" (id_cl integer PRIMARY KEY, distance real,  FOREIGN KEY (id_cl) REFERENCES dataset (id))";
             sqlCreate = "CREATE TABLE cluster (id_cl integer PRIMARY KEY, cluster_id integer , distance real,  FOREIGN KEY (id_cl) REFERENCES dataset (id))";
             stm.execute(sqlCreate);
-            
-//            for(int i=1; i<clusterids.size(); i++){
-//                sqlCreate = "CREATE TABLE cluster"+clusterids.get(i)+" AS SELECT * FROM cluster1";
-//                stm.execute(sqlCreate);
-//            }
-            
-            
             conn.commit();
-            
-            
-//            for(Integer r : records){
-//                this.put(clusterId, r, 0.0, null);
-////                pstm = this.conn.prepareStatement(sqlInsert);
-////                pstm.setInt(1, r);
-////                pstm.setDouble(2, 0.0);
-////                pstm.executeUpdate();
-//            }
-//            this.currentSizeCl.put(clusterId, records.size());
-            
         }catch(Exception e){
             e.printStackTrace();
             System.err.println("Error: "+e.getMessage()+" create table cluster");
@@ -174,38 +174,97 @@ public class Clusters {
     }
     
     public int getmaxIdCluster(){
-        return Collections.max(this.currentSizeCl.keySet());
+        if(!currentSizeCl.isEmpty())
+            return Collections.max(this.currentSizeCl.keySet());
+        else
+            return 0;
     }
     
-    public void remove(int clusterId, int recordId){
-//        String sqlDelete = "DELETE FROM cluster"+clusterId+" WHERE id_cl = "+recordId;
-//        Statement stm = null;
+    
+    public Double[][] removeSmallClusters(Centroid[] centroids, List<Integer> smallClusters){
+        String sqlUnique = "SELECT * FROM cluster,dataset WHERE cluster_id IN "+Arrays.toString(smallClusters.toArray()).replace("[", "(").replace("]", ")")+" AND id_cl=id";
+        String delUnique = "DELETE FROM cluster WHERE cluster_id IN "+Arrays.toString(smallClusters.toArray()).replace("[", "(").replace("]", ")");
+        Statement stm = null;
+        ResultSet rs = null;
+        Double[][] records = null;
         try{
-//            stm = this.conn.createStatement();
-//            stm.execute(sqlDelete);
+            this.conn.setAutoCommit(false);
+            stm = this.conn.createStatement();
+            rs = stm.executeQuery(sqlUnique);
+            ResultSetMetaData resultMeta = rs.getMetaData();
+            records = new Double[this.computedSmallSize][resultMeta.getColumnCount()-3];
+            int i=0;
+            while(rs.next()){
+                for(int j=4; j<=resultMeta.getColumnCount(); j++){
+                    records[i][j-4] = rs.getDouble(j);
+                }
+                i++;
+            }
             
-            if(this.deleteQueries[clusterId][0]!=0){
-                this.deleteQueries[clusterId][this.deleteClusterPainter[clusterId]] = recordId;
-                this.deleteClusterPainter[clusterId]++;
+            
+            for(Integer clusterId : smallClusters){
+                this.currentSizeCl.remove(clusterId);
+                centroids[clusterId] = null;
+            }
+            stm.executeUpdate(delUnique);
+
+            
+            
+        }catch(Exception e){
+            e.printStackTrace();
+            System.err.println("Error: remove unique clusters "+e.getMessage());
+        }finally{
+            if(stm!=null){
+                try {
+                    stm.close();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    Logger.getLogger(Clusters.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            
+            if(rs!=null){
+                try {
+                    rs.close();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    Logger.getLogger(Clusters.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            
+            try {
+                this.conn.setAutoCommit(true);
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+                Logger.getLogger(Clusters.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        
+        return records;
+    }
+    
+   
+    
+    public void remove(int clusterId, int recordId){
+        try{
+            
+            if(this.deleteQueries.get(clusterId) == null){
+                List<Integer> recIds = new ArrayList();
+                recIds.add(recordId);
+                this.deleteQueries.put(clusterId, recIds);
             }
             else{
-                this.deleteQueries[clusterId][0] = recordId;
-                this.deleteClusterPainter[clusterId] = 1;
+                this.deleteQueries.get(clusterId).add(recordId);
             }
             
             this.counterDeletions++;
             
             this.currentSizeCl.put(clusterId, this.currentSizeCl.get(clusterId)-1);
             
-            
-//            if(this.counterDeletions >= 8000){
-//                this.executeDeleteBatch();
-//                
-//            }
 
             
         }catch(Exception e){
-            System.err.println("Error: "+e.getMessage()+" remove from cluster");
+            System.err.println("Error: "+e.getMessage()+" remove from cluster "+clusterId);
             e.printStackTrace();
         }
     }
@@ -217,33 +276,21 @@ public class Clusters {
         try{
             this.conn.setAutoCommit(false);
             stm = this.conn.createStatement();
-           
-            
-            if(this.deleteQueries[clusterId][0]!=0){
+
+            List<Integer> removeIds = this.deleteQueries.get(clusterId);
+            if(removeIds!=null){
                 String sqlDelete = "DELETE FROM cluster";
-                for(int j=0; j<this.deleteQueries[clusterId].length; j++){
-                    if(this.deleteQueries[clusterId][j]!=0){
-                        stm.executeUpdate(sqlDelete+" WHERE id_cl = "+this.deleteQueries[clusterId][j]+" AND cluster_id = "+clusterId);
-                        counterDelete++;
-                        executeDelete = true;
-                    }
-                    else{
-                        break;
-                    }
+                for(Integer record : removeIds){
+                    stm.executeUpdate(sqlDelete+" WHERE id_cl = "+record+" AND cluster_id = "+clusterId);
+                    executeDelete = true;
+                    counterDelete++;
                 }
             }
             
-            
-//            for(Entry<Integer,List<Integer>> entry : this.deleteQueries.entrySet()){
-//                String sqlDelete = "DELETE FROM cluster"+entry.getKey();
-//                for(Integer record : entry.getValue()){
-//                    stm.executeUpdate(sqlDelete+" WHERE id_cl = "+record);
-//                }
-//            }
-            
             if(executeDelete){
                 this.conn.commit();
-                this.deleteQueries[clusterId] = new int [this.size+1];
+                System.out.println("Execute Delete "+clusterId);
+                this.deleteQueries.put(clusterId, null);
                 this.counterDeletions -= counterDelete;
             }
         }catch(Exception e){
@@ -276,34 +323,23 @@ public class Clusters {
     
     public void executeDeleteBatch(){
         Statement stm = null;
+        boolean executeDelete = false;
         try{
             this.conn.setAutoCommit(false);
             stm = this.conn.createStatement();
             
-            for(int i=0; i<=this.lastClusterId; i++){
-                if(this.deleteQueries[i][0]!=0){
-                    String sqlDelete = "DELETE FROM cluster";
-                    for(int j=0; j<this.deleteQueries[i].length; j++){
-                        if(this.deleteQueries[i][j]!=0){
-                            stm.executeUpdate(sqlDelete+" WHERE id_cl = "+this.deleteQueries[i][j]+" AND cluster_id = "+i);
-                        }
-                        else{
-                            break;
-                        }
-                    }
+            for(Entry<Integer,List<Integer>> entry : this.deleteQueries.entrySet()){
+                String sqlDelete = "DELETE FROM cluster";
+                for(Integer record : entry.getValue()){
+                    stm.executeUpdate(sqlDelete+" WHERE id_cl = "+record+" AND cluster_id = "+entry.getKey());
+                    executeDelete = true;
                 }
             }
             
-//            for(Entry<Integer,List<Integer>> entry : this.deleteQueries.entrySet()){
-//                String sqlDelete = "DELETE FROM cluster"+entry.getKey();
-//                for(Integer record : entry.getValue()){
-//                    stm.executeUpdate(sqlDelete+" WHERE id_cl = "+record);
-//                }
-//            }
-            
-            if(this.counterDeletions!=0){
+            if(executeDelete){
                 this.conn.commit();
-                this.deleteQueries = new int [2*maxClusters+1][this.size+1];
+                System.out.println("Execute Delete");
+                this.deleteQueries.clear();
                 this.counterDeletions = 0;
             }
         }catch(Exception e){
@@ -341,51 +377,27 @@ public class Clusters {
         int counter = 0;
         String errMessage="";
         boolean executeUpdate=false;
-//        String sqlInsert = "INSERT INTO cluster"+clusterId+"(id_cl,distance) VALUES("+recordId+","+distance+")";
         try{
             this.conn.setAutoCommit(false);
             stm = this.conn.createStatement();
             
-            
             int counterUpdate = 0;
-            if(this.insertQueries[clusterId][0]!=null){
+            Set<Pair<Integer,Double>> insertClIds = this.insertQueries.get(clusterId);
+            
+            if(insertClIds!=null){
+                counter++;
                 String sqlInsert = "INSERT INTO cluster(id_cl,cluster_id,distance) VALUES(";
-                for(int j=0; j<this.insertQueries[clusterId].length; j++){
-                    if(insertQueries[clusterId][j]!=null){
-                        errMessage = sqlInsert+insertQueries[clusterId][j].getKey()+","+insertQueries[clusterId][j].getValue()+")";
-                        stm.executeUpdate(sqlInsert+insertQueries[clusterId][j].getKey()+","+clusterId+","+insertQueries[clusterId][j].getValue()+")");
-                        counterUpdate++;
-                        executeUpdate=true;
-                    }
-                    else{
-                        break;
-                    }
+                for(Pair<Integer,Double> recDist : insertClIds){
+                    errMessage = sqlInsert+recDist.getKey()+","+clusterId+","+recDist.getValue()+")";
+                    stm.executeUpdate(sqlInsert+recDist.getKey()+","+clusterId+","+recDist.getValue()+")");
+                    executeUpdate = true;
                 }
             }
-            
-            
-//            for(Entry<Integer,Set<Pair<Integer,Double>>> entry : this.insertQueries.entrySet()){
-//                counter++;
-//                if(entry == null)
-//                    System.out.println(counter+" SQl insert ");
-//                String sqlInsert = "INSERT INTO cluster"+entry.getKey()+"(id_cl,distance) VALUES(";
-////                stm.executeUpdate(insertQuery);
-//                for(Pair<Integer,Double> recDist : entry.getValue()){
-////                    System.out.println("Batch "+sqlInsert+recDist.getKey()+","+recDist.getValue()+")");
-//                    errMessage = sqlInsert+recDist.getKey()+","+recDist.getValue()+")";
-//                    stm.executeUpdate(sqlInsert+recDist.getKey()+","+recDist.getValue()+")");
-//                }
-//            }
             if(executeUpdate){
                 this.conn.commit();
-                this.insertQueries[clusterId] = new Pair[this.size+1];;
+                this.insertQueries.remove(clusterId);
                 counterInserts -= counterUpdate;
             }
-//            if(!insertQueries.isEmpty()){
-//                this.conn.commit();
-//                this.insertQueries.clear();
-//                counterInserts = 0;
-//            }
         }catch(Exception e){
             System.err.println("Error : cluster excute batch "+e.getMessage());
             System.err.println(errMessage);
@@ -414,6 +426,54 @@ public class Clusters {
             }
         }
     }
+    
+    
+    public void executeUpdateBatch(){
+        String sqlUpdate = "UPDATE cluster SET distance = ? WHERE id_cl = ? AND cluster_id = ?";
+        PreparedStatement pstm = null;
+        boolean executeUpdate = false;
+        try{
+            pstm = this.conn.prepareStatement(sqlUpdate);
+            this.conn.setAutoCommit(false);
+            for(Entry<Integer,List<Pair<Integer,Double>>> entryUpdate : this.updateQueries.entrySet()){
+                for(Pair<Integer,Double> entryRecUpdate : entryUpdate.getValue()){
+                    pstm.setDouble(1, entryRecUpdate.getValue());
+                    pstm.setInt(2, entryRecUpdate.getKey());
+                    pstm.setInt(3, entryUpdate.getKey());
+                    pstm.executeUpdate();
+                    executeUpdate = true;
+                }
+            }
+            
+            if(executeUpdate){
+                this.conn.commit();
+                this.updateQueries.clear();
+                this.counterUpdates = 0;
+            }
+            
+            
+        }catch(Exception e){
+            e.printStackTrace();
+            System.err.println("Error execute update batch "+e.getMessage());
+        }finally{
+            if(pstm!=null){
+                try {
+                    pstm.close();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    Logger.getLogger(Clusters.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            
+            try {
+                this.conn.setAutoCommit(true);
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+                Logger.getLogger(Clusters.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+    
     
     public void executeBatch(){
         this.executeDeleteBatch();
@@ -422,50 +482,26 @@ public class Clusters {
         int counter = 0;
         String errMessage="";
         boolean executeUpdate=false;
-//        String sqlInsert = "INSERT INTO cluster"+clusterId+"(id_cl,distance) VALUES("+recordId+","+distance+")";
         try{
             this.conn.setAutoCommit(false);
             stm = this.conn.createStatement();
             
-            
-            for(int i=0; i<=this.lastClusterId; i++){
-                if(this.insertQueries[i][0]!=null){
-                    String sqlInsert = "INSERT INTO cluster(id_cl,cluster_id,distance) VALUES(";
-                    for(int j=0; j<this.insertQueries[i].length; j++){
-                        if(insertQueries[i][j]!=null){
-                            errMessage = sqlInsert+insertQueries[i][j].getKey()+","+insertQueries[i][j].getValue()+")";
-                            stm.executeUpdate(sqlInsert+insertQueries[i][j].getKey()+","+i+","+insertQueries[i][j].getValue()+")");
-                            executeUpdate=true;
-                        }
-                        else{
-                            break;
-                        }
-                    }
+            for(Entry<Integer,Set<Pair<Integer,Double>>> entry : this.insertQueries.entrySet()){
+                counter++;
+                if(entry == null)
+                    System.out.println(counter+" SQl insert ");
+                String sqlInsert = "INSERT INTO cluster(id_cl,cluster_id,distance) VALUES(";
+                for(Pair<Integer,Double> recDist : entry.getValue()){
+                    errMessage = sqlInsert+recDist.getKey()+","+entry.getKey()+","+recDist.getValue()+")";
+                    stm.executeUpdate(sqlInsert+recDist.getKey()+","+entry.getKey()+","+recDist.getValue()+")");
+                    executeUpdate=true;
                 }
             }
-            
-//            for(Entry<Integer,Set<Pair<Integer,Double>>> entry : this.insertQueries.entrySet()){
-//                counter++;
-//                if(entry == null)
-//                    System.out.println(counter+" SQl insert ");
-//                String sqlInsert = "INSERT INTO cluster"+entry.getKey()+"(id_cl,distance) VALUES(";
-////                stm.executeUpdate(insertQuery);
-//                for(Pair<Integer,Double> recDist : entry.getValue()){
-////                    System.out.println("Batch "+sqlInsert+recDist.getKey()+","+recDist.getValue()+")");
-//                    errMessage = sqlInsert+recDist.getKey()+","+recDist.getValue()+")";
-//                    stm.executeUpdate(sqlInsert+recDist.getKey()+","+recDist.getValue()+")");
-//                }
-//            }
             if(executeUpdate){
                 this.conn.commit();
-                this.insertQueries = new Pair[2*maxClusters+1][this.size+1];;
+                this.insertQueries.clear();
                 counterInserts = 0;
             }
-//            if(!insertQueries.isEmpty()){
-//                this.conn.commit();
-//                this.insertQueries.clear();
-//                counterInserts = 0;
-//            }
         }catch(Exception e){
             System.err.println("Error : cluster excute batch "+e.getMessage());
             System.err.println(errMessage);
@@ -496,69 +532,64 @@ public class Clusters {
     }
     
     
-    
+    public void update(int clusterId, int recordId , double distance){
+        if(this.updateQueries.get(clusterId) == null){
+            List<Pair<Integer,Double>> list = new ArrayList<Pair<Integer,Double>>();
+            list.add(new Pair(recordId,distance));
+            this.updateQueries.put(clusterId, list);
+        }
+        else{
+            this.updateQueries.get(clusterId).add(new Pair(recordId,distance));
+        }
+        
+        this.counterUpdates++;
+    }
     public int put(int clusterId, int recordId, double distance,Semaphore split){
-//        String sqlInsert = "INSERT INTO cluster"+clusterId+"(id_cl,distance) VALUES("+recordId+","+distance+")";
         int newCluster = -1;
         try{
-//            System.out.println("sql insert "+sqlInsert);
-//            pstm = this.conn.prepareStatement(sqlInsert);
-//            pstm.setInt(1, recordId);
-//            pstm.setDouble(2, distance);
-//            pstm.executeUpdate();
             if(split!=null){
                 if(split.tryAcquire()){
                     split.release();
-//                    this.insertQueries.add(sqlInsert);
-                    if(this.insertQueries[clusterId][0]==null){
-//                        Set<Pair<Integer,Double>> list = new HashSet<Pair<Integer,Double>>();
-//                        list.add(new Pair(recordId,distance));
-                        Pair<Integer,Double> temp = new Pair(recordId,distance);
-                        this.insertQueries[clusterId][0] = temp;
-                        this.insertClusterPointer[clusterId] = 1;
+                    
+                    if(this.insertQueries.get(clusterId) == null){
+                        Set<Pair<Integer,Double>> list = new HashSet<Pair<Integer,Double>>();
+                        list.add(new Pair(recordId,distance));
+                        this.insertQueries.put(clusterId, list);
                     }
                     else{
-                        this.insertQueries[clusterId][this.insertClusterPointer[clusterId]] = new Pair(recordId,distance);
-                        this.insertClusterPointer[clusterId]++;
+                        this.insertQueries.get(clusterId).add(new Pair(recordId,distance));
                     }
                 }
                 else{
                     split.acquire();
-                    if(this.insertQueries[clusterId][0]==null){
-//                        Set<Pair<Integer,Double>> list = new HashSet<Pair<Integer,Double>>();
-                       this.insertQueries[clusterId][0] = new Pair(recordId,distance);
-                       this.insertClusterPointer[clusterId] = 1;
+                    
+                    if(this.insertQueries.get(clusterId) == null){
+                        Set<Pair<Integer,Double>> list = new HashSet<Pair<Integer,Double>>();
+                        list.add(new Pair(recordId,distance));
+                        this.insertQueries.put(clusterId, list);
                     }
                     else{
-                        this.insertQueries[clusterId][this.insertClusterPointer[clusterId]] = new Pair(recordId,distance);
-                        this.insertClusterPointer[clusterId]++;
+                        this.insertQueries.get(clusterId).add(new Pair(recordId,distance));
                     }
                     split.release();
                 }
             }
             else{
-                if(this.insertQueries[clusterId][0]==null){
-//                    Set<Pair<Integer,Double>> list = new HashSet<Pair<Integer,Double>>();
-//                    list.add(new Pair(recordId,distance));
-//                    this.insertQueries.put(clusterId, list);
-                    this.insertQueries[clusterId][0] = new Pair(recordId,distance);
-                    this.insertClusterPointer[clusterId] = 1;
+                
+                
+                if(this.insertQueries.get(clusterId) == null){
+                    Set<Pair<Integer,Double>> list = new HashSet<Pair<Integer,Double>>();
+                    list.add(new Pair(recordId,distance));
+                    this.insertQueries.put(clusterId, list);
                 }
                 else{
-//                    this.insertQueries.get(clusterId).add(new Pair(recordId,distance));
-                    this.insertQueries[clusterId][this.insertClusterPointer[clusterId]] = new Pair(recordId,distance);
-                    this.insertClusterPointer[clusterId]++;
-                }     
+                    this.insertQueries.get(clusterId).add(new Pair(recordId,distance));
+                }
             }
             counterInserts++;
             if(this.currentSizeCl.get(clusterId)!=null){
                 this.currentSizeCl.put(clusterId, this.currentSizeCl.get(clusterId)+1);
-
-    //            if(sqlInsert==null){
-    //                System.out.println("NULL cID "+clusterId+" recID "+recordId+" distance "+distance);
-    //            }
-
-                if(this.currentSizeCl.get(clusterId) == size+1){
+                if(this.withSplits && this.currentSizeCl.get(clusterId) == size+1){
                     if(split != null){
                         split.acquire();   
                     }
@@ -569,7 +600,7 @@ public class Clusters {
                         split.release();
 
                 }
-                else if(counterInserts >= 8000){
+                else if(counterInserts >= this.threshold){
                     if(split != null){
                         split.acquire();   
                     }
@@ -580,7 +611,7 @@ public class Clusters {
                         split.release();
                 }
             }
-            else if(counterInserts >= 8000){
+            else if(counterInserts >= this.threshold){
                 if(split != null){
                     split.acquire();   
                 }
@@ -609,34 +640,195 @@ public class Clusters {
         return k;
     }
     
-//    public void deleteTable(int clusterId){
-//        String sqlDelete = "DROP TABLE IF EXISTS cluster;";
-//        Statement stm = null;
-//        try{
-//            
-//            stm = this.conn.createStatement();
-//            stm.executeUpdate(sqlDelete);
-//            
-////            this.currentSizeCl.remove(clusterId);
-//        }catch(Exception e){
-//            e.printStackTrace();
-//            System.err.println("Error : "+e.getMessage()+" delete table");
-//        }finally {
-//            if(stm!=null){
-//                try {
-//                    stm.close();
-//                } catch (SQLException ex) {
-//                    ex.printStackTrace();
-//                    Logger.getLogger(Clusters.class.getName()).log(Level.SEVERE, null, ex);
-//                }
-//            }
-//        }
-//        
-//        
-//    }
     
-    private List<Integer> newSplit(int clusterId){
-        return null;
+    
+    public void split(Centroid[] centroids, Map<Integer,Hierarchy> hiers){
+        List<Integer> bigClusters = this.getBigclusters();
+        List<Integer> newClusters = new ArrayList();
+        for(Integer cluster : bigClusters){
+            newClusters.addAll(newSplit(cluster,hiers,centroids));
+        }
+        this.executeBatch();
+        this.executeUpdateBatch();
+        
+    }
+    
+    public Map<Integer,Double[][]> getClusterDatasetRecs(List<Integer> clusters, boolean newConnection){
+        String sqlSelect = "SELECT * FROM cluster,dataset WHERE cluster_id IN "+Arrays.toString(clusters.toArray()).replace("[", "(").replace("]", ")")+" AND id=id_cl ORDER BY cluster_id,distance";
+        Statement stm = null;
+        ResultSet rs = null;
+        Map<Integer,Double[][]> clustersRecords = null;
+        int cluster=-1;
+        Connection newConn=null;
+        try{
+            if(newConnection){
+                newConn = DriverManager.getConnection(this.urlBbTemp);
+                stm = newConn.createStatement();
+            }
+            else{
+                stm = this.conn.createStatement();
+            }
+            clustersRecords = new HashMap();
+            rs = stm.executeQuery(sqlSelect);
+            ResultSetMetaData resultMeta = rs.getMetaData();
+            int i=-1;
+            
+            while(rs.next()){
+                cluster = rs.getInt(2);
+                
+                if(clustersRecords.get(cluster) == null){
+                    clustersRecords.put(cluster,new Double[this.currentSizeCl.get(cluster)][resultMeta.getColumnCount()-3]);
+                    i=0;
+                }
+                for(int j=4; j<=resultMeta.getColumnCount(); j++){
+                    clustersRecords.get(cluster)[i][j-4] = rs.getDouble(j);
+                }
+                
+                i++;
+                
+            }
+            
+            
+            
+        }catch(Exception e){
+            e.printStackTrace();
+            System.err.println("Error getClusterDatasetRecs : "+e.getMessage()+" clusterId "+cluster+" lenght "+this.currentSizeCl.get(cluster));
+        }finally{
+            if(stm!=null){
+                try {
+                    stm.close();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    Logger.getLogger(Clusters.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            
+            if(rs!=null){
+                try {
+                    rs.close();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    Logger.getLogger(Clusters.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            
+            if(newConn != null){
+                try {
+                    newConn.close();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    Logger.getLogger(Clusters.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+                 
+        }
+        return clustersRecords;
+    }
+    private List<Integer> newSplit(int clusterId,Map<Integer,Hierarchy> hiers,Centroid[] centroids){
+        String sqlSelect = "SELECT * FROM cluster,dataset WHERE cluster_id="+clusterId+" AND id=id_cl ORDER BY distance";
+        Statement stm = null;
+        List<Integer> newClusters = new ArrayList();
+        int remainder = this.currentSizeCl.get(clusterId) % this.k;
+        try{
+            this.conn.setAutoCommit(false);
+            stm = this.conn.createStatement();
+            ResultSet rs = stm.executeQuery(sqlSelect);
+            ResultSetMetaData resultMeta = rs.getMetaData();
+            Double[] record = new Double[resultMeta.getColumnCount()-3];
+            int size_cluster=0,i=0; 
+            this.lastClusterId++;
+            this.currentSizeCl.put(lastClusterId, 0);
+            Centroid newCentroid = null;
+            while(i<this.k){
+                rs.next();
+                for(int j=4; j<=resultMeta.getColumnCount(); j++){
+                    record[j-4] = rs.getDouble(j);
+                }
+                
+                if(i==0){
+                    newCentroid = new Centroid(clusterId,hiers,record,true);
+                }
+                else{
+                    double distance = newCentroid.computeDistance(record,true);
+                    this.update(clusterId, record[0].intValue(), distance);
+                    newCentroid.update(record,true);
+                }
+                
+                i++;
+            }
+            
+            centroids[clusterId] = newCentroid;
+            while(remainder!=0){
+                rs.next();
+                this.remove(clusterId, rs.getInt(1));
+                this.put(this.lastClusterId, rs.getInt(1), rs.getDouble(3), null);
+                size_cluster++;
+                for(int j=4; i<=resultMeta.getColumnCount(); i++){
+                    record[j-4] = rs.getDouble(j);
+                }
+                if(size_cluster == 1){
+                    newCentroid = new Centroid(clusterId,hiers,record,true);
+                }
+                else{
+                    double distance = newCentroid.computeDistance(record,true);
+                    this.update(clusterId, record[0].intValue(), distance);
+                    newCentroid.update(record,true); 
+                }
+                remainder--;
+            }
+            int counter = 0;
+            while(rs.next()){
+                for(int j=4; i<=resultMeta.getColumnCount(); i++){
+                    record[j-4] = rs.getDouble(j);
+                }
+                
+                if(counter % this.k == 0){
+                    newClusters.add(this.lastClusterId);
+                    centroids[lastClusterId] = newCentroid;
+                    this.lastClusterId++;
+                    this.currentSizeCl.put(lastClusterId, 0);
+                    size_cluster=0;
+                    counter = 0;
+                }
+                
+                this.remove(clusterId, rs.getInt(1));
+                this.put(this.lastClusterId, rs.getInt(1), rs.getDouble(3), null);
+                counter++;
+                size_cluster++;
+                
+                if(size_cluster == 1){
+                    newCentroid = new Centroid(clusterId,hiers,record,true);
+                }
+                else{
+                    double distance = newCentroid.computeDistance(record,true);
+                    this.update(clusterId, record[0].intValue(), distance);
+                    newCentroid.update(record,true); 
+                }
+            }
+            newClusters.add(this.lastClusterId);
+            centroids[lastClusterId] = newCentroid;
+            rs.close();
+        }catch(Exception e){
+            e.printStackTrace();
+            System.err.println("Error new split : "+e.getMessage());
+        }finally{
+            if(stm!=null){
+                try {
+                    stm.close();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    Logger.getLogger(Clusters.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            
+            try {
+                this.conn.setAutoCommit(true);
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+                Logger.getLogger(Clusters.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        return newClusters;
     }
     
     private int split(int clusterId){
@@ -644,7 +836,6 @@ public class Clusters {
         
         int newCluster = this.lastClusterId +1;
         this.lastClusterId++;
-//        String sqlCreate = "CREATE TABLE cluster"+(++this.lastClusterId)+" (id_cl integer PRIMARY KEY, distance real,  FOREIGN KEY (id_cl) REFERENCES dataset (id))";
         String sqlInsert = "INSERT INTO cluster (id_cl,cluster_id,distance) VALUES(?,?,?)";
         String sqlSelect = "SELECT * FROM cluster WHERE cluster_id="+clusterId+" ORDER BY distance DESC LIMIT "+this.k;
         String sqlDelete = "DELETE FROM cluster WHERE cluster_id="+clusterId+" AND id_cl = ?";
@@ -653,14 +844,6 @@ public class Clusters {
         
         try{
             stm = this.conn.createStatement();
-            
-            
-//            System.out.println("Select "+sqlSelect +" insert "+sqlInsert +" delete "+sqlDelete);
-            
-
-//            stm.executeUpdate("drop table if exists cluster"+this.lastClusterId+";");
-//            stm.execute(sqlCreate);
-            
             ResultSet rs = stm.executeQuery(sqlSelect);
             ResultSetMetaData metaData = rs.getMetaData();
             this.conn.setAutoCommit(false);
@@ -676,13 +859,7 @@ public class Clusters {
                 pstm.setDouble(2, newCluster);
                 pstm.setDouble(3, rs.getDouble(3));
                 pstm.executeUpdate();
-                
-//                System.out.println("Insert "+rs.getInt(1)+" "+rs.getDouble(2));
-//                System.out.println("Delete "+rs.getInt(1));
-                
-                
-                
-                
+                             
             }
             this.conn.commit();
             this.currentSizeCl.put(this.lastClusterId, k);
@@ -741,24 +918,11 @@ public class Clusters {
         Double[] firstRecord = null;
         ResultSet result=null;
         Connection centrConn = null;
-//        String[] datesVals  = null;
-//        int countDatesVal=0;
-        
         try{
             Class.forName("org.sqlite.JDBC").newInstance();
             centrConn = DriverManager.getConnection(this.urlDb);
             stm = centrConn.createStatement();
             
-//            for(Entry<Integer,Hierarchy> entryH : hiers.entrySet()){
-//                if(entryH.getValue().getNodesType().equals("date")){
-//                    countDatesVal++;
-//                }
-//            }
-
-//            if(countDatesVal!=0){
-//                datesVals = new String[countDatesVal];
-//                countDatesVal=0;
-//            }
             
             result = stm.executeQuery(sqlSelectData+"=("+sqlSelect+" "+sqlLimit+")");
             ResultSetMetaData resultMeta = result.getMetaData();
@@ -776,7 +940,6 @@ public class Clusters {
             centrConn.setAutoCommit(false);
             pstm = centrConn.prepareStatement(sqlUpdate);
             System.out.println("Id first: "+firstRecord[0].intValue());
-//            System.out.println("Distance "+result.getString(2));
             pstm.setDouble(1, 0.0);
             pstm.setInt(2, firstRecord[0].intValue());
             pstm.setInt(3, clusterId);
@@ -786,14 +949,8 @@ public class Clusters {
                 Double[] record = new Double[resultMeta.getColumnCount()-1];
                 for(int i=2; i<=resultMeta.getColumnCount(); i++){
                     record[i-2] = result.getDouble(i);
-//                    if(hiers.containsKey(i-2) && hiers.get(i-2).getNodesType().equals("date")){
-//                        datesVals[countDatesVal] = hiers.get(i-2).getDictionary().getIdToString().get(record[i-2].intValue());
-//                        countDatesVal++;
-//                    }
                 }
-//                countDatesVal=0;
                 double distance = newCentroid.computeDistance(record,false);
-//                System.out.println("Id other: "+result.getInt(1)+" distrance "+distance);
                 pstm.setDouble(1, distance);
                 pstm.setInt(2, result.getInt(1));
                 pstm.setInt(3, clusterId);
@@ -802,48 +959,6 @@ public class Clusters {
             }
             centrConn.commit();
             
-//            while(result.next()){
-//                String sqlSelectDataTemp = sqlSelectData+result.getInt(1);
-//                
-//                stmData = this.conn.createStatement();
-//                ResultSet resultData = stmData.executeQuery(sqlSelectDataTemp);
-//                ResultSetMetaData metaData = resultData.getMetaData();
-//                
-//                if(resultData.next()){
-//                    Double[] record = new Double[metaData.getColumnCount()-1];
-//                    for(int i=2; i<=metaData.getColumnCount(); i++){
-//                        record[i-2] = resultData.getDouble(i);
-//                    }
-//                    
-//                    if(firstrecord){
-//                        newCentroid = new Centroid(clusterId,hiers,record,false);
-//                        System.out.println("Id first: "+result.getInt(1));
-//                        System.out.println("Distance "+result.getString(2));
-//                        if(result.getDouble(2) != 0.0){
-//                            System.out.println("Mpike "+result.getString(2));
-//                            pstm = conn.prepareStatement(sqlUpdate);
-//                            pstm.setDouble(1, 0.0);
-//                            pstm.setInt(2, result.getInt(1));
-//                            pstm.executeUpdate();
-//                        }
-//                        firstrecord = false;
-//                    }
-//                    else{
-//                        double distance = newCentroid.computeDistance(record,false);
-//                        pstm = conn.prepareStatement(sqlUpdate);
-//                        pstm.setDouble(1, distance);
-//                        pstm.setInt(2, result.getInt(1));
-//                        System.out.println("Id other: "+result.getInt(1)+" distrance "+distance);
-//                        pstm.executeUpdate();
-//                        newCentroid.update(record,false,s);
-//                    }
-//                    
-//                }
-//                
-//                resultData.close();
-//                
-//            }
-//            result.close();
             
         }catch(Exception e){
             if(centrConn!=null)
@@ -911,7 +1026,6 @@ public class Clusters {
         ResultSet resultDatabase=null,resultCluster=null;
         Statement stm = null;
         Statement stm2 = null;
-//        Double[][] records = null;
         int counterExpr;
         int recordsCounter;
         
@@ -936,10 +1050,6 @@ public class Clusters {
                             break;
                         }
                     }
-
-        //            result.close();
-
-    //                System.out.println("SQL SEl: "+sqlSelectDatabase);
                     resultDatabase = stm2.executeQuery(sqlSelectDatabase);
 
                     if(firstReputation){
@@ -955,13 +1065,8 @@ public class Clusters {
                         recordsCounter++;
                     }
 
-    //                resultDatabase.close();
                     sqlSelectDatabase = "SELECT * from dataset WHERE id=";
                 }
-                
-//                recordsClusters[l] = records;
-//                records = null;
-                
             }
             
         }catch(Exception e){
@@ -1012,7 +1117,6 @@ public class Clusters {
     }
     
     public Double[][] getRecords(int cluster,boolean newConnection){
-//        String sqlCount = "SELECT COUNT(*) FROM cluster"+cluster;
         String sqlSelect = "SELECT * FROM cluster WHERE cluster_id="+cluster;
         String sqlSelectDatabase = "SELECT * from dataset WHERE id=";
         String sqlSelectDatabaseMore = " OR id=";
@@ -1048,10 +1152,6 @@ public class Clusters {
                         break;
                     }
                 }
-
-    //            result.close();
-
-//                System.out.println("SQL SEl: "+sqlSelectDatabase);
                 resultDatabase = stm2.executeQuery(sqlSelectDatabase);
                 
                 if(records == null){
@@ -1066,10 +1166,8 @@ public class Clusters {
                     recordsCounter++;
                 }
 
-//                resultDatabase.close();
                 sqlSelectDatabase = "SELECT * from dataset WHERE id=";
             }
-//            System.out.println("Cluster "+cluster+" num records "+numRecords+" counter "+recordsCounter);
             
         }catch(Exception e){
             e.printStackTrace();
@@ -1124,30 +1222,6 @@ public class Clusters {
         return records;
     }
     
-//    public Map<Integer,Double[][]> removeAnonymized(){
-//        Map<Integer,Double[][]> anonymizedClusters = new HashMap<Integer,Double[][]>();
-//        
-//        try{
-//            for(Entry<Integer,Integer> entrySize : this.currentSizeCl.entrySet()){
-//                if(entrySize.getValue() >= this.k){
-//                    Double[][] records = this.getRecords(entrySize.getKey(),false);
-//                    anonymizedClusters.put(entrySize.getKey(), records);
-//                    this.deleteTable(entrySize.getKey());
-//                }
-//
-//            }
-//            
-//            for(Integer cluster : anonymizedClusters.keySet()){
-//                this.currentSizeCl.remove(cluster);
-//            }
-//        }catch(Exception e){
-//            e.printStackTrace();
-//            System.err.println("Error: "+e.getMessage()+" remove anonymized data");
-//        }
-//        
-//        return anonymizedClusters;
-//        
-//    }
     
     public void daleteClusterTable(){
         String sqlDelete = "DROP TABLE IF EXISTS cluster;";
@@ -1157,7 +1231,6 @@ public class Clusters {
             stm = this.conn.createStatement();
             stm.executeUpdate(sqlDelete);
             
-//            this.currentSizeCl.remove(clusterId);
         }catch(Exception e){
             e.printStackTrace();
             System.err.println("Error : "+e.getMessage()+" delete table");
@@ -1178,11 +1251,8 @@ public class Clusters {
     public List<Integer> removeEmptyClusters(){
         List<Integer> emptyClusters = new ArrayList<Integer>();
         for(Entry<Integer,Integer> entryCluster : this.currentSizeCl.entrySet()){
-//            System.out.println("Before Cluster "+entryCluster.getKey()+" size "+entryCluster.getValue());
             if(entryCluster.getValue() == 0){
-//                System.out.println("Cluster "+entryCluster.getKey()+" size "+entryCluster.getValue());
                 emptyClusters.add(entryCluster.getKey());
-//                this.deleteTable(entryCluster.getKey());
             }
         }
         
@@ -1193,51 +1263,42 @@ public class Clusters {
         return emptyClusters;
     }
     
-   
-    
-    public List<Integer> getSmallClusters(){
-//        String sqlCount = "SELECT COUNT(*) FROM cluster";
-//        Statement stm = null;
-//        List<Integer> smallClusters = new ArrayList<Integer>();
-//        int computedSize=0;
-//        
-//        try{
-//            stm = this.conn.createStatement();
-//            for(int i=1; i<=this.numOfClusters; i++){
-//                ResultSet count = stm.executeQuery(sqlCount+i);
-//                count.next();
-//                int size = count.getInt(1);
-//                if(size < this.k){
-//                    smallClusters.add(i);
-//                    computedSize += size;
-//                }
-//            }
-//        }catch(Exception e){
-//           System.err.println("Error: "+e.getMessage()+" get clusters with size < k");
-//        }finally{
-//            if(stm!=null){
-//                try {
-//                    stm.close();
-//                } catch (SQLException ex) {
-//                    ex.printStackTrace();
-//                    Logger.getLogger(Clusters.class.getName()).log(Level.SEVERE, null, ex);
-//                }
-//            }
-//        }
-        
-        List<Integer> smallClusters = new ArrayList<Integer>();
+    public List<Integer> getBigclusters(){
+        List<Integer> bigClusters = new ArrayList<Integer>();
         int computedSize=0;
         
         for(Entry<Integer,Integer> entrySize : this.currentSizeCl.entrySet()){
-            if(entrySize.getValue() < this.k){
-                smallClusters.add(entrySize.getKey());
+            if(entrySize.getValue() > this.size){
+                bigClusters.add(entrySize.getKey());
                 computedSize += entrySize.getValue();
             }
         }
         
         
         
-        System.out.println("Total Size small "+computedSize+" list size "+smallClusters.size());
+        System.out.println("Total Size big "+computedSize+" list size "+bigClusters.size());
+        return bigClusters;
+    }
+    
+    public List<Integer> getSmallClusters(){
+        List<Integer> smallClusters = new ArrayList<Integer>();
+        this.computedSmallSize=0;
+        int computeOnes=0;
+        
+        for(Entry<Integer,Integer> entrySize : this.currentSizeCl.entrySet()){
+            if(entrySize.getValue() < this.k){
+                smallClusters.add(entrySize.getKey());
+                this.computedSmallSize += entrySize.getValue();
+            }
+            
+            if(entrySize.getValue() == 1){
+                computeOnes++;
+            }
+        }
+        
+        
+        
+        System.out.println("Total Size small "+this.computedSmallSize+" list size "+smallClusters.size()+" ones "+computeOnes);
         return smallClusters;
     }
     
@@ -1245,36 +1306,10 @@ public class Clusters {
         this.currentSizeCl.remove(clusterId);
     }
     
-//    public boolean tableExists(int clusterId){
-//        ResultSet rs = null;
-//        try{
-//            DatabaseMetaData md = conn.getMetaData();
-//            rs = md.getTables(null, null, "cluster"+clusterId, null);
-//            rs.last();
-//            boolean result =  rs.getRow() > 0;
-//            rs.close();
-//            return result;
-//        }catch(SQLException ex){
-//            ex.printStackTrace();
-//            System.err.println("Error: "+ex.getMessage()+" check table existance");
-//            Logger.getLogger(Clusters.class.getName()).log(Level.SEVERE, null, ex);
-//            
-//            if(rs!=null){
-//                try {
-//                    rs.close();
-//                } catch (SQLException ex1) {
-//                    ex1.printStackTrace();
-//                    Logger.getLogger(Clusters.class.getName()).log(Level.SEVERE, null, ex1);
-//                }
-//            }
-//        }
-//        return false;
-//    }
     
     public int totalSize(){
         int totalSize=0;
         for(Entry<Integer,Integer> entry : this.currentSizeCl.entrySet()){
-//            System.out.println("Cluster "+entry.getKey()+" size "+entry.getValue());
             totalSize += entry.getValue();
         }
         return totalSize;
@@ -1292,32 +1327,15 @@ public class Clusters {
         return this.currentSizeCl.size();
     }
     
-    public void anonymizeCluster(int clusterId, Centroid centroidCluster, DiskData data,Double[][][] clusterRecords,int i){
-        Double [][] records = null;
+    public void anonymizeCluster(int clusterId, Centroid centroidCluster, DiskData data,Double[][][] clusterRecords,Double[][] records,int i){
         Double [][] anonymizedRecords = null;
         try{
             
-//            synchronized(this.conn){
-                records = this.getRecords(clusterId,true);
-//            }
-//            records = clusterRecords[i];
-            
             anonymizedRecords = centroidCluster.anonymize(records);
-            
-//            synchronized(data){
-//                data.fillAnonymizedRecords(anonymizedRecords);
-//            }
             clusterRecords[i] = anonymizedRecords;
-//            this.anonymizedPointer++;
-            
-//            clusterRecords[i] = centroidCluster.anonymize(clusterRecords[i]);
         }catch(Exception e){
             e.printStackTrace();
             System.err.println("Error: anonymize cluster "+clusterId+" "+e.getMessage());
         }
-    }
-    
-    public void setAnonymizedPointer(int p){
-        this.anonymizedPointer = p;
     }
 }

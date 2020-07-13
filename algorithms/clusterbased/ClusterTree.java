@@ -7,11 +7,14 @@ package algorithms.clusterbased;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import javafx.util.Pair;
 import org.apache.commons.lang.SerializationUtils;
 
 /**
@@ -19,6 +22,8 @@ import org.apache.commons.lang.SerializationUtils;
  * @author nikos
  */
 public class ClusterTree {
+    
+    
     Centroid[] parents;
     Centroid[][] centroidClusters;
     int children;
@@ -29,39 +34,20 @@ public class ClusterTree {
     public ClusterTree(Centroid[] centroidsCl, int maxChilds, Clusters clusters){
         this.children = maxChilds;
         this.currentParentExtract = 0;
-//        Map<Integer,Centroid> tempCentroidsCl = convertToMap(centroidsCl,clusters);
-        Centroid[] tempCentroidsCl = centroidsCl.clone();
         Centroid[] queneCentroids = new Centroid[maxChilds];
         this.numParents = (int) Math.ceil(((double)clusters.numOfClusters())/maxChilds);
         parents = new Centroid[numParents];
         int remainder = clusters.numOfClusters() % maxChilds;
         System.out.println("Clusters "+clusters.numOfClusters()+" Parents "+numParents+" remainder "+remainder);
         this.centroidClusters = new Centroid[numParents][];
-//        if(remainder == 0){
-//            clusters = new Centroid[numParents][maxChilds];
-//        }
-//        else{
-//            clusters = new Centroid[numParents][];
-//            for(int i=0; i<clusters.length; i++){
-//                if(i != clusters.length-1){
-//                    clusters[i] = new Centroid[remainder];
-//                }
-//                else{
-//                    clusters[i] = new Centroid[maxChilds];
-//                }
-//            }
-//        }
         
         int parentId = 0;
-        int centroidcounter=0;
-        int clusterSize = clusters.numOfClusters();
         List<Integer> clustersIds = new LinkedList(Arrays.asList(clusters.getClustersIds()));
         while(!clustersIds.isEmpty()){
             Centroid firstCentroid = centroidsCl[clustersIds.get(0)];
-//            tempCentroidsCl.remove(firstCentroid.getKey());
             clustersIds.remove(0);
             queneCentroids[0] = firstCentroid;
-            Centroid parent = findShortCentroids(queneCentroids,firstCentroid,centroidsCl,clustersIds);
+            Centroid parent = findShortCentroids(queneCentroids,firstCentroid,centroidsCl,clustersIds,clusters);
             System.out.println("Consumer size "+clustersIds.size()+" parent id"+parentId+" "+queneCentroids.length);
             this.parents[parentId] = parent;
             this.centroidClusters[parentId] = queneCentroids.clone();
@@ -76,51 +62,38 @@ public class ClusterTree {
             parentId++;
             
         }
-//        while(!tempCentroidsCl.isEmpty()){
-//            Map.Entry<Integer,Centroid> firstCentroid = tempCentroidsCl.entrySet().iterator().next();
-//            tempCentroidsCl.remove(firstCentroid.getKey());
-//            queneCentroids[0] = firstCentroid.getValue();
-//            Centroid parent = findShortCentroids(queneCentroids,firstCentroid.getValue(),tempCentroidsCl);
-//            System.out.println("Consumer size "+tempCentroidsCl.size()+" parent id"+parentId+" "+queneCentroids.length);
-//            this.parents[parentId] = parent;
-//            this.centroidClusters[parentId] = queneCentroids.clone();
-//            if(tempCentroidsCl.size() != 0){
-//                if(tempCentroidsCl.size() == remainder){
-//                    queneCentroids = new Centroid[remainder];
-//                }
-//                else{
-//                    queneCentroids = new Centroid[maxChilds];
-//                }
-//            }
-//            parentId++;
-//            
-//        }
     }
     
-//    private Map<Integer,Centroid> convertToMap(Centroid[] centrs, Clusters clusters){
-//        
-//    }
+
     
-    private Centroid findShortCentroids(Centroid[] quene,Centroid initialCentr, Centroid[] consumer,List<Integer> clusterIds){
+    private Centroid findShortCentroids(Centroid[] quene,Centroid initialCentr, Centroid[] consumer,List<Integer> clusterIds,Clusters cl){
         Centroid parentCentr = new Centroid(initialCentr);
-        int counter = 1;
-        while(counter < quene.length){
-            double minDistance = 1000000.0;
-            Integer centroidCluster = -1;
-            for(Integer cluster : clusterIds){
-                double distance = consumer[cluster].computeDistance(parentCentr);
-                if(minDistance > distance){
-                    minDistance = distance;
-                    centroidCluster = cluster;
-                }
-                
-            }
-            
-            parentCentr.update(consumer[centroidCluster]);
-            quene[counter] = consumer[centroidCluster];
-            counter++;
-            clusterIds.remove(centroidCluster);
+
+        List<Pair<Integer,Double>> compareList = new ArrayList();
+        for(Integer cluster : clusterIds){
+            double distance = consumer[cluster].computeDistance(parentCentr);
+
+            compareList.add(new Pair(cluster,distance));
+
         }
+
+        Collections.sort(compareList, new Comparator<Pair<Integer,Double>>() {
+            @Override
+            public int compare(Pair<Integer,Double> lhs, Pair<Integer,Double> rhs) {
+                // -1 - less than, 1 - greater than, 0 - equal, all inversed for descending
+                return lhs.getValue().compareTo(rhs.getValue());
+            }
+        });
+
+//        System.out.println("Sorted List "+Arrays.toString(compareList.toArray()));
+
+        for(int i=0; i<quene.length-1; i++){
+            Pair<Integer,Double> element = compareList.get(i);
+            quene[i+1] = consumer[element.getKey()];
+            clusterIds.remove(element.getKey());
+        }
+            
+        
         
         return parentCentr;
     }
@@ -133,6 +106,11 @@ public class ClusterTree {
                 this.centroidClusters[i][j].print();
             }
         }
+    }
+    
+    public void printStatistics(){
+        System.out.println("Parents size "+numParents);
+        System.out.println("Children "+children);
     }
     
     public Integer[] getNextClusters(){

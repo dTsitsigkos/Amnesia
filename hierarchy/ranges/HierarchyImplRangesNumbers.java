@@ -32,11 +32,14 @@ import static hierarchy.Hierarchy.online_version;
 import hierarchy.NodeStats;
 import hierarchy.distinct.HierarchyImplDouble;
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -91,7 +94,7 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
 
     public void load() throws LimitException {
         try {
-            br = new BufferedReader(new FileReader(this.inputFile));
+            br = new BufferedReader(new InputStreamReader(new FileInputStream(this.inputFile),StandardCharsets.UTF_8));
             processingMetadata();
             loadHierarchy();
             findAllParents();
@@ -1306,6 +1309,7 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
 
     @Override
     public Integer getWeight(double nodeId) {
+//        System.out.println("Id "+nodeId+" "+this.statsDistinct.get(nodeId).weight);
         return this.statsDistinct.get(nodeId).weight;
     }
     
@@ -1782,6 +1786,14 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
                 DiskData diskData = (DiskData) d;
                 List<Double> missingValues = diskData.checkRange(root.upperBound, root.lowerBound, col);
                 if(!missingValues.isEmpty()){
+                    for(int i=0; i<missingValues.size(); i++){
+                        if(Double.isNaN(missingValues.get(i)) || missingValues.get(i).equals(2147483646.0)){
+                            if(this.getParent(new RangeDouble(Double.NaN,Double.NaN)) == null){
+                               return "Node (null) for spaces values and non-Numeric values, is not defined in the hierarchy \""+this.name+"\"" ;
+                            }
+                            missingValues.remove(i);
+                        }
+                    }
                     if(missingValues.size() == 1){
                         if(d.getColNamesType().get(col).equals("int")){
                             return "Value \""+missingValues.get(0).intValue()+"\" are not defined in hierarchy \""+this.name+"\"";
@@ -1790,7 +1802,7 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
                             return "Value \""+missingValues.get(0)+"\" are not defined in hierarchy \""+this.name+"\"";
                         }
                     }
-                    else{
+                    else if(!missingValues.isEmpty()){
                         if(d.getColNamesType().get(col).equals("int")){
                             return "Values \""+missingValues.toString().replace(".0", "").replace("[", "(").replace("]", ")")+"\" are not defined in hierarchy \""+this.name+"\"";
                         }
@@ -1804,14 +1816,21 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
                 double[][] dataset = d.getDataSet();
                 for(int i=0; i<dataset.length; i++){
                     if(!root.contains(dataset[i][col])){
-                        Object value;
-                        if(d.getColNamesType().get(col).equals("int")){
-                            value = (int)dataset[i][col];
+                        if(Double.isNaN(dataset[i][col]) || dataset[i][col] == 2147483646.0){
+                            if(this.getParent(new RangeDouble(Double.NaN,Double.NaN)) == null){
+                               return "Node (null) for spaces values and non-Numeric values, is not defined in the hierarchy \""+this.name+"\"" ;
+                            }
                         }
                         else{
-                            value = dataset[i][col];
+                            Object value;
+                            if(d.getColNamesType().get(col).equals("int")){
+                                value = (int)dataset[i][col];
+                            }
+                            else{
+                                value = dataset[i][col];
+                            }
+                            return "Value \""+value+"\" is not defined in the hierarchy \""+this.name+"\"";
                         }
-                        return "Value \""+value+"\" is not defined in the hierarchy \""+this.name+"\"";
                     }
                 }
             }

@@ -46,6 +46,7 @@ import hierarchy.Hierarchy;
 import hierarchy.ranges.RangeDouble;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -215,7 +216,7 @@ public class TXTData implements Data,Serializable{
         try {
             fstream = new FileInputStream(inputFile);
             in = new DataInputStream(fstream);
-            br = new BufferedReader(new InputStreamReader(in));
+            br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
             
             //counts lines of the dataset
             while ((strLine = br.readLine()) != null)   {
@@ -270,7 +271,7 @@ public class TXTData implements Data,Serializable{
         try {
             fstream = new FileInputStream(inputFile);
             in = new DataInputStream(fstream);
-            br = new BufferedReader(new InputStreamReader(in));
+            br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
             
             while ((strLine = br.readLine()) != null){
 //                System.out.println("Edw mpainei");
@@ -764,7 +765,7 @@ public class TXTData implements Data,Serializable{
         try {
             fstream = new FileInputStream(inputFile);
             in = new DataInputStream(fstream);
-            br = new BufferedReader(new InputStreamReader(in));
+            br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
             int counter = 0 ;
             
             while ((strLine = br.readLine()) != null)   {
@@ -844,7 +845,7 @@ public class TXTData implements Data,Serializable{
         try {
             fstream = new FileInputStream(inputFile);
             in = new DataInputStream(fstream);
-            br = new BufferedReader(new InputStreamReader(in));
+            br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
             while ((strLine = br.readLine()) != null)   {
                 //escape first row
                 if (FLAG == true){

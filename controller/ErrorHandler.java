@@ -5,6 +5,7 @@
  */
 package controller;
 
+import exceptions.DateParseException;
 import exceptions.ErrorResponse;
 import exceptions.LimitException;
 import exceptions.NotFoundValueException;
@@ -39,13 +40,26 @@ public class ErrorHandler {
     @ResponseBody
     public ErrorResponse onlineVersionLimits(LimitException ex){
         ErrorResponse rs = new ErrorResponse(ex.getMessage());
-//        if(ex.isCleanSession()){
-//            HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-//
-//            HttpSession session = request.getSession(true);
-//            AppCon.restart(session);
-//        }
+        if(ex.isCleanSession()){
+            HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+
+            HttpSession session = request.getSession(true);
+            AppController.restart(session);
+        }
         return rs;
     }
     
+    @ExceptionHandler(DateParseException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ResponseBody
+    public ErrorResponse multipleDateFormats(DateParseException ex){
+        ErrorResponse rs = new ErrorResponse(ex.getMessage());
+        if(ex.isCleanSession()){
+            HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+
+            HttpSession session = request.getSession(true);
+            AppController.restart(session);
+        }
+        return rs;
+    }
 }

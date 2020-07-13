@@ -25,6 +25,7 @@ import java.util.Map;
 import data.Data;
 import dictionary.DictionaryString;
 import hierarchy.Hierarchy;
+import hierarchy.distinct.HierarchyImplString;
 import hierarchy.ranges.RangeDate;
 import hierarchy.ranges.RangeDouble;
 import java.text.ParseException;
@@ -95,6 +96,9 @@ public class Buffer {
             }
             else if( data.getColNamesType().get(qidColumns[k]).equals("date")){
                 rowValue = dict.getIdToString((int)row[qidColumns[k]]);
+                if(rowValue == null){
+                    rowValue = HierarchyImplString.getWholeDictionary().getIdToString((int)row[qidColumns[k]]);
+                }
             }
             else {
                 rowValue = row[qidColumns[k]];

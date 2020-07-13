@@ -15,6 +15,7 @@ import hierarchy.ranges.RangeDouble;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.text.ParseException;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -35,7 +36,6 @@ public class Centroid {
     private Map<Integer,Hierarchy> quasiHiers = null;
     private Map<Integer,Pair<String,Object>> centroidValues;
     private Map<Integer,Long> dateValues;
-//    private static Map<Integer,String> localDatesDict;
     
     
     public Centroid(int cluster, Map<Integer,Hierarchy> qh,Double[] values, boolean recWithId){
@@ -43,25 +43,26 @@ public class Centroid {
         this.quasiHiers = qh;
         this.centroidValues = new HashMap();
         this.dateValues = new HashMap();
-//        if(localDatesDict==null){
-//            localDatesDict = new TreeMap();
-//        }
         for(Entry<Integer,Hierarchy> entry : this.quasiHiers.entrySet()){
             Pair<String,Object> centroidValue = new Pair(entry.getValue().getNodesType(),values[recWithId ? entry.getKey()+1 : entry.getKey()]);
             this.centroidValues.put(entry.getKey(), centroidValue);
+            
             if(entry.getValue().getNodesType().equals("date")){
-                
-//                    String date=entry.getValue().getDictionary().getIdToString(((Double)centroidValue.getValue()).intValue());
-//                    localDatesDict.put(((Double)centroidValue.getValue()).intValue(),date);
+                if(((Double)centroidValue.getValue()).equals(2147483646.0)){
+                    System.out.println("Initial "+Arrays.toString(values));
+                    System.out.println("Edw mpainei giati etsi");
+                    dateValues.put(entry.getKey(), 0L);
+                    
+                }
+                else{
                     dateValues.put(entry.getKey(), ((Double)centroidValue.getValue()).longValue());
-               
+                }
             }
             
         }
     }
     
     public Centroid(Centroid c){
-        this.clusterId = Integer.parseInt("333"+c.clusterId);
         this.quasiHiers = c.quasiHiers;
         this.centroidValues = new HashMap(c.centroidValues);
         this.dateValues = new HashMap(c.dateValues);
@@ -86,16 +87,15 @@ public class Centroid {
     
     public void update(Double[] record, boolean withRecId){
         
-        int datesVals=0;
         try{
-        Map<Integer,Pair<String,Object>> updated = new HashMap();
-        for(Entry<Integer,Pair<String,Object>> entry : this.centroidValues.entrySet()){
-            int column = entry.getKey();
-            Object centroidValue = null;
-            Object newValue = null ; 
-            Hierarchy hier = this.quasiHiers.get(column);
-            column = withRecId ? column+1 : column;
-            if(record[column] != 2147483646.0){
+            Map<Integer,Pair<String,Object>> updated = new HashMap();
+            for(Entry<Integer,Pair<String,Object>> entry : this.centroidValues.entrySet()){
+                int column = entry.getKey();
+                Object centroidValue = null;
+                Object newValue = null ; 
+                Hierarchy hier = this.quasiHiers.get(column);
+                column = withRecId ? column+1 : column;
+//                if(record[column] != 2147483646.0){
                 if(hier.getHierarchyType().equals("distinct")){
                     centroidValue = (Double)entry.getValue().getValue();
                     newValue = hier.findCommon(record[column], (Double)centroidValue);
@@ -103,40 +103,33 @@ public class Centroid {
                 else{
                     if(hier.getNodesType().equals("date")){
                         centroidValue = entry.getValue().getValue();
-//                        BigInteger total = BigInteger.ZERO;
-//                        String strDateCentroid = hier.getDictionary().getIdToString(centroidValue.intValue());
-//                        String strDateRec=null;
-//                        if(originalDates!=null){
-//                            strDateRec = originalDates[datesVals];
-//                        }
-//                        datesVals++;
-//                        if(strDateRec==null){
-//                            strDateRec = hier.getDictionary().getIdToString(record[column].intValue());
-//                        }
-    //                    System.out.println("Centroid "+strDateCentroid+" "+strDateRec+" column "+column+" record size "+record.length+" recId "+withRecId);
-
                         Date dateCentroid=null,dateRec=null;
-                        dateCentroid = new Date(this.dateValues.get(entry.getKey()));
-                        dateRec = new Date(record[column].longValue());
-//                        try {
-//                            dateCentroid = this.dateValues.get(entry.getKey());
-//                            dateRec = AnonymizedDataset.getDateFromString(strDateRec==null ? hier.getDictionary().getIdToString().get(record[column].intValue()) : strDateRec);
-//                        } catch (ParseException ex) {
-//                            System.err.println("Error: parseDate "+strDateRec+" "+ex.getMessage());
-//                            ex.printStackTrace();
-//                            Logger.getLogger(Centroid.class.getName()).log(Level.SEVERE, null, ex);
-//                        } 
+                        if(this.dateValues.get(entry.getKey()) == 0){
+                            dateCentroid = ((HierarchyImplRangesDate)hier).getParent(new RangeDate(null,null)).lowerBound;
+                            System.out.println("Rec update centr "+((HierarchyImplRangesDate)hier).getParent(new RangeDate(null,null)).lowerBound+" date rec "+new Date(record[column].longValue()));
+                        }
+                        else{
+                            dateCentroid = new Date(this.dateValues.get(entry.getKey()));
+                        }
+                        if(record[column].equals(2147483646.0)){
+                            dateRec = ((HierarchyImplRangesDate)hier).getParent(new RangeDate(null,null)).lowerBound;
+                            System.out.println("Rec update record "+((HierarchyImplRangesDate)hier).getParent(new RangeDate(null,null)).lowerBound+" date Cent "+dateCentroid);
 
+                        }
+                        else{
+                            dateRec = new Date(record[column].longValue());
+                        }
                         if(dateCentroid!=null && dateRec!=null){
                             long timeCentroid = this.dateValues.get(entry.getKey());
-                            long timeRec = dateRec.getTime();
+                            if(timeCentroid == 0){
+                                timeCentroid = ((HierarchyImplRangesDate)hier).getParent(new RangeDate(null,null)).lowerBound.getTime();
 
-//                            total = total.add(BigInteger.valueOf(timeCentroid));
-//                            total = total.add(BigInteger.valueOf(timeRec));
-//
-//                            BigInteger averageMillis = total.divide(BigInteger.valueOf(2));
-//                            Date averageDate = new Date((timeCentroid+timeRec)/2);
-                            
+                            }
+                            long timeRec = dateRec.getTime();
+                            if(timeRec == 0){
+                                timeRec = ((HierarchyImplRangesDate)hier).getParent(new RangeDate(null,null)).lowerBound.getTime();
+
+                            }
                             if(centroidValue instanceof Double){
                                newValue = ((HierarchyImplRangesDate)hier).findCommonRange(dateCentroid, dateRec);
                             }
@@ -147,39 +140,9 @@ public class Centroid {
                                 else{
                                     newValue = ((HierarchyImplRangesDate)hier).findCommonRange((RangeDate)centroidValue, dateRec);
                                 }
-                                
-                            }
-                            
-//                            synchronized(localDatesDict){
-//                                localDatesDict.remove(record[column].intValue());
-//                            }
-                            
-    //                        System.out.println("milisec "+averageMillis);
-    //                        System.out.println("New avg pure date "+averageDate.toString());
-//                            String strDate = this.dateToString(averageDate);
-    //                        System.out.println("New avg date "+strDate);
-//                               System.out.println("ClusterID "+this.clusterId+" newValue "+newValue);
-//                            if(s!=null){
-//                                s.acquire();
-//                            }
-//                            DictionaryString dictHier = hier.getDictionary();
-//                            int newDateId = dictHier.getMaxUsedId()+1;
-//
-//                            if(!dictHier.containsString(strDate)){
-//                                dictHier.putIdToString(newDateId, strDate);
-//                                dictHier.putStringToId(strDate, newDateId);
-//                            }
-//                            else{
-//                                newDateId = dictHier.getStringToId(strDate);
-//                            }
-//
-//                            if(s!=null){
-//                                s.release();
-//                            }
-                            
-                            this.dateValues.put(entry.getKey(), (timeCentroid+timeRec)/2);
 
-                           
+                            }
+                            this.dateValues.put(entry.getKey(), (timeCentroid+timeRec)/2);
                         }
                         else{
                             newValue = centroidValue;
@@ -187,22 +150,33 @@ public class Centroid {
                     }
                     else{
                         centroidValue = (Double)entry.getValue().getValue();
-                        newValue = (record[column] + ((Double)centroidValue))/2;
+                        Double rec;
+                        if(((Double)centroidValue).equals(2147483646.0)){
+                            centroidValue = ((HierarchyImplRangesNumbers)hier).getParent(2147483646.0).lowerBound;
+                        }
+
+                        if(record[column].equals(2147483646.0)){
+                            rec = ((HierarchyImplRangesNumbers)hier).getParent(2147483646.0).lowerBound;
+                        }
+                        else{
+                            rec = record[column];
+                        }
+                        newValue = (rec + ((Double)centroidValue))/2;
                     }
                 }
+//                }
+//                else{
+//                   newValue = centroidValue; 
+//                }
+
+                if(newValue!=null)
+                    updated.put(withRecId ? column-1 : column, new Pair(entry.getValue().getKey(),newValue));
+                else
+                    updated.put(withRecId ? column-1 : column, entry.getValue());
             }
-            else{
-               newValue = centroidValue; 
-            }
-            
-            if(newValue!=null)
-                updated.put(withRecId ? column-1 : column, new Pair(entry.getValue().getKey(),newValue));
-            else
-                updated.put(withRecId ? column-1 : column, entry.getValue());
-        }
-        
-        if(!updated.isEmpty())
-            this.centroidValues = updated;
+
+            if(!updated.isEmpty())
+                this.centroidValues = updated;
         }catch(Exception e){
             e.printStackTrace();
             System.err.println("Error centr update "+e.getMessage());
@@ -213,8 +187,6 @@ public class Centroid {
         Map<Integer,Pair<String,Object>> updated = new HashMap();
         for(Entry<Integer,Pair<String,Object>> entry : this.centroidValues.entrySet()){
             int column = entry.getKey();
-//            Double centroidValue = entry.getValue().getValue();
-//            Double centroidValue2 = c.centroidValues.get(entry.getKey()).getValue();
             Object newValue =null; 
             Hierarchy hier = this.quasiHiers.get(column);
             if(hier.getHierarchyType().equals("distinct")){
@@ -225,30 +197,39 @@ public class Centroid {
             else{
                 if(hier.getNodesType().equals("date")){
                     Object centroidValue = entry.getValue().getValue();
-                    Object centroidValue2 = c.centroidValues.get(entry.getKey()).getValue();
-//                    BigInteger total = BigInteger.ZERO;
-//                    String strDateCentroid = hier.getDictionary().getIdToString(centroidValue.intValue());
-//                    String strDateRec = hier.getDictionary().getIdToString(centroidValue2.intValue());
-//                    System.out.println("Centroid "+strDateCentroid+" "+strDateRec+" column "+column+" record size "+record.length+" recId "+withRecId);
-                    
+                    Object centroidValue2 = c.centroidValues.get(entry.getKey()).getValue();                  
                     Date dateCentroid=null,dateRec=null;
                     dateCentroid = new Date(this.dateValues.get(column));
                     dateRec = new Date(c.dateValues.get(column));
                     
+                    if(this.dateValues.get(column) == 0){
+                        dateCentroid = ((HierarchyImplRangesDate)hier).getParent(new RangeDate(null,null)).lowerBound;
+                        System.out.println("Centr update centroid "+((HierarchyImplRangesDate)hier).getParent(new RangeDate(null,null)).lowerBound+" date rec "+new Date(c.dateValues.get(column)));
+                    }
+                    else{
+                        dateCentroid = new Date(this.dateValues.get(column));
+                    }
+                    if(c.dateValues.get(column) == 0){
+                        dateRec = ((HierarchyImplRangesDate)hier).getParent(new RangeDate(null,null)).lowerBound;
+                         System.out.println("Centr update record "+((HierarchyImplRangesDate)hier).getParent(new RangeDate(null,null)).lowerBound+" date centr "+dateCentroid);
+                    }
+                    else{
+                        dateRec = new Date(c.dateValues.get(column));
+                    }
+                    
                     if(dateCentroid!=null && dateRec!=null){
                         long timeCentroid = this.dateValues.get(column);
-                        long timeRec = c.dateValues.get(column);
-                        
-//                        total = total.add(BigInteger.valueOf(timeCentroid));
-//                        total = total.add(BigInteger.valueOf(timeRec));
-//                        
-//                        BigInteger averageMillis = total.divide(BigInteger.valueOf(2));
-//                        Date averageDate = new Date((timeCentroid+timeRec)/2);
-//                        System.out.println("milisec "+averageMillis);
-//                        System.out.println("New avg pure date "+averageDate.toString());
+                        if(timeCentroid == 0){
+                            timeCentroid = dateCentroid.getTime();
+                            
+                        }
+                        long timeRec = c.dateValues.get(column); 
+                        if(timeRec == 0){
+                            timeRec = dateRec.getTime();
+                           
+                            
+                        }
                         this.dateValues.put(column, (timeCentroid+timeRec)/2);
-//                        String strDate = this.dateToString(averageDate);
-//                        System.out.println("New avg date "+strDate);
                         if(centroidValue instanceof Double && centroidValue2 instanceof Double){
                            newValue = ((HierarchyImplRangesDate)hier).findCommonRange(dateCentroid,dateRec);
                         }
@@ -270,20 +251,7 @@ public class Centroid {
                         }
                         else{
                             newValue = ((HierarchyImplRangesDate)hier).findCommonRange((RangeDate)centroidValue,(RangeDate)centroidValue2);
-                        }
-                            
-//                        DictionaryString dictHier = hier.getDictionary();
-//                        int newDateId = dictHier.getMaxUsedId()+1;
-//                        System.out.println("ClusterID "+this.clusterId+" newValue Centr "+newValue);
-//                        if(!dictHier.containsString(strDate)){
-//                            dictHier.putIdToString(newDateId, strDate);
-//                            dictHier.putStringToId(strDate, newDateId);
-//                        }
-//                        else{
-//                            newDateId = dictHier.getStringToId(strDate);
-//                        }
-//                        
-//                        newValue = (double) newDateId;
+                        }                        
                     }
                     else{
                         newValue = centroidValue;
@@ -291,8 +259,17 @@ public class Centroid {
                 }
                 else{
                     
-                     Double centroidValue = (Double) entry.getValue().getValue();
-                     Double centroidValue2 =(Double) c.centroidValues.get(entry.getKey()).getValue();
+                    Double centroidValue = (Double) entry.getValue().getValue();
+                    Double centroidValue2 =(Double) c.centroidValues.get(entry.getKey()).getValue();
+                    if(((Double)centroidValue).equals(2147483646.0)){
+                        centroidValue = ((HierarchyImplRangesNumbers)hier).getParent(2147483646.0).lowerBound;
+                    }
+                    
+                    if(((Double)centroidValue2).equals(2147483646.0)){
+                        centroidValue2 = ((HierarchyImplRangesNumbers)hier).getParent(2147483646.0).lowerBound;
+                    }
+                        
+                       
                     newValue = (centroidValue2 + centroidValue)/2;
                 }
             }
@@ -314,76 +291,59 @@ public class Centroid {
             int column = recordWithId ? entry.getKey()+1 : entry.getKey();
             Hierarchy hier = this.quasiHiers.get(entry.getKey());
             Object centroidValue = entry.getValue().getValue();
-            if(!record[column].equals(2147483646.0)){
-                if(hier.getHierarchyType().equals("distinct")){
+            
+            if(hier.getHierarchyType().equals("distinct")){
 
-                    distance += (double)hier.findCommonHeight((Double)centroidValue,record[column])/(hier.getHeight()-1);
+                distance += (double)hier.findCommonHeight((Double)centroidValue,record[column])/(hier.getHeight()-1);
+            }
+            else {
+                if(hier.getNodesType().equals("date")){
+                    long timeCentroid =this.dateValues.get(entry.getKey());
+                    if(0 == timeCentroid){
+                        timeCentroid = ((HierarchyImplRangesDate)hier).getParent(new RangeDate(null,null)).lowerBound.getTime();
+                        System.out.println("Rec distance centroid "+((HierarchyImplRangesDate)hier).getParent(new RangeDate(null,null)).lowerBound);
+                    }
+                    long timeRec = record[column].longValue();
+                    if(record[column].equals(2147483646.0)){
+                        timeRec = ((HierarchyImplRangesDate)hier).getParent(new RangeDate(null,null)).lowerBound.getTime();
+                        System.out.println("Rec distance record "+((HierarchyImplRangesDate)hier).getParent(new RangeDate(null,null)).lowerBound);
+                    }
+//                        System.out.println("REcord "+Arrays.toString(record));
+                    long diff  = Math.abs(timeRec - timeCentroid);
+
+                    RangeDate root = (RangeDate) hier.getRoot();
+
+                    long upperTime = root.getUpperBound().getTime();
+                    long lowerTime = root.getLowerBound().getTime();
+                    distance += (double)diff /(Math.abs(upperTime - lowerTime));
+
+
                 }
-                else {
-                    if(hier.getNodesType().equals("date")){
-    //                    System.out.println("date centroid "+centroidValue);
-    //                    System.out.print("Range Date ");
-    //                    ((RangeDate)hier.getRoot()).print();
-//                        String strDateCentroid = hier.getDictionary().getIdToString(centroidValue.intValue());
-//                        String strDateRec=null;
-//                        if(originalDates!=null){
-//                            strDateRec = originalDates[datesVals];
-//                        }
-//                        datesVals++;
-//                        if(strDateRec==null){
-//                            strDateRec = hier.getDictionary().getIdToString(record[column].intValue());
-//                            synchronized(localDatesDict){
-//                                localDatesDict.put(record[column].intValue(),strDateRec);
-//                            }
-//                        }
+                else{
+                    RangeDouble root = (RangeDouble) hier.getRoot();
+                    Double diff,rec;
+                    if(((Double)centroidValue).equals(2147483646.0)){
+                        centroidValue = ((HierarchyImplRangesNumbers)hier).getParent(2147483646.0).lowerBound;
+                    }
 
-    //                    System.out.println("Dist Centroid "+strDateCentroid+" "+strDateRec+" column "+column+" record size "+record.length+" recId "+recordWithId);
-
-                        Date dateCentroid=null,dateRec=null;
-                        dateCentroid = new Date(this.dateValues.get(entry.getKey()));
-                        dateRec = new Date(record[column].longValue());
-                       
-//                        System.out.println("DAte centroid "+dateCentroid.toString());
-                        
-                        long timeCentroid =this.dateValues.get(entry.getKey());
-                        long timeRec = record[column].longValue();
-
-//                        System.out.println("Time centroid "+timeCentroid+" time rec "+timeRec);
-                        long diff  = Math.abs(timeRec - timeCentroid);
-
-
-
-//                        System.out.println("Diff "+diff);
-//                        if(timeCentroid > timeRec){
-//                            diff = timeCentroid - timeRec;
-//                        }
-//                        else{
-//                            diff = timeRec - timeCentroid;
-//                        }
-
-                        RangeDate root = (RangeDate) hier.getRoot();
-
-                        long upperTime = root.getUpperBound().getTime();
-                        long lowerTime = root.getLowerBound().getTime();
-                        distance += (double)diff /(Math.abs(upperTime - lowerTime));
-                        
-
+                    if(record[column].equals(2147483646.0)){
+                        rec = ((HierarchyImplRangesNumbers)hier).getParent(2147483646.0).lowerBound;
                     }
                     else{
-                        RangeDouble root = (RangeDouble) hier.getRoot();
-                        Double diff;
-
-                        if((Double)centroidValue > record[column]){
-                           diff = ((Double)centroidValue) - record[column];
-                        }
-                        else{
-                           diff = record[column] - ((Double)centroidValue);
-                        }
-
-                        distance += (double)diff / (root.upperBound-root.lowerBound);
+                        rec = record[column];
                     }
+
+                    if((Double)centroidValue > rec){
+                       diff = ((Double)centroidValue) - rec;
+                    }
+                    else{
+                       diff = rec - ((Double)centroidValue);
+                    }
+
+                    distance += (double)diff / (root.upperBound-root.lowerBound);
                 }
             }
+            
         }
         
         return distance;
@@ -402,52 +362,37 @@ public class Centroid {
             }
             else {
                 if(hier.getNodesType().equals("date")){
-//                    System.out.println("date centroid "+centroidValue);
-//                    System.out.print("Range Date ");
-//                    ((RangeDate)hier.getRoot()).print();
-//                    String strDateCentroid = hier.getDictionary().getIdToString(centroidValue.intValue());
-//                    String strDateRec = hier.getDictionary().getIdToString(centroidValue2.intValue());
-                    
-//                    System.out.println("Dist Centroid "+strDateCentroid+" "+strDateRec+" column "+column+" record size "+record.length+" recId "+recordWithId);
-                    
-                    Date dateCentroid=null,dateRec=null;
-                    dateCentroid = new Date(this.dateValues.get(entry.getKey()));
-                    dateRec = new Date(c.dateValues.get(entry.getKey()));
-                    
-                    
-//                    if(dateCentroid!=null && dateRec!=null){
+
                     long timeCentroid = this.dateValues.get(entry.getKey());
+                    if(0 == timeCentroid){
+                        timeCentroid = ((HierarchyImplRangesDate)hier).getParent(new RangeDate(null,null)).lowerBound.getTime();
+                        System.out.println("Centr distance centrroid "+((HierarchyImplRangesDate)hier).getParent(new RangeDate(null,null)).lowerBound);
+                    }
                     long timeRec = c.dateValues.get(entry.getKey());
-
-//                        System.out.println("Time centroid "+timeCentroid+" time rec "+timeRec);
+                    if(0 == timeRec){
+                        timeCentroid = ((HierarchyImplRangesDate)hier).getParent(new RangeDate(null,null)).lowerBound.getTime();
+                        System.out.println("Centr distance record "+((HierarchyImplRangesDate)hier).getParent(new RangeDate(null,null)).lowerBound);
+                    }
                     long diff = Math.abs(timeCentroid - timeRec);;
-
-//                        if(dateCentroid.after(dateRec)){
-//                            diff  = Math.abs(timeCentroid - timeRec);
-//                        }
-//                        else{
-//                            diff = Math.abs(timeRec - timeCentroid);
-//                        }
-
-//                        System.out.println("Diff "+diff);
-//                        if(timeCentroid > timeRec){
-//                            diff = timeCentroid - timeRec;
-//                        }
-//                        else{
-//                            diff = timeRec - timeCentroid;
-//                        }
 
                     RangeDate root = (RangeDate) hier.getRoot();
 
                     long upperTime = root.getUpperBound().getTime();
                     long lowerTime = root.getLowerBound().getTime();
                     distance += (double)diff /(Math.abs(upperTime - lowerTime));
-//                    }
                     
                 }
                 else{
                     RangeDouble root = (RangeDouble) hier.getRoot();
                     Double diff;
+                    
+                    if(((Double)centroidValue).equals(2147483646.0)){
+                        centroidValue = ((HierarchyImplRangesNumbers)hier).getParent(2147483646.0).lowerBound;
+                    }
+
+                    if(((Double)centroidValue2).equals(2147483646.0)){
+                        centroidValue2 = ((HierarchyImplRangesNumbers)hier).getParent(2147483646.0).lowerBound;
+                    }
 
                     if((Double)centroidValue > (Double)centroidValue2){
                        diff = ((Double)centroidValue) - ((Double)centroidValue2);
@@ -484,7 +429,6 @@ public class Centroid {
             Hierarchy hier = this.quasiHiers.get(entry.getKey());
             
             if(hier.getHierarchyType().equals("distinct")){
-//                System.out.println("Distinct value "+entry.getValue().getValue());
                 for(int i=0; i<records.length; i++){
                    records[i][entry.getKey()+1] = (Double)entry.getValue().getValue();
                 } 
@@ -492,46 +436,8 @@ public class Centroid {
             else{
                 if(hier.getNodesType().equals("date")){
                     HierarchyImplRangesDate h = (HierarchyImplRangesDate)  hier;
-//                    RangeDate commonParent = null;
-////                    System.out.println("Print first records "+records[0][entry.getKey()+1]+" "+records[1][entry.getKey()+1]);
-//                    commonParent = h.findCommonRange(localDatesDict.get(records[0][entry.getKey()+1].intValue()), localDatesDict.get(records[1][entry.getKey()+1].intValue()));
-//                    int recCount = 2;
-//                    while(recCount < records.length && commonParent== null){
-//                        commonParent = h.findCommonRange(localDatesDict.get(records[recCount-1][entry.getKey()+1].intValue()), localDatesDict.get(records[recCount][entry.getKey()+1].intValue()));
-//                        if(commonParent.equals(h.getRoot())){
-//                            break;
-//                        }
-//                        recCount++;
-//                    }
-//                    
-//                    
-//                    if(commonParent != null){
-//                        while(recCount < records.length){
-//                            if(commonParent.equals(h.getRoot())){
-//                                break;
-//                            }
-//                            try {
-//                                if(commonParent.contains(localDatesDict.get(records[recCount][entry.getKey()+1].intValue()))){
-//                                    recCount++;
-//                                    continue;
-//                                }
-//                                else{
-//                                    commonParent = h.findCommonRange(commonParent, localDatesDict.get(records[recCount][entry.getKey()+1].intValue()));
-//                                }
-//                            } catch (ParseException ex) {
-//                                Logger.getLogger(Centroid.class.getName()).log(Level.SEVERE, null, ex);
-//                                commonParent = h.findCommonRange(commonParent, localDatesDict.get(records[recCount][entry.getKey()+1].intValue()));
-//                            }
-//                            
-//                            
-//                            recCount++;
-//                        }
-//                        String strCommon = commonParent.dateToString(h.translateDateViaLevel(h.getHeight() - h.getLevel(commonParent)));
                         String strCommon;
                         strCommon = ((RangeDate)entry.getValue().getValue()).dateToString();
-                        
-//                        System.out.println("Cluster "+clusterId+" column RangeDate "+entry.getKey()+" value "+strCommon);
-                        
                         DictionaryString dict = h.getDictResults();
                         int idRange;
                         if(dict == null){
@@ -553,7 +459,6 @@ public class Centroid {
                         for(int i=0; i<records.length; i++){
                             records[i][entry.getKey()+1] = (double)idRange;
                         }
-//                    }
                 }
                 else{
                    HierarchyImplRangesNumbers h =  (HierarchyImplRangesNumbers) hier;
@@ -571,7 +476,6 @@ public class Centroid {
                             commonParent = h.findCommonRange(commonParent, records[recCount][entry.getKey()+1]);
                             recCount++;
                         }
-//                        System.out.println("Cluster "+clusterId+" column RangeDouble "+entry.getKey()+" value "+commonParent);
                         DictionaryString dict = h.getDictionary();
                         int idRange;
                         if(dict == null){

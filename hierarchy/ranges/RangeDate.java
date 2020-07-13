@@ -11,6 +11,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 
 /**
  *
@@ -65,8 +66,14 @@ public class RangeDate {
             return false;
         RangeDate r = (RangeDate) obj;
         
-        if (r.lowerBound == null){
+        if (r.lowerBound == null && this.lowerBound == null && r.upperBound == null && this.upperBound == null){
             return true;
+        }
+        else if((r.lowerBound == null && r.upperBound == null) && (this.upperBound !=null && this.lowerBound !=null)){
+            return false;
+        }
+        else if((this.lowerBound == null && this.upperBound == null) && (r.upperBound !=null && r.lowerBound !=null)){
+            return false;
         }
         
         return (this.upperBound.equals(r.upperBound)) && (this.lowerBound.equals(r.lowerBound));
@@ -81,7 +88,19 @@ public class RangeDate {
     }
     
     public int compareTo(RangeDate d){
-        if(upperBound.equals(d.upperBound) && lowerBound.equals(d.lowerBound)){
+        if(d==null && this.upperBound==null && this.lowerBound==null){
+            return 0;
+        }
+        else if(this.upperBound==null && this.lowerBound==null && d.upperBound==null && d.lowerBound==null){
+            return 0;
+        }
+        else if(this.upperBound==null && this.lowerBound==null){
+           return -1; 
+        }
+        else if(d.upperBound==null && d.lowerBound==null){
+            return 1;
+        }
+        else if(upperBound.equals(d.upperBound) && lowerBound.equals(d.lowerBound)){
             return 0;
         }
         else if(this.lowerBound.before(d.lowerBound)  && upperBound.equals(d.upperBound)){
@@ -97,7 +116,16 @@ public class RangeDate {
     
     
     public int compareTo(Date d){
-        if(this.upperBound.equals(d)){
+        if(d==null && this.upperBound==null && this.lowerBound==null){
+            return 0;
+        }
+        else if(d==null){
+            return 1;
+        }
+        else if(this.upperBound==null && this.lowerBound==null){
+            return -1;
+        }
+        else if(this.upperBound.equals(d)){
             return 1;
         }
         else if(this.lowerBound.equals(d)){
@@ -128,11 +156,14 @@ public class RangeDate {
     public boolean contains(Date v){
         //return v >= this.lowerBound && v <= this.upperBound;
 //        System.out.println("v = "+v);
-        if(v==null && this.lowerBound==v && this.upperBound==null){
+        if(v==null && this.lowerBound==v && this.upperBound==v){
 //            RangeDate ranNull = new RangeDate(null,null);
             return true;
         }
         else if(v==null){
+            return false;
+        }
+        else if(this.lowerBound==null && this.upperBound==null){
             return false;
         }
         else{
@@ -166,6 +197,9 @@ public class RangeDate {
                 return true;
             }
             else if(v==null){
+                return false;
+            }
+            else if(this.lowerBound==null && this.upperBound==null){
                 return false;
             }
             else if (v.equals(this.lowerBound)){
@@ -348,7 +382,7 @@ public class RangeDate {
                         str = Integer.toString(calendar.get(Calendar.YEAR));
                     }
                     else{
-                        str = calendar.get(Calendar.YEAR) + "-" +calendar2.get(Calendar.YEAR);
+                        str = calendar.get(Calendar.YEAR) + "," +calendar2.get(Calendar.YEAR);
                     }					
                     break;
                 case 1:
@@ -370,7 +404,7 @@ public class RangeDate {
         if(str.contains("null")){
             return new RangeDate(null,null);
         }
-        SimpleDateFormat sf = new SimpleDateFormat("E MMM dd HH:mm:ss z yyyy" );
+        SimpleDateFormat sf = new SimpleDateFormat("E MMM dd HH:mm:ss z yyyy",Locale.US );
         String[] arr = str.split("-");
         
         if(arr.length != 2){

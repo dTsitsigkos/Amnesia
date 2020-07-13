@@ -271,14 +271,24 @@ public class MixedCombinations {
                 if(first.getValue() instanceof RangeDate){
                     firstDate = (RangeDate) first.getValue();
                     try {
-                        secondDate = (RangeDate) h.getParent(new SimpleDateFormat("dd/MM/yyyy").parse(h.getDictionaryData().getIdToString(((Double)second.getValue()).intValue())));
+                        if((h.getDictionaryData().getIdToString(((Double)second.getValue()).intValue())).equals("NaN")){
+                            secondDate = new RangeDate(null,null);
+                        }
+                        else{
+                            secondDate = (RangeDate) h.getParent(new SimpleDateFormat("dd/MM/yyyy").parse(h.getDictionaryData().getIdToString(((Double)second.getValue()).intValue())));
+                        }
                     } catch (ParseException ex) {
                         Logger.getLogger(MixedCombinations.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
                 else{
                     try {
-                        firstDate = (RangeDate) h.getParent(new SimpleDateFormat("dd/MM/yyyy").parse(h.getDictionaryData().getIdToString(((Double)first.getValue()).intValue())));
+                        if((h.getDictionaryData().getIdToString(((Double)first.getValue()).intValue())).equals("NaN")){
+                            firstDate = new RangeDate(null,null);
+                        }
+                        else{
+                            firstDate = (RangeDate) h.getParent(new SimpleDateFormat("dd/MM/yyyy").parse(h.getDictionaryData().getIdToString(((Double)first.getValue()).intValue())));
+                        }
                     } catch (ParseException ex) {
                         Logger.getLogger(MixedCombinations.class.getName()).log(Level.SEVERE, null, ex);
                     }

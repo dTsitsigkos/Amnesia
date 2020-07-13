@@ -40,6 +40,7 @@ import dictionary.DictionaryString;
 import hierarchy.Hierarchy;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
@@ -196,7 +197,7 @@ public class SETData implements Data,Serializable {
         try {
             fstream = new FileInputStream(inputFile);
             in = new DataInputStream(fstream);
-            br = new BufferedReader(new InputStreamReader(in));
+            br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
             System.out.println("del save set "+delimeter);
             
             while ((strLine = br.readLine()) != null){
@@ -297,7 +298,7 @@ public class SETData implements Data,Serializable {
         try {
             fstream = new FileInputStream(inputFile);
             in = new DataInputStream(fstream);
-            br = new BufferedReader(new InputStreamReader(in));
+            br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
             
             //counts lines of the dataset
             while ((strLine = br.readLine()) != null)   {
@@ -502,7 +503,7 @@ public class SETData implements Data,Serializable {
         try {
             fstream = new FileInputStream(inputFile);
             in = new DataInputStream(fstream);
-            br = new BufferedReader(new InputStreamReader(in));
+            br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
             
             while ((strLine = br.readLine()) != null)   {
                 

@@ -24,6 +24,7 @@ import data.Data;
 import static hierarchy.Hierarchy.online_limit;
 import static hierarchy.Hierarchy.online_version;
 import hierarchy.NodeStats;
+import hierarchy.ranges.RangeDate;
 import hierarchy.ranges.RangeDouble;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -187,8 +188,15 @@ public class AutoHierarchyImplDouble extends HierarchyImplDouble{
         stats.put(root, new NodeStats(0));
         System.out.println("counter " + count);
         
-        Double nan = Double.NaN;
-        allParents.get(1).add(nan);
+        if(this.parents.get(Double.NaN)==null && this.parents.get(2147483646.0)==null){
+            Double nan = 2147483646.0;
+            allParents.get(1).add(nan);
+            parents.put(nan, root);
+            List<Double> childsTemp = (ArrayList<Double>) children.get(root);
+            childsTemp.add(nan);
+            children.put(nan,null);
+            stats.put(nan,new NodeStats(1));
+        }
         
 //        long end = System.currentTimeMillis();
 //        System.out.println("Time: " + (end - start));

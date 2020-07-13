@@ -57,8 +57,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.lang.management.MemoryUsage;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -205,7 +207,7 @@ class AppController {
     
     
     // ean to kanw kai gia hierarchies tha prepei na allaksw ta paths
-   @RequestMapping(value = "/action/uploadf", method = RequestMethod.POST)
+    @RequestMapping(value = "/action/uploadf", method = RequestMethod.POST)
     public  @ResponseBody ErrorMessage uploadf(MultipartHttpServletRequest request, HttpSession session){
         try {
             ErrorMessage errMes = new ErrorMessage();
@@ -332,7 +334,7 @@ class AppController {
 //            if(!errorFile.exists()){
 //                errorFile.createNewFile();
 //            }
-            BufferedWriter out = new BufferedWriter(new FileWriter(errorFile.getAbsolutePath(),true));
+            BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(errorFile.getAbsolutePath(), true), StandardCharsets.UTF_8));
             out.write(error+"\n\n\n\n\n");
             out.close();
         }
@@ -620,7 +622,7 @@ class AppController {
 
             fstream = new FileInputStream(fullPath);
             in = new DataInputStream(fstream);
-            br = new BufferedReader(new InputStreamReader(in));
+            br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
             
             if(!fullPath.toLowerCase().endsWith(".xml")){
                 while ((strLine = br.readLine()) != null){
@@ -799,7 +801,7 @@ class AppController {
         String fullPath = dir + "/" + filename; 
         fstream = new FileInputStream(fullPath);
         in = new DataInputStream(fstream);
-        br = new BufferedReader(new InputStreamReader(in));
+        br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
 
         while ((strLine = br.readLine()) != null){
             if ( counter < 4){
@@ -1521,7 +1523,7 @@ class AppController {
         Future<String> future = null;
         System.out.println("Algorithm starts");
         try {
-            if(os.equals("")){
+            if(os.equals("online")){
                 ExecutorService executor = Executors.newCachedThreadPool();
                 final Algorithm temp = algorithm;
                 future = executor.submit( new Callable<String>() {
@@ -1550,6 +1552,7 @@ class AppController {
             else{
                 e.printStackTrace();
                 future.cancel(true);
+                restart(session);
                 return "outoftime";
             }
         }
@@ -1559,10 +1562,12 @@ class AppController {
         } catch (InterruptedException ex) {
             ex.printStackTrace();
             Logger.getLogger(AppCon.class.getName()).log(Level.SEVERE, null, ex);
+            restart(session);
             return "wrong";
         } catch (ExecutionException ex) {
             ex.printStackTrace();
             Logger.getLogger(AppCon.class.getName()).log(Level.SEVERE, null, ex);
+            restart(session);
             return "wrong";
         }
         
@@ -2288,7 +2293,7 @@ System.out.println("url = " + url);
         if ( h.getNodesType().equals("string")){
             int newStrId,parentId;
             
-            if(newNode.equals("")){
+            if(newNode.equals("") || newNode.equals("(null)")){
                 newNode = "NaN";
             }
             DictionaryString dictData = h.getDictionaryData();
@@ -2298,13 +2303,13 @@ System.out.println("url = " + url);
             if(dictData.containsString(newNode)){
                 newStrId = dictData.getStringToId(newNode);
                 if(h.getParent((double)newStrId)!=null){
-                    return "Value "+newNode+" is already exists in hierarchy";
+                    return "The node exists in hierarchy";
                 }
             }
             else if(dictHier.containsString(newNode)){
                 newStrId = dictHier.getStringToId(newNode);
                 if(h.getParent((double)newStrId)!=null){
-                    return "Value "+newNode+" is already exists in hierarchy";
+                    return "The node exists in hierarchy";
                 }
             }
             else{
@@ -2398,7 +2403,9 @@ System.out.println("url = " + url);
                 if(h.getNodesType().equals("date")){
                     RangeDate newNodeDate,parentNodeDate;
                     
-                    if(tempNew.length == 2)
+                    if(newNode.equals("(null)"))
+                        newNodeDate = new RangeDate(null,null);
+                    else if(tempNew.length == 2)
                         newNodeDate = new RangeDate(((HierarchyImplRangesDate) h).getDateFromString(tempNew[0],true),((HierarchyImplRangesDate) h).getDateFromString(tempNew[1],false));
                     else
                         newNodeDate = new RangeDate(((HierarchyImplRangesDate) h).getDateFromString(newNode,true),((HierarchyImplRangesDate) h).getDateFromString(newNode,false));
@@ -2408,23 +2415,42 @@ System.out.println("url = " + url);
                     else
                         parentNodeDate = new RangeDate(((HierarchyImplRangesDate) h).getDateFromString(parent,true),((HierarchyImplRangesDate) h).getDateFromString(parent,false));
                     
+                    if(h.getParent(newNodeDate)!=null){
+                        return "The node exists in hierarchy";
+                    }
                     
                     h.add(newNodeDate, parentNodeDate);
                 }
                 else{
+                    
                     RangeDouble newNodeRange = RangeDouble.parseRange(newNode);
 //                    RangeDouble newNodeRange = new RangeDouble(Double.parseDouble(tempNew[0]),Double.parseDouble(tempNew[1]));
                     newNodeRange.setNodesType(h.getNodesType());
                     RangeDouble parentNodeRange = RangeDouble.parseRange(parent);
 //                    RangeDouble parentNodeRange = new RangeDouble(Double.parseDouble(tempParent[0]),Double.parseDouble(tempParent[1]));
                     parentNodeRange.setNodesType(h.getNodesType());
+                    
+                    if(h.getParent(newNodeRange)!=null){
+                        return "The node exists in hierarchy";
+                    }
                 
                     h.add(newNodeRange, parentNodeRange);
                 }
             }
             else{
                 //// TODO add check intdouble existance
-                h.add(Double.parseDouble(newNode), Double.parseDouble(parent));
+                if(newNode.equals("(null)")){
+                    if(h.getParent(Double.NaN)!=null || h.getParent(2147483646.0)!=null){
+                        return "The node exists in hierarchy";
+                    }
+                    h.add(2147483646.0, Double.parseDouble(parent));
+                }
+                else{
+                    if(h.getParent(Double.parseDouble(newNode))!=null){
+                        return "The node exists in hierarchy";
+                    }
+                    h.add(Double.parseDouble(newNode), Double.parseDouble(parent));
+                }
             }
         }
         
@@ -2575,6 +2601,9 @@ System.out.println("url = " + url);
         h = hierarchies.get(hierName);
         
         if ( h.getNodesType().equals("string")){
+            if(delnode.equals("(null)")){
+                delnode = "NaN";
+            }
             DictionaryString dict;
             if(h.getDictionary().containsString(delnode)){
                 dict = h.getDictionary();
@@ -2583,6 +2612,7 @@ System.out.println("url = " + url);
                 dict = h.getDictionaryData();
                 
             }
+            
             double nodeId = dict.getStringToId(delnode);
             Double root = (Double) h.getRoot();
             if(root == nodeId){
@@ -2603,11 +2633,16 @@ System.out.println("url = " + url);
                 
                 if(h.getNodesType().equals("date")){
                     RangeDate delDate;
-                    
-                    if(temp.length == 2)
+                    if(delnode.equals("(null)")){
+                        delDate = new RangeDate(null,null);
+                        
+                    }
+                    else if(temp.length == 2){
                         delDate = new RangeDate(((HierarchyImplRangesDate) h).getDateFromString(temp[0], true),((HierarchyImplRangesDate) h).getDateFromString(temp[1], false));
-                    else
+                    }
+                    else{
                         delDate = new RangeDate(((HierarchyImplRangesDate) h).getDateFromString(delnode, true),((HierarchyImplRangesDate) h).getDateFromString(delnode, false));
+                    }
                     
                     RangeDate root = (RangeDate) h.getRoot();
                     if(root.equals(delDate)){
@@ -2626,12 +2661,24 @@ System.out.println("url = " + url);
                 }
             }
             else{
-                Double delValue = Double.parseDouble(delnode);
-                Double root = (Double) h.getRoot();
-                if(root.equals(delValue)){
-                    return "You can not delete root";
+                Double delValue;
+                if(delnode.equals("(null)")){
+                    delValue = Double.NaN;
+                    try{
+                       h.remove(delValue); 
+                    }catch(Exception e){
+                        h.remove(2147483646.0);
+                    }
                 }
-                h.remove(delValue);
+                else{
+                    delValue = Double.parseDouble(delnode);
+                    Double root = (Double) h.getRoot();
+                    if(root.equals(delValue)){
+                        return "You can not delete root";
+                    }
+                    h.remove(delValue);
+                }
+                
             }
         }
         
@@ -3425,6 +3472,7 @@ System.out.println("url = " + url);
     }
     
     
+    
     @RequestMapping(value="/action/restart", method = RequestMethod.POST) //method = RequestMethod.POST
     public static @ResponseBody void restart ( HttpSession session) {
         try{
@@ -3955,12 +4003,12 @@ System.out.println("url = " + url);
                 Data dataset = this.getSmallDataSet(del, "tabular","", session);
                 String[][] types = dataset.getTypesOfVariables(dataset.getSmallDataSet());
                 templateFile = new File(path+File.separator+"template.txt");
-                BufferedWriter out = new BufferedWriter(new FileWriter(templateFile.getAbsolutePath(),false));
+                BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(templateFile.getAbsolutePath(), true), StandardCharsets.UTF_8));
 
                 File dataFile = new File(path+File.separator+filename);
                 FileInputStream fileStream = new FileInputStream(dataFile);
                 DataInputStream inData = new DataInputStream(fileStream);
-                BufferedReader br = new BufferedReader(new  InputStreamReader(inData));
+                BufferedReader br = new BufferedReader(new  InputStreamReader(inData,StandardCharsets.UTF_8));
                 
                 if(!filename.endsWith(".xml")){
                     String firstLine = br.readLine();
@@ -4020,7 +4068,7 @@ System.out.println("url = " + url);
            File templ = new File(path+File.separator+files[1].getOriginalFilename());
            FileInputStream fileStream = new FileInputStream(templ);
            DataInputStream inData = new DataInputStream(fileStream);
-           BufferedReader br = new BufferedReader(new  InputStreamReader(inData));
+           BufferedReader br = new BufferedReader(new  InputStreamReader(inData,StandardCharsets.UTF_8));
            
            String strline; 
            List<String> vartypesArr,relationsArr;
@@ -4339,7 +4387,7 @@ System.out.println("url = " + url);
         BufferedReader br;
         String line;
         try {
-            br = new BufferedReader(new FileReader(file));
+            br = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8));
             
             while ((line = br.readLine()) != null) {
 //                System.out.println(line);

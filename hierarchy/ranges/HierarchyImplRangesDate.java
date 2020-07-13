@@ -19,12 +19,16 @@ import static hierarchy.Hierarchy.online_limit;
 import static hierarchy.Hierarchy.online_version;
 import hierarchy.NodeStats;
 import hierarchy.distinct.HierarchyImplDouble;
+import hierarchy.distinct.HierarchyImplString;
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -114,7 +118,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     @Override
     public void load() throws LimitException {
         try {
-            br = new BufferedReader(new FileReader(this.inputFile));
+            br = new BufferedReader(new InputStreamReader(new FileInputStream(this.inputFile),StandardCharsets.UTF_8));
             processingMetadata();
             loadHierarchy();
             findAllParents();
@@ -736,7 +740,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
         }
         
         for (double[] columnData : data) {
-            System.out.println("columnData[c] = " + columnData[c]+" original value "+dataset.getDictionary().getIdToString((int)columnData[c]));
+//            System.out.println("columnData[c] = " + columnData[c]+" original value "+dataset.getDictionary().getIdToString((int)columnData[c]));
             compute(getRoot(), columnData[c],true,true,dataset);
             if(this.statsDistinct.get(columnData[c])!=null){
                 this.statsDistinct.get(columnData[c]).weight++;
@@ -790,7 +794,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                 for(RangeDate c : ch){
 //                    System.out.println("cccccccccccccccc = " + c.toString());
                     if (value == 2147483646.0 || value.equals(Double.NaN)){
-                       if (c.toString().equals("NaN - NaN")){
+                       if (c.toString().contains("NaN")){
                            this.stats.get(c).weight++;
                            this.stats.get(getRoot()).weight++;
 //                            System.out.println("value = " + value.toString());
@@ -801,6 +805,10 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                            this.stats.get(getRoot()).weight++;
 //                            System.out.println("value = " + value.toString());
 //                            System.out.println(c.toString());
+                       }
+                       else if(c.toString().contains("null")){
+                           this.stats.get(c).weight++;
+                           this.stats.get(getRoot()).weight++;
                        }
                     }
                     else if (isRoot == true){
@@ -1362,11 +1370,19 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                 SimpleDateFormat df2 = new SimpleDateFormat("dd/MM/yyyy");
                 String originalDates = "";
                 Date realDate = null;
+                for(int i=0; i<missingValues.size(); i++){
+                    if(Double.isNaN(missingValues.get(i)) || missingValues.get(i).equals(2147483646.0)){
+                        if(this.getParent(new RangeDate(null,null)) == null){
+                           return "Node (null) for spaces values and non-Date values, is not defined in the hierarchy \""+this.name+"\"" ;
+                        }
+                        missingValues.remove(i);
+                    }
+                }
                 if(missingValues.size() == 1){
                     realDate = new Date(missingValues.get(0).longValue());
                     return "Value \""+df2.format(realDate)+"\" are not defined in hierarchy \""+this.name+"\"";
                 }
-                else{
+                else if(!missingValues.isEmpty()){
                     for(Double dateVal : missingValues){
                         realDate = new Date(dateVal.longValue());
                         originalDates += df2.format(realDate) +", ";
@@ -1380,12 +1396,33 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
            DictionaryString dictionary =  d.getDictionary();
            for(int i=0; i<dataset.length; i++){
                try {
-                   if(!root.contains(dictionary.getIdToString((int)dataset[i][col]))){
+                    if(dictionary.getIdToString((int)dataset[i][col]).equals("NaN")){
+                        RangeDate nullDate = new RangeDate(null,null);
+                        if(this.parents.get(nullDate)==null){
+                            return "Node (null) for spaces values and non-Date values, is not defined in the hierarchy \""+this.name+"\""; 
+                        }
+                    }
+                    else if(!root.contains(dictionary.getIdToString((int)dataset[i][col]))){
                       return "Value \""+dictionary.getIdToString((int)dataset[i][col])+"\" is not defined in the hierarchy \""+this.name+"\""; 
-                   }
+                    }
                 } catch (ParseException ex) {
                    Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);
                    return "Value \""+dictionary.getIdToString((int)dataset[i][col])+" is not a supported Date";
+               } catch(NullPointerException ne){
+                   try{
+                        if(HierarchyImplString.getWholeDictionary().getIdToString((int)dataset[i][col]).equals("NaN")){
+                             RangeDate nullDate = new RangeDate(null,null);
+                             if(this.parents.get(nullDate)==null){
+                                 return "Node (null) for spaces values and non-Date values, is not defined in the hierarchy \""+this.name+"\""; 
+                             }
+                         }
+                         else if(!root.contains(HierarchyImplString.getWholeDictionary().getIdToString((int)dataset[i][col]))){
+                           return "Value \""+dictionary.getIdToString((int)dataset[i][col])+"\" is not defined in the hierarchy \""+this.name+"\""; 
+                         }
+                    }catch (ParseException ex) {
+                        Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);
+                        return "Value \""+HierarchyImplString.getWholeDictionary().getIdToString((int)dataset[i][col])+" is not a supported Date";
+                    }
                }
            }
         }

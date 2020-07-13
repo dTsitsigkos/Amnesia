@@ -33,12 +33,16 @@ import hierarchy.Hierarchy;
 import static hierarchy.Hierarchy.online_limit;
 import static hierarchy.Hierarchy.online_version;
 import hierarchy.NodeStats;
+import hierarchy.ranges.RangeDate;
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -130,7 +134,7 @@ public class HierarchyImplString implements Hierarchy<Double> {
     @Override
     public void load() throws LimitException{
         try {
-            br = new BufferedReader(new FileReader(this.inputFile));
+            br = new BufferedReader(new InputStreamReader(new FileInputStream(this.inputFile),StandardCharsets.UTF_8));
             processingMetadata();
             loadHierarchy();
             findAllParents();
@@ -197,9 +201,17 @@ public class HierarchyImplString implements Hierarchy<Double> {
                             strId = dictData.getStringToId(tkn).doubleValue();
                         }
                         else{
+                           
                             if(!dict.containsString(tkn)){
-                                dict.putIdToString(strCount, tkn);
-                                dict.putStringToId(tkn, strCount++);
+                                if(tkn.equals("NaN")){
+                                    dict.putIdToString(2147483646, tkn);
+                                    dict.putStringToId(tkn,2147483646);
+                                }
+                                else{
+                                    dict.putIdToString(strCount, tkn);
+                                    dict.putStringToId(tkn, strCount++);
+                                }
+                                
                             }
                             strId = dict.getStringToId(tkn).doubleValue();
                         }
@@ -249,8 +261,14 @@ public class HierarchyImplString implements Hierarchy<Double> {
                     }
                     else{
                         if(!dict.containsString(token)){
-                            dict.putIdToString(strCount, token);
-                            dict.putStringToId(token, strCount++);
+                            if(token.equals("NaN")){
+                                dict.putIdToString(2147483646, token);
+                                dict.putStringToId(token,2147483646);
+                            }
+                            else{
+                                dict.putIdToString(strCount, token);
+                                dict.putStringToId(token, strCount++);
+                            }
                         }
                         strId = dict.getStringToId(token).doubleValue();
                     }
@@ -289,16 +307,24 @@ public class HierarchyImplString implements Hierarchy<Double> {
                 else{
                     if(isChild && !dictData.containsString(token) && !dict.containsString(token)){
                         
-                        dict.putIdToString(strCount, token);
-                        dict.putStringToId(token, strCount++);
-                        ch.add((double)strCount-1);
+                        if(token.equals("NaN")){
+                            dict.putIdToString(2147483646, token);
+                            dict.putStringToId(token,2147483646);
+                            ch.add(2147483646.0);
+                        }
+                        else{
+                            dict.putIdToString(strCount, token);
+                            dict.putStringToId(token, strCount++);
+                            ch.add((double)strCount-1);
+                        }
+                        
                     }
                     else if(isChild){
                         if(dictData.containsString(token)){
                             strId = dictData.getStringToId(token).doubleValue();
                         }
                         else {
-                             strId = dict.getStringToId(token).doubleValue();
+                            strId = dict.getStringToId(token).doubleValue();
                         }
                         
                         ch.add(strId);
@@ -446,6 +472,9 @@ public class HierarchyImplString implements Hierarchy<Double> {
 //            System.out.println("Flash level "+levelFlash+" node "+node+" "+this.dictData.getIdToString(node.intValue()));
 //            System.out.println("Flash level "+levelFlash+"  anon node "+anonValue+" anonNode "/*+this.dictData.getIdToString(anonValue.intValue())+" level node "+this.getLevel((double)node)*/);
 //            System.out.println("Flash level "+levelFlash+" level anon node "+this.getLevel((double)anonValue)+" anonNode "+this.dict.getIdToString(anonValue.intValue())+" level node "+this.getLevel((double)node));
+            if(this.getLevel((double)node) == null){
+                return null;
+            }
             if(levelFlash == this.getLevel((double)node)){
                 return anonValue;
             }
@@ -1425,6 +1454,9 @@ public class HierarchyImplString implements Hierarchy<Double> {
     public Integer getLevel(double nodeId) {
 //        System.out.println("getLevel hierarchy = " + nodeId + "\t height = " + this.height);
 //        String value = this.dict.getIdToString((int)nodeId);
+        if(this.getLevel((Double)nodeId) == null){
+            return null;
+        }
         return (this.height - this.getLevel((Double)nodeId) - 1) ;
     }
 
@@ -1754,6 +1786,14 @@ public class HierarchyImplString implements Hierarchy<Double> {
             if(!missingValues.isEmpty()){
                 String originalValues = "";
                 String realValue = "";
+                for(int i=0; i<missingValues.size(); i++){
+                    if(Double.isNaN(missingValues.get(i)) || missingValues.get(i).equals(2147483646.0)){
+                        if(this.getParent(2147483646.0) == null){
+                           return "Node (null) for spaces values, is not defined in the hierarchy \""+this.name+"\"" ;
+                        }
+                        missingValues.remove(i);
+                    }
+                }
                 if(missingValues.size() == 1){
                     realValue = this.dictData.getIdToString(missingValues.get(0).intValue());
                     if(realValue == null){
@@ -1761,7 +1801,7 @@ public class HierarchyImplString implements Hierarchy<Double> {
                     }
                     return "Value \""+realValue+"\" are not defined in hierarchy \""+this.name+"\"";
                 }
-                else{
+                else if(!missingValues.isEmpty()){
                     
                     for(Double missingValue : missingValues) {
                         realValue = this.dictData.getIdToString(missingValue.intValue());
@@ -1784,7 +1824,15 @@ public class HierarchyImplString implements Hierarchy<Double> {
                         if(value == null){
                             value = dict.getIdToString((int)dataset[i][j]);
                         }
-                        return "Value \""+value+"\" is not defined in the hierarchy \""+this.name+"\"";
+                        if(value.equals("NaN")){
+                            if(this.parents.get(2147483646.0)==null){
+                                return "Node (null) for spaces values and non-Date values, is not defined in the hierarchy \""+this.name+"\""; 
+                            }
+                        }
+                        else{
+                            
+                            return "Value \""+value+"\" is not defined in the hierarchy \""+this.name+"\"";
+                        }
                     }
                 }
             }
@@ -1803,7 +1851,15 @@ public class HierarchyImplString implements Hierarchy<Double> {
                             if(value == null){
                                 value = dict.getIdToString((int)dataset[i][j]);
                             }
-                            return "Value \""+value+"\" in "+d.getColumnByPosition(col)+" column is not defined in the hierarchy \""+this.name+"\"";
+                            if(value.equals("NaN")){
+                                if(this.parents.get(2147483646.0)==null){
+                                    return "Node (null) for spaces values and non-Date values, is not defined in the hierarchy \""+this.name+"\""; 
+                                }
+                            }
+                            else{
+                                
+                                return "Value \""+value+"\" in "+d.getColumnByPosition(col)+" column is not defined in the hierarchy \""+this.name+"\"";
+                            }
                         }
                     }
                 }
@@ -1813,7 +1869,11 @@ public class HierarchyImplString implements Hierarchy<Double> {
                 for(int i=0; i<dataset.length; i++){
                     Double parent = this.parents.get(dataset[i][col]);
                     if(parent == null && root.doubleValue()!=dataset[i][col]){
-                        return "Value \""+relsetData.getDictionary().getIdToString((int)dataset[i][col])+"\"  in "+d.getColumnByPosition(col)+" column is not defined in the hierarchy \""+this.name+"\"";
+                        String value = relsetData.getDictionary().getIdToString((int)dataset[i][col]);
+                        if(value == null){
+                            value = dict.getIdToString((int)dataset[i][col]);
+                        }
+                        return "Value \""+value+"\"  in "+d.getColumnByPosition(col)+" column is not defined in the hierarchy \""+this.name+"\"";
                     }
                 }
             }
@@ -1828,7 +1888,7 @@ public class HierarchyImplString implements Hierarchy<Double> {
                         value = dict.getIdToString((int)dataset[i][col]);
                     }
                     if(dataset[i][col]!= root.doubleValue()){
-                        return "Value "+d.getDictionary().getIdToString((int)dataset[i][col])+" in "+d.getColumnByPosition(col)+" column is not defined in the hierarchy \""+this.name+"\"";
+                        return "Value "+value+" in "+d.getColumnByPosition(col)+" column is not defined in the hierarchy \""+this.name+"\"";
                     }
                 }
             }

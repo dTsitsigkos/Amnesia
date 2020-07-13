@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -309,7 +310,7 @@ public class RelSetData implements Data {
         try {
             fstream = new FileInputStream(inputFile);
             in = new DataInputStream(fstream);
-            br = new BufferedReader(new InputStreamReader(in));
+            br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
             
             while ((strLine = br.readLine()) != null){
                 
@@ -567,7 +568,7 @@ public class RelSetData implements Data {
         try {
             fstream = new FileInputStream(inputFile);
             in = new DataInputStream(fstream);
-            br = new BufferedReader(new InputStreamReader(in));
+            br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
             
             //counts lines of the dataset
             while ((strLine = br.readLine()) != null)   {
@@ -695,7 +696,7 @@ public class RelSetData implements Data {
         try{
             fstream = new FileInputStream(inputFile);
             in = new DataInputStream(fstream);
-            br = new BufferedReader(new InputStreamReader(in));
+            br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
             int counter = 0 ;
             
             while ((strLine = br.readLine()) != null)   {
@@ -778,7 +779,7 @@ public class RelSetData implements Data {
         try{
             fstream = new FileInputStream(inputFile);
             in = new DataInputStream(fstream);
-            br = new BufferedReader(new InputStreamReader(in));
+            br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
             while ((strLine = br.readLine()) != null)   {
                 if(firstLine){
                     temp = strLine.split(delimeter,-1);

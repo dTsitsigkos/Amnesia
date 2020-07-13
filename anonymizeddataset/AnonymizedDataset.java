@@ -14,6 +14,7 @@ import data.RelSetData;
 import data.SETData;
 import dictionary.DictionaryString;
 import hierarchy.Hierarchy;
+import hierarchy.distinct.HierarchyImplString;
 import hierarchy.ranges.HierarchyImplRangesDate;
 import hierarchy.ranges.RangeDate;
 import hierarchy.ranges.RangeDouble;
@@ -245,7 +246,10 @@ public class AnonymizedDataset {
 //                            System.out.println("Data date "+columnData[line][column]);
                             Double num = (Double)columnData[line][column];
                             String originalValue = dataset.getDictionary().getIdToString().get(num.intValue());
-                            columnData[line][column] = anonymizeValue(dataset.getDictionary().getIdToString().get(num.intValue()), hierarchy, level); 
+                            if(originalValue == null){
+                                originalValue = HierarchyImplString.getWholeDictionary().getIdToString().get(num.intValue());
+                            }
+                            columnData[line][column] = anonymizeValue(originalValue, hierarchy, level); 
                             if(columnData[line][column] == null){
                                 throw new NotFoundValueException("Value \""+originalValue+"\" is not set in the hierarchy tree");
                             }
@@ -267,6 +271,10 @@ public class AnonymizedDataset {
                                 if(columnData[line][column]==null){
                                     columnData[line][column] = dataset.getDictionary().getIdToString().get(((Double)value).intValue());
                                 }
+                                
+                                if(columnData[line][column].equals("NaN")){
+                                    columnData[line][column] = "(null)";
+                                }
                             }
                             
                         }
@@ -279,7 +287,8 @@ public class AnonymizedDataset {
                         Double num = (Double)columnData[line][column];
                         columnData[line][column] = dataset.getDictionary().getIdToString().get(num.intValue());
                         if(columnData[line][column] == null){
-                            columnData[line][column] = hierarchy.getDictionary().getIdToString().get(num.intValue());
+                            
+                            columnData[line][column] = HierarchyImplString.getWholeDictionary().getIdToString().get(num.intValue());
                         }
                         if ( ((String)columnData[line][column]).equals("NaN")){
                             columnData[line][column] = "(null)";
@@ -495,6 +504,15 @@ public class AnonymizedDataset {
                                 if(anonymizedData[line][column] == 2147483646.0){
                                    columnData[line][column] = "(null)" ;
                                 }
+                                
+                                if(!columnData[line][column].equals("(null)") && !((String)columnData[line][column]).contains("-")){
+                                    try{
+                                       columnData[line][column] = ((Double)Double.parseDouble((String)columnData[line][column])).intValue();
+                                    }catch(NumberFormatException e){
+//                                        e.printStackTrace();
+                                        columnData[line][column] = hierarchy.getDictionary().getIdToString((int) anonymizedData[line][column]);
+                                    }
+                                }
                             }
                         }
                         else{
@@ -536,13 +554,19 @@ public class AnonymizedDataset {
                         else{
                             if(anonymizedData[line][column] == 2147483646.0){
                                 columnData[line][column] = "(null)" ;
-                            }  
+                            }
+                            else{
+                                columnData[line][column] = anonymizedData[line][column];
+                            }
                         }
                     }
                     else{
                         if(anonymizedData[line][column] == 2147483646.0){
                             columnData[line][column] = "(null)" ;
-                        } 
+                        }
+                        else{
+                            columnData[line][column] = anonymizedData[line][column];
+                        }
                     }
                 }
             }
@@ -575,18 +599,42 @@ public class AnonymizedDataset {
                         else{
                             if (anonymizedData[line][column] == originalData[line][column]){
                                 columnData[line][column] =  dataset.getDictionary().getIdToString((int) anonymizedData[line][column]);
+                                if(columnData[line][column] == null){
+                                    columnData[line][column] = HierarchyImplString.getWholeDictionary().getIdToString((int) anonymizedData[line][column]);
+                                }
                             }
                             else{
-                                columnData[line][column] = hierarchy.getDictionary().getIdToString((int) anonymizedData[line][column]);
+                                columnData[line][column] = HierarchyImplString.getWholeDictionary().getIdToString((int) anonymizedData[line][column]);
+                            }
+                            
+                            if(anonymizedData[line][column] == 2147483646.0){
+                                columnData[line][column] = "(null)" ;
                             }
                         }
                     }
                     else{
-                        columnData[line][column] = dataset.getDictionary().getIdToString((int) anonymizedData[line][column]);
-                        if(columnData[line][column]==null){
-                            Date date = new Date((long)anonymizedData[line][column]);
-                            SimpleDateFormat df2 = new SimpleDateFormat("dd/MM/yyyy");
-                            columnData[line][column] = df2.format(date);
+                        if(dataset.getColNamesType().get(column).equals("date")){
+                            columnData[line][column] = dataset.getDictionary().getIdToString((int) anonymizedData[line][column]);
+                            if(columnData[line][column]==null){
+                                
+                                Date date = new Date((long)anonymizedData[line][column]);
+                                SimpleDateFormat df2 = new SimpleDateFormat("dd/MM/yyyy");
+                                columnData[line][column] = df2.format(date);
+                            }
+
+                            if(anonymizedData[line][column] == 2147483646.0){
+                                columnData[line][column] = "(null)" ;
+                            }
+                        }
+                        else{
+                           columnData[line][column] = dataset.getDictionary().getIdToString((int) anonymizedData[line][column]);
+                            if(columnData[line][column] == null){
+                               columnData[line][column] = HierarchyImplString.getWholeDictionary().getIdToString((int) anonymizedData[line][column]);
+                            }
+                            
+                            if(columnData[line][column].equals("NaN")){
+                                columnData[line][column] = "(null)" ;
+                            }
                         }
                     }
                 } 
@@ -802,7 +850,7 @@ public class AnonymizedDataset {
                         }
                     }
                     else{
-                        if (((Double) columnData[line][column]).equals(Double.NaN)) {
+                        if (((Double) columnData[line][column]).equals(Double.NaN) || (double)columnData[line][column] == 2147483646.0) {
                             columnData[line][column] = "(null)";
                         }
                         else {
@@ -843,6 +891,13 @@ public class AnonymizedDataset {
                                 else{
 //                                System.out.println("column Val"+rulesRelational.get(columnData[line][column]));
                                     columnData[line][column] = dataset.getDictionary().getIdToString().get(((Double)rulesRelational.get(columnData[line][column])).intValue()); 
+                                    if(columnData[line][column] == null){
+                                        columnData[line][column] = hierarchy.getDictionary().getIdToString().get(((Double)rulesRelational.get(columnData[line][column])).intValue());
+                                    }
+                                    
+                                    if(columnData[line][column].equals("NaN")){
+                                        columnData[line][column] = "(null)";
+                                    }
                                 }
                             }
                         }
@@ -854,11 +909,18 @@ public class AnonymizedDataset {
                             else{
                                columnData[line][column] = dataset.getDictionary().getIdToString().get(((Double)rulesRelational.get(columnData[line][column])).intValue()); 
                             }
+                            
+                            if(columnData[line][column].equals("NaN")){
+                                columnData[line][column] = "(null)";
+                            }
                         }
                     }
                     else{
                         Double num = (Double)columnData[line][column];
                         columnData[line][column] = dataset.getDictionary().getIdToString().get(num.intValue());
+                        if(columnData[line][column] == null){
+                            columnData[line][column] = HierarchyImplString.getWholeDictionary().getIdToString(num.intValue());
+                        }
                         if ( ((String)columnData[line][column]).equals("NaN")){
                             columnData[line][column] = "(null)";
                         }
@@ -919,22 +981,70 @@ public class AnonymizedDataset {
             }
 
             for(int column=0; column<anonymizedData[0].length; column++){
+            
+                String columnName = colNamesPosition.get(column);
                 boolean anonymizeColumn = false;
                 Hierarchy hierarchy = null;
 
                 if((count < qids.length) && (qids[count] == column)){
                     anonymizeColumn = true;
                     hierarchy = quasiIdentifiers.get(column);
+    //                level = transformation[count];
                     count++;
                 }
 
-                if(colNamesType.get(column).contains("int")){
+                if(colNamesType.get(column).equals("int")){
                     for(int line=0; line<columnData.length; line++){
-                        if(anonymizeColumn){
+                        if(anonymizeColumn && hierarchy!=null){
                             if(hierarchy.getHierarchyType().equals("range")){
 
                                 if (anonymizedData[line][column] == originalData[line][column]){
                                     columnData[line][column] = (int) originalData[line][column];
+                                    if(anonymizedData[line][column] == 2147483646.0){
+                                       columnData[line][column] = "(null)" ;
+                                    }
+                                }
+                                else{
+                                    columnData[line][column] = hierarchy.getDictionary().getIdToString((int) anonymizedData[line][column]);
+                                    if(anonymizedData[line][column] == 2147483646.0){
+                                       columnData[line][column] = "(null)" ;
+                                    }
+
+                                    if(!columnData[line][column].equals("(null)") && !((String)columnData[line][column]).contains("-")){
+                                        try{
+                                           columnData[line][column] = ((Double)Double.parseDouble((String)columnData[line][column])).intValue();
+                                        }catch(NumberFormatException e){
+    //                                        e.printStackTrace();
+                                            columnData[line][column] = hierarchy.getDictionary().getIdToString((int) anonymizedData[line][column]);
+                                        }
+                                    }
+                                }
+                            }
+                            else{
+                                if(anonymizedData[line][column] == 2147483646.0){
+                                    columnData[line][column] = "(null)" ;
+                                }
+                                else{
+                                    columnData[line][column] = (int)  anonymizedData[line][column];
+                                }
+                            }
+                        }
+                        else{
+                            if(anonymizedData[line][column] == 2147483646.0){
+                                columnData[line][column] = "(null)" ;
+                            }
+                            else{
+                                columnData[line][column] = (int)  anonymizedData[line][column];
+                            }
+                        }
+                    }
+                }
+                else if(colNamesType.get(column).equals("double")){
+                    for(int line=0; line<columnData.length; line++){
+                        if(anonymizeColumn && hierarchy!=null){
+                            if(hierarchy.getHierarchyType().equals("range")){
+                                if (anonymizedData[line][column] == originalData[line][column]){
+                                    columnData[line][column] =  originalData[line][column];
                                     if(anonymizedData[line][column] == 2147483646.0){
                                        columnData[line][column] = "(null)" ;
                                     }
@@ -951,7 +1061,7 @@ public class AnonymizedDataset {
                                     columnData[line][column] = "(null)" ;
                                 }
                                 else{
-                                    columnData[line][column] = (int)  anonymizedData[line][column]; 
+                                    columnData[line][column] = anonymizedData[line][column];
                                 }
                             }
                         }
@@ -960,44 +1070,20 @@ public class AnonymizedDataset {
                                 columnData[line][column] = "(null)" ;
                             }
                             else{
-                                columnData[line][column] = (int)  anonymizedData[line][column]; 
+                                columnData[line][column] = anonymizedData[line][column];
                             }
-                        }
-                    }
-                }
-                else if(colNamesType.get(column).contains("double")){
-                    for(int line=0; line<columnData.length; line++){
-                        if(anonymizeColumn){
-                            if(hierarchy.getHierarchyType().equals("range")){
-                                if (anonymizedData[line][column] == originalData[line][column]){
-                                    columnData[line][column] =  originalData[line][column];
-                                    if(anonymizedData[line][column] == 2147483646.0){
-                                       columnData[line][column] = "(null)" ;
-                                    }
-                                }
-                                else{
-                                    columnData[line][column] = hierarchy.getDictionary().getIdToString((int) anonymizedData[line][column]);
-                                    if(anonymizedData[line][column] == 2147483646.0){
-                                       columnData[line][column] = "(null)" ;
-                                    }
-                                }
-                            }
-                        }
-                        else{
-                            if(anonymizedData[line][column] == 2147483646.0){
-                                columnData[line][column] = "(null)" ;
-                            } 
                         }
                     }
                 }
                 else{
                     for(int line=0; line<columnData.length; line++){
-                        if(anonymizeColumn){
+                        if(anonymizeColumn && hierarchy!=null){
                             if(hierarchy.getNodesType().equals("date")){
+
                                 DictionaryString dictResult = ((HierarchyImplRangesDate) hierarchy).getDictResults();
                                 DictionaryString dictOriginal = hierarchy.getDictionaryData();
-                                if(anonymizedData[line][column]==originalData[line][column]){
-                                    columnData[line][column] = hierarchy.getDictionary().getIdToString((int) originalData[line][column]);
+                                if(originalData[line][column] == anonymizedData[line][column]){
+                                    columnData[line][column] = hierarchy.getDictionaryData().getIdToString((int) originalData[line][column]);
                                     if(anonymizedData[line][column] == 2147483646.0){
                                        columnData[line][column] = "(null)" ;
                                     }
@@ -1013,22 +1099,47 @@ public class AnonymizedDataset {
                                        columnData[line][column] = "(null)" ;
                                     }
                                 }
+
                             }
                             else{
                                 if (anonymizedData[line][column] == originalData[line][column]){
                                     columnData[line][column] =  dataset.getDictionary().getIdToString((int) anonymizedData[line][column]);
+                                    if(columnData[line][column] == null){
+                                        columnData[line][column] = HierarchyImplString.getWholeDictionary().getIdToString((int) anonymizedData[line][column]);
+                                    }
                                 }
                                 else{
-                                    columnData[line][column] = hierarchy.getDictionary().getIdToString((int) anonymizedData[line][column]);
+                                    columnData[line][column] = HierarchyImplString.getWholeDictionary().getIdToString((int) anonymizedData[line][column]);
+                                }
+
+                                if(anonymizedData[line][column] == 2147483646.0){
+                                    columnData[line][column] = "(null)" ;
                                 }
                             }
                         }
                         else{
-                            columnData[line][column] = dataset.getDictionary().getIdToString((int) anonymizedData[line][column]);
-                            if(columnData[line][column]==null){
-                                Date date = new Date((long)anonymizedData[line][column]);
-                                SimpleDateFormat df2 = new SimpleDateFormat("dd/MM/yyyy");
-                                columnData[line][column] = df2.format(date);
+                            if(dataset.getColNamesType().get(column).equals("date")){
+                                columnData[line][column] = dataset.getDictionary().getIdToString((int) anonymizedData[line][column]);
+                                if(columnData[line][column]==null){
+
+                                    Date date = new Date((long)anonymizedData[line][column]);
+                                    SimpleDateFormat df2 = new SimpleDateFormat("dd/MM/yyyy");
+                                    columnData[line][column] = df2.format(date);
+                                }
+
+                                if(anonymizedData[line][column] == 2147483646.0){
+                                    columnData[line][column] = "(null)" ;
+                                }
+                            }
+                            else{
+                               columnData[line][column] = dataset.getDictionary().getIdToString((int) anonymizedData[line][column]);
+                                if(columnData[line][column] == null){
+                                   columnData[line][column] = HierarchyImplString.getWholeDictionary().getIdToString((int) anonymizedData[line][column]);
+                                }
+
+                                if(columnData[line][column].equals("NaN")){
+                                    columnData[line][column] = "(null)" ;
+                                }
                             }
                         }
                     } 
@@ -1229,7 +1340,7 @@ public class AnonymizedDataset {
                         }
                     }
                     else{
-                        if (((Double) columnData[line][column]).equals(Double.NaN)) {
+                        if (((Double) columnData[line][column]).equals(Double.NaN) || (double) columnData[line][column] == 2147483646.0) {
                             columnData[line][column] = "(null)";
                         }
                         else {
@@ -1275,6 +1386,9 @@ public class AnonymizedDataset {
                     else{
                         Double num = (Double)columnData[line][column];
                         columnData[line][column] = dataset.getDictionary().getIdToString().get(num.intValue());
+                        if(columnData[line][column] == null){
+                            columnData[line][column] = HierarchyImplString.getWholeDictionary().getIdToString().get(num.intValue());
+                        }
                         if ( ((String)columnData[line][column]).equals("NaN")){
                             columnData[line][column] = "(null)";
                         }
@@ -1497,6 +1611,9 @@ public class AnonymizedDataset {
                         else{
                             Double num = (Double)columnData[line][column];
                             columnData[line][column] = dataset.getDictionary().getIdToString().get(num.intValue());
+                            if(columnData[line][column] == null){
+                                columnData[line][column] = HierarchyImplString.getWholeDictionary().getIdToString().get(num.intValue());
+                            }
                             if ( ((String)columnData[line][column]).equals("NaN")){
                                 columnData[line][column] = "(null)";
                             }

@@ -36,22 +36,22 @@ public class ClusterBasedAlgorithm implements Algorithm {
     Map<Integer, Hierarchy> hierarchies = null;
     Integer k;
     Integer clusters;
-//    Set<Integer> recordsIds;
     Pair<Double[],List<Integer>>[] randomRecords;
     int sizeRandomCluster;
-//    List<Double[]> recordsCentroids;
     Double[] recordCentroid;
     Clusters diskClusters;
-//    Map<Integer,Centroid> clustersCentroids;
     Centroid[] clustersCentroids;
     static Semaphore[] semaphores;
     Slave[] slaves;
     int numOfSlaves=4;
-    final int treeChildClusters = 5;
+    int treeChildClusters = 5;
     int numRecordsMain;
     Map<Integer,RangeDouble> rangeThreads;
     final int  partOfData = 8;
     int numRecsSlave;
+    ClusterDistTree cltree = null;
+    int initialClusters;
+    double clustersProportion = 0.005;
 
     public ClusterBasedAlgorithm(Data data){
         this.diskData = (DiskData) data;
@@ -85,7 +85,6 @@ public class ClusterBasedAlgorithm implements Algorithm {
 
     @Override
     public void anonymize() {
-//        sortDatabase();
         long end ;
         long start2;
         long start = System.currentTimeMillis(); 
@@ -96,12 +95,6 @@ public class ClusterBasedAlgorithm implements Algorithm {
             }
         }
         if(initialiseClusters()){
-//        if(removeAnonymizedClusters()){
-            long startBuild = System.currentTimeMillis();
-//            System.out.println("Build dist tree");
-//            this.treeDist = new CentroidTreeDist(this.clustersCentroids,this.diskClusters.getLastClusterId());
-//            long endBuild = System.currentTimeMillis();
-//            System.out.println("End dist tree "+(endBuild-startBuild)+" ms");
             initialiseSlaves();
             fillClusters();
             end = System.currentTimeMillis();
@@ -116,7 +109,6 @@ public class ClusterBasedAlgorithm implements Algorithm {
             System.out.println("Removing Time is "+(end-start2)/1000.0+" s");
             System.out.println("Removing Time is "+(end-start2)/60000.0+" min");
            
-    //        buildClusteringTree();
             start2 = System.currentTimeMillis(); 
             anonymization();
             end = System.currentTimeMillis();
@@ -125,11 +117,10 @@ public class ClusterBasedAlgorithm implements Algorithm {
             System.out.println("Anonymization Time is "+(end - start2)/60000.0+" min");
             
         }
-//        new Thread(new Runnable() {
-//            public void run(){
-//                clear();
-//            }
-//        }).start();
+        else{
+            anonymizeSmallRecords();
+            System.out.println("Exception ");
+        }      
         start2 = System.currentTimeMillis(); 
         clear();
         end = System.currentTimeMillis();
@@ -141,95 +132,34 @@ public class ClusterBasedAlgorithm implements Algorithm {
         System.out.println("Time is "+(end-start)/60000.0+" min");
     }
     
-    
-    private boolean initialiseClusters(){
-        Pair<Pair<Double[],List<Integer>>[],Integer> returnedRandom;
-        List<Integer> clusterIds = new ArrayList();
-//        Map<Integer,Object> recordsInfo = this.diskData.getRandomRecords(this.clusters,this.hierarchies.keySet());
-        this.diskData.createAnonymizedTable();
-        this.diskData.createChekedTable();
-//        this.diskData.removeAnonymizedRec(this.k,this.hierarchies.keySet());
-//        this.randomRecords = this.diskData.getRandomRecords(this.clusters,this.hierarchies.keySet());
-        returnedRandom = this.diskData.getRandomRecords(this.clusters,this.hierarchies.keySet());
-        this.randomRecords = returnedRandom.getKey();
-        this.sizeRandomCluster = returnedRandom.getValue();
-        this.clustersCentroids = new Centroid[2*this.clusters+1];
-//        this.randomRecords = (ArrayList) recordsInfo.get(0);
-//        this.recordsIds =  (HashSet) recordsInfo.get(1);
-        
-        
-        System.out.println("Clusters real "+this.sizeRandomCluster);
-//        if(this.randomRecords.size() == this.diskData.getRecordsTotal()){
-//            this.diskData.cloneOriginalToAnonymize();
-//            return false;
-//        }
-//        else{
-            this.diskClusters = new Clusters(this.diskData.getUrlDataBase(),this.clusters,k);
-//            int start=0;
+    private void anonymizeSmallRecords(){
+        List<Pair<Double[],List<Integer>>> smallClusters = this.diskData.getSmallRecordsClusters(k, this.hierarchies.keySet());
+        if(!smallClusters.isEmpty()){
+            this.diskClusters.createCluster();
+            this.numOfSlaves = new ForkJoinPool().getParallelism();
+            Pair<Double[],List<Integer>>[] smallClustersArr = new Pair[smallClusters.size()];
             
-            int counterCluster=0;
-            int sumAnonymized = 0;
-            int clusterSmallest = 0;
-            List<Integer> mergeSmall = new ArrayList();
-            for(int i=0; i<this.sizeRandomCluster; i++){
-                
-                List<Integer> similarRecords = randomRecords[i].getValue(); 
-//                System.out.println("Ran "+counterCluster+" size "+similarRecords.size());
-//                counterCluster += similarRecords.size();
-                if(similarRecords.size() >= this.k){
-                    diskData.fillAnonymizedRecords(similarRecords);
-                    randomRecords[i]=null;
-                    sumAnonymized++;
-                }
-//                else{
-//                    counterCluster += similarRecords.size();
-//                    if(similarRecords.size() == 1){
-//                        clusterSmallest++;
-//                        mergeSmall.addAll(similarRecords);
-//                        if(mergeSmall.size() >= this.k){
-//                            randomRecords[i] = new Pair(randomRecords[i].getKey(),mergeSmall);
-//                            mergeSmall = new ArrayList();
-//                        }
-//                        else if(i==sizeRandomCluster-1 && !mergeSmall.isEmpty()){
-//                            randomRecords[i] = new Pair(randomRecords[i].getKey(),mergeSmall);
-//                        }
-//                        else{
-//                            randomRecords[i] = null;
-//                        }
-//                    }
-//                }
-                
-                
-//                else{
-//                    clusterIds.add(counterCluster);
-////                    this.diskClusters.createCluster(similarRecords,counterCluster);
-////                    Centroid centroid = new Centroid(counterCluster,this.hierarchies,randomRecords[i].getKey(),true);
-////                    this.clustersCentroids[counterCluster] =  centroid; 
-//                    counterCluster++;
-//                }
+            if(smallClusters.size() < numOfSlaves){
+                this.numOfSlaves = smallClusters.size();
             }
             
-            
-            this.diskClusters.createCluster();
-//            this.diskClusters.setLastClusterId(this.sizeRandomCluster - sumAnonymized);
-//            return false;
-            
-            this.numOfSlaves = new ForkJoinPool().getParallelism();
-            int numRandomRecSl = (sizeRandomCluster + numOfSlaves -1)/numOfSlaves;
-            RangeDouble range = new RangeDouble(0.0,(double)numRandomRecSl-1);
+            int numSmallRecSl = (smallClusters.size() + numOfSlaves -1)/numOfSlaves;
+            RangeDouble range = new RangeDouble(0.0,(double)numSmallRecSl-1);
             Slave.setCase(2);
-            Slave.setRandom(clustersCentroids, randomRecords,this.diskClusters);
+            smallClusters.toArray(smallClustersArr);
+            Slave.setRandom(clustersCentroids, smallClustersArr ,this.diskClusters);
+            
             slaves = new Slave[this.numOfSlaves];
             for(int i=0; i<this.numOfSlaves; i++){
                 slaves[i] = new Slave(i+1,range,this.hierarchies);
-                range = new RangeDouble(range.upperBound+1,range.upperBound+numRandomRecSl >= sizeRandomCluster ? sizeRandomCluster-1  : range.upperBound+numRandomRecSl);
+                range = new RangeDouble(range.upperBound+1,range.upperBound+numSmallRecSl >= smallClusters.size() ? smallClusters.size()-1  : range.upperBound+numSmallRecSl);
             }
-            
+
             for(int i=0; i< this.numOfSlaves; i++){
                 slaves[i].start();
             }
-            
-            
+
+
             for(int i=0; i< this.numOfSlaves; i++){
                 try {
                     slaves[i].join();
@@ -237,134 +167,146 @@ public class ClusterBasedAlgorithm implements Algorithm {
                     Logger.getLogger(ClusterBasedAlgorithm.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
-            
-            
-            this.randomRecords=null;
-            this.diskData.executeAnonymizedBatch();
-//            this.diskClusters.setLastClusterId(counterCluster-1);
             this.diskClusters.executeBatch();
-            System.out.println("Last"+(this.sizeRandomCluster - sumAnonymized)+"Max "+this.diskClusters.getmaxIdCluster()+" sum recs "+counterCluster+" very small records "+clusterSmallest);
             this.diskClusters.setLastClusterId(this.diskClusters.getmaxIdCluster());
-            return this.diskClusters.numOfClusters()==0 ? false : true; 
-//            return false;
-            
-//            for(int i=1; i<=this.clusters; i++){
-//                similarRecords = getSimilarRecords(start);
-//                start += similarRecords.size();
-//
-//                this.diskClusters.createCluster(similarRecords);
-//                Centroid centroid = new Centroid(this.diskClusters.getLastClusterId(),this.hierarchies,this.recordCentroid,true);
-//                this.clustersCentroids.put(this.diskClusters.getLastClusterId(), centroid);
-//                // create centroids
-//    //            
-//    //            System.out.println("Similar "+i);
-//    //            System.out.println(Arrays.toString(similarRecords.toArray()));
-//
-//                if(start == this.randomRecords.size()){
-//                    break;
-//                }
-//            }
-//            this.diskClusters.executeBatch();
-//            this.randomRecords.clear();
-//        }
+            Double [][] records = this.diskData.getSpecificDataset(0, this.diskData.getRecordsTotal(), false);
+            this.initialClusters = smallClusters.size();
+            this.numOfSlaves = new ForkJoinPool().getParallelism();
+            slaves = new Slave[numOfSlaves];
+            if(this.diskData.getRows() != 0){
+                
+                if(this.diskData.getRows() < this.numOfSlaves){
+                    this.numOfSlaves = this.diskData.getRows();
+                    slaves = new Slave[numOfSlaves];
+                }
+                
+                int newNumRec = (this.diskData.getRows()  + numOfSlaves -1)/numOfSlaves;
+                RangeDouble nRange = new RangeDouble(0.0,(double)newNumRec-1);
+                Slave.setRecords(records, null);
+                for(int i=0; i< this.numOfSlaves; i++){
+                    slaves[i] = new Slave(i+1,this.diskClusters,this.clustersCentroids,this.diskData,this.hierarchies,nRange);
+                    if(i==0){
+                        Slave.setCase(0);
+                    }
+                    slaves[i].start();
+                    nRange = new RangeDouble(nRange.upperBound+1,nRange.upperBound+newNumRec >= this.diskData.getRows() ? this.diskData.getRows()-1  : nRange.upperBound+newNumRec);
+                }
+
+                for(int i=0; i< this.numOfSlaves; i++){
+                    try {
+                        slaves[i].join();
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(ClusterBasedAlgorithm.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+
+                this.diskClusters.executeBatch();
+            }
+
+            removeSmallclusters();
+            anonymization();
+        }
+        else{
+            this.diskData.cloneOriginalToAnonymize();
+        }
     }
     
-//    private boolean removeAnonymizedClusters(){
-//        this.diskData.createAnonymizedTable();
-//        Map<Integer,Double[][]> anonymizedRecs = this.diskClusters.removeAnonymized();
-//        System.out.println("Anonymized clusters "+anonymizedRecs.isEmpty());
-//        if(!anonymizedRecs.isEmpty()){
-//            if(this.diskClusters.numOfClusters() == 0){
-//                this.diskData.cloneOriginalToAnonymize();
-//                return false;
-//            }
-//            else{
-//                System.out.println("REmove anonymized");
-//                for(Entry<Integer,Double[][]> recByCluster : anonymizedRecs.entrySet()){
-//                    this.clustersCentroids.remove(recByCluster.getKey());
-//                    this.diskData.fillAnonymizedRecords(recByCluster.getValue());
-//                }   
-//            }
-//        }
-//        
-//        return true;
-//    }
     
-//    private void initialiseSlaves(){
-//         
-////        this.numOfSlaves = new ForkJoinPool().getParallelism();
-////        this.numOfSlaves =1;
-////        System.out.println("Threads : "+this.numOfSlaves);
-//        slaves = new Slave[this.numOfSlaves];
-//        numRecsSlave = (this.diskData.getRecordsTotal() + this.partOfData -1)/this.partOfData;
-//        RangeDouble range = new RangeDouble(1.0,(double)numRecsSlave);
-////        semaphores = new Semaphore[3];
-////        semaphores[0] = new Semaphore(1);
-////        semaphores[1] = new Semaphore(1);
-////        semaphores[2] = new Semaphore(1);
-//        for(int i=0; i< this.numOfSlaves; i++){
-//            slaves[i] = new Slave(i+1,this.diskClusters,this.clustersCentroids,this.diskData,this.hierarchies,range);
-//            range = new RangeDouble(range.upperBound+1,range.upperBound+numRecsSlave);
-//        }
-//        
-//    }
-//    
+    private boolean initialiseClusters(){
+        Pair<Pair<Double[],List<Integer>>[],Integer> returnedRandom;
+        this.diskData.createAnonymizedTable();
+        this.diskData.createChekedTable();
+        returnedRandom = this.diskData.getRandomRecords(this.clusters,this.hierarchies.keySet());
+        this.randomRecords = returnedRandom.getKey();
+        this.sizeRandomCluster = returnedRandom.getValue();
+        this.clustersCentroids = new Centroid[2*this.clusters+1];
+        
+        
+        System.out.println("Clusters real "+this.sizeRandomCluster);
+        this.diskClusters = new Clusters(this.diskData.getUrlDataBase(),this.clusters,k);
+
+        int counterCluster=0;
+        int sumAnonymized = 0;
+        int clusterSmallest = 0;
+        List<Integer> mergeSmall = new ArrayList();
+        for(int i=0; i<this.sizeRandomCluster; i++){
+
+            List<Integer> similarRecords = randomRecords[i].getValue(); 
+            if(similarRecords.size() >= this.k){
+                diskData.fillAnonymizedRecords(similarRecords);
+                randomRecords[i]=null;
+                sumAnonymized++;
+            }
+        }
+
+        this.diskClusters.createCluster();
+
+        this.numOfSlaves = new ForkJoinPool().getParallelism();
+        int numRandomRecSl = (sizeRandomCluster + numOfSlaves -1)/numOfSlaves;
+        RangeDouble range = new RangeDouble(0.0,(double)numRandomRecSl-1);
+        Slave.setCase(2);
+        Slave.setRandom(clustersCentroids, randomRecords,this.diskClusters);
+        slaves = new Slave[this.numOfSlaves];
+        for(int i=0; i<this.numOfSlaves; i++){
+            slaves[i] = new Slave(i+1,range,this.hierarchies);
+            range = new RangeDouble(range.upperBound+1,range.upperBound+numRandomRecSl >= sizeRandomCluster ? sizeRandomCluster-1  : range.upperBound+numRandomRecSl);
+        }
+
+        for(int i=0; i< this.numOfSlaves; i++){
+            slaves[i].start();
+        }
+
+
+        for(int i=0; i< this.numOfSlaves; i++){
+            try {
+                slaves[i].join();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ClusterBasedAlgorithm.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+
+
+        this.diskData.executeAnonymizedBatch();
+        this.diskClusters.executeBatch();
+        System.out.println("Last "+(this.sizeRandomCluster - sumAnonymized)+" Max "+this.diskClusters.getmaxIdCluster()+" sum recs "+counterCluster+" very small records "+clusterSmallest);
+        this.diskClusters.setLastClusterId(this.diskClusters.getmaxIdCluster());
+        this.initialClusters = this.diskClusters.getLastClusterId();
+        if(very_small_k()){
+            Double[] simple_rec = this.randomRecords[0].getKey();
+            this.randomRecords=null;
+            this.diskClusters.setSplit(!very_small_k());
+            this.cltree = new ClusterDistTree(this.clustersCentroids,((int)(this.diskClusters.getLastClusterId() * this.clustersProportion))/*30*/,this.diskClusters.getmaxIdCluster());
+            System.out.println("Tree dist build");
+            cltree.print();
+            RangeDouble simpleRange = cltree.findRange(simple_rec);
+            System.out.println("Range search "+simpleRange);
+        }
+        return this.diskClusters.numOfClusters()==0 ? false : true; 
+    }
+    
+    private boolean very_small_k(){
+        return ((double)this.k / this.diskData.getRecordsTotal()) < 0.0001 && (this.initialClusters * 0.01) > 1;
+    }
+     
     private void initialiseSlaves(){
          
-        
         this.rangeThreads = new HashMap();
-//        this.numOfSlaves =1;
         System.out.println("Threads : "+this.numOfSlaves);
-//        slaves = new Slave[this.numOfSlaves];
         numRecordsMain = (this.diskData.getRecordsTotal() + numOfSlaves -1)/numOfSlaves;
         int numRecords = (numRecordsMain + numOfSlaves -1)/numOfSlaves;
         System.out.println("Main "+numRecordsMain+" slaves "+numRecords);
         RangeDouble range = new RangeDouble(0.0,(double)numRecords-1);
-//        semaphores = new Semaphore[3];
-//        semaphores[0] = new Semaphore(1);
-//        semaphores[1] = new Semaphore(1);
-//        semaphores[2] = new Semaphore(1);
         for(int i=0; i< this.numOfSlaves; i++){
             System.out.println("Thread "+(i+1)+" range "+range.toString() );
             slaves[i] = new Slave(i+1,this.diskClusters,this.clustersCentroids,this.diskData,this.hierarchies,range);
             this.rangeThreads.put(i, range);
             range = new RangeDouble(range.upperBound+1,range.upperBound+numRecords >= numRecordsMain ? numRecordsMain-1  : range.upperBound+numRecords);
-            
-            
-            
         }
         
     }
     
-    
-//    private List<Integer> getSimilarRecords(int start){
-//        List<Integer> records = new ArrayList<Integer>();
-//        Set<Integer> quasiIdentifiers = this.hierarchies.keySet();
-//        records.add(this.randomRecords.get(start)[0].intValue());
-//        this.recordCentroid = this.randomRecords.get(start);
-//        
-//        for(int i=start+1; i<this.randomRecords.size(); i++){
-//            Double[] record = this.randomRecords.get(i);
-//            Double[] previousRecord = this.randomRecords.get(i-1);
-//            int j;
-//            for(j=1; j<record.length; j++){
-//                if(quasiIdentifiers.contains(j-1)){
-//                    if(!record[j].equals(previousRecord[j])){
-//                       break; 
-//                    }
-//                }
-//            }
-//            
-//            if(j==record.length){
-//                records.add(record[0].intValue());
-//            }
-//            else{
-//                break;
-//            }
-//        }
-//        
-//        return records;
-//    }
+   
     
     private void recomputeSizeRanges(long heapRemainsSize){
         this.numRecordsMain = ((Long)(heapRemainsSize / (this.diskData.getDataColumns() * Double.BYTES))).intValue();
@@ -383,8 +325,6 @@ public class ClusterBasedAlgorithm implements Algorithm {
     private void fillClusters(){
         Slave.setCase(0);
         RangeDouble rangeMain;
-//        long heapFreeSize = Runtime.getRuntime().freeMemory(); 
-//        long heapFreeSize = Runtime.getRuntime().maxMemory() - Runtime.getRuntime().totalMemory();
         long heapFreeSize = Runtime.getRuntime().maxMemory() - (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory());
         long recordsSize = this.numRecordsMain * this.diskData.getDataColumns() * Double.BYTES;
         System.out.println("Heap "+heapFreeSize+" Records "+recordsSize);
@@ -396,13 +336,24 @@ public class ClusterBasedAlgorithm implements Algorithm {
         
         
         Double[][] records = this.diskData.getSpecificDataset(rangeMain.lowerBound.intValue(), rangeMain.upperBound.intValue(),false);
-        Slave.setRecords(records);
+        Slave.setRecords(records,this.cltree);
         System.out.println("Reputaton range "+rangeMain);
-        while(rangeMain.upperBound<= this.diskData.getRecordsTotal()){
+        while(rangeMain.upperBound <= this.diskData.getRecordsTotal()){
+            
+            RangeDouble nRange = null;
+            if(this.diskData.getRows() < this.numRecordsMain){
+                int newNumRec = (this.diskData.getRows()  + numOfSlaves -1)/numOfSlaves;
+                nRange = new RangeDouble(0.0,(double)newNumRec-1);
+                for(int i=0; i< this.numOfSlaves; i++){
+                    slaves[i].setRange(nRange);
+                    nRange = new RangeDouble(nRange.upperBound+1,nRange.upperBound+newNumRec >= this.diskData.getRows() ? this.diskData.getRows()-1  : nRange.upperBound+newNumRec);
+                }
+            }
             
             for(int i=0; i< this.numOfSlaves; i++){
                 slaves[i].start();
             }
+            
             
             
             for(int i=0; i< this.numOfSlaves; i++){
@@ -413,187 +364,327 @@ public class ClusterBasedAlgorithm implements Algorithm {
                 }
             }
             
+            System.out.println("Ends fill");
+            
+            records = null;
+            Slave.setRecords(null,null);
+            System.gc();
+            Runtime.getRuntime().gc();
+            
+            if(very_small_k()){
+                this.diskClusters.executeBatch();
+                System.out.println("Start split");
+                int numSlavesBig = this.numOfSlaves;
+                List<Integer> bigClusters = this.diskClusters.getBigclusters();
+                if(numSlavesBig > bigClusters.size()){
+                    numSlavesBig = bigClusters.size();
+                }
+                
+                if(numSlavesBig > 1){
+                    int numClusters = (bigClusters.size() + numSlavesBig -1)/numSlavesBig;
+
+                    RangeDouble rangeBigCl = new RangeDouble(0.0,(double)numClusters);
+                    Slave.setCase(3);
+                    Slave.setSplit(this.diskClusters);
+                    Slave.setCentroids(this.clustersCentroids);
+                    for(int i=0; i< numSlavesBig; i++){
+                        System.out.println("Sublist range"+rangeBigCl);
+                        slaves[i] =  new Slave(i+1,this.hierarchies,bigClusters.subList(rangeBigCl.lowerBound.intValue(), rangeBigCl.upperBound.intValue()));
+                        rangeBigCl = new RangeDouble((double)rangeBigCl.lowerBound.intValue()+numClusters,(double)rangeBigCl.upperBound.intValue()+numClusters);
+                        slaves[i].start();
+                        if(rangeBigCl.getUpperBound().intValue() > bigClusters.size()){
+                            rangeBigCl.setUpperBound((double)bigClusters.size());
+                        }
+                    }
+
+                    for(int i=0; i< numSlavesBig; i++){
+                        try {
+                            slaves[i].join();
+                        } catch (InterruptedException ex) {
+                            Logger.getLogger(ClusterBasedAlgorithm.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                    this.diskClusters.executeBatch();
+                    this.diskClusters.executeUpdateBatch();
+                    this.diskClusters.setLastClusterId(this.diskClusters.getmaxIdCluster());
+                    System.out.println("End split");
+                }
+
+
+                this.cltree = new ClusterDistTree(this.clustersCentroids,((int)(this.diskClusters.getLastClusterId() * clustersProportion))/*30*/,this.diskClusters.getmaxIdCluster());
+            }
+            
             if(rangeMain.upperBound>=this.diskData.getRecordsTotal()){
                 break;
             }
             
-            records = null;
-            Slave.setRecords(null);
-            System.gc();
-            Runtime.getRuntime().gc();
+            
             
             heapFreeSize = Runtime.getRuntime().maxMemory() - (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory());
             recordsSize = this.numRecordsMain * this.diskData.getDataColumns() * Double.BYTES;
             System.out.println("2 Heap "+heapFreeSize+" Records "+recordsSize);
             if(recordsSize > heapFreeSize){
                 this.recomputeSizeRanges(heapFreeSize);
-//                rangeMain = new RangeDouble(rangeMain.upperBound,rangeMain.upperBound+this.numRecordsMain>this.diskData.getRecordsTotal() ? (double)this.diskData.getRecordsTotal() : rangeMain.upperBound+this.numRecordsMain) ;
-//                records = this.diskData.getSpecificDataset(rangeMain.lowerBound.intValue(), rangeMain.upperBound.intValue(),false);
-//                Slave.setRecords(records);
             }
-//            else{
-//               for(int i=0; i< this.numOfSlaves; i++){
-//               
-//                    if(rangeMain.upperBound!=this.diskData.getRecordsTotal() && i==0){
-//                        rangeMain = new RangeDouble(rangeMain.upperBound,rangeMain.upperBound+this.numRecordsMain>this.diskData.getRecordsTotal() ? (double)this.diskData.getRecordsTotal() : rangeMain.upperBound+this.numRecordsMain) ;
-//                        records = this.diskData.getSpecificDataset(rangeMain.lowerBound.intValue(), rangeMain.upperBound.intValue(),false);
-//                        Slave.setRecords(records);
-//                        System.out.println("Reputaton range "+rangeMain);
-//                    }
-//                    slaves[i] = new Slave(i+1,this.diskData,this.hierarchies,this.rangeThreads.get(i));
-//               
-//                } 
-//            }
             
             for(int i=0; i< this.numOfSlaves; i++){
                
-                    if(rangeMain.upperBound!=this.diskData.getRecordsTotal() && i==0){
-                        rangeMain = new RangeDouble(rangeMain.upperBound,rangeMain.upperBound+this.numRecordsMain>this.diskData.getRecordsTotal() ? (double)this.diskData.getRecordsTotal() : rangeMain.upperBound+this.numRecordsMain) ;
-                        records = this.diskData.getSpecificDataset(rangeMain.lowerBound.intValue(), rangeMain.upperBound.intValue(),false);
-                        Slave.setRecords(records);
-                        System.out.println("Reputaton range "+rangeMain);
-                    }
-                    slaves[i] = new Slave(i+1,this.diskData,this.hierarchies,this.rangeThreads.get(i));
-               
+                if(rangeMain.upperBound!=this.diskData.getRecordsTotal() && i==0){
+                    rangeMain = new RangeDouble(rangeMain.upperBound,rangeMain.upperBound+this.numRecordsMain>this.diskData.getRecordsTotal() ? (double)this.diskData.getRecordsTotal() : rangeMain.upperBound+this.numRecordsMain) ;
+                    records = this.diskData.getSpecificDataset(rangeMain.lowerBound.intValue(), rangeMain.upperBound.intValue(),false);
+                    Slave.setRecords(records,this.cltree);
+                    Slave.setCase(0);
+                    System.out.println("Reputaton range "+rangeMain);
                 }
+                slaves[i] = new Slave(i+1,this.diskData,this.hierarchies,this.rangeThreads.get(i));
+            }
             
             
         }
-//        for(int i=0; i< this.numOfSlaves; i++){
-//            try {
-//                slaves[i].join();
-//            } catch (InterruptedException ex) {
-//                ex.printStackTrace();
-//                Logger.getLogger(ClusterBasedAlgorithm.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-//        }
-        Slave.setRecords(null);
+        Slave.setRecords(null,null);
         this.diskClusters.executeBatch();
         System.out.println("Total Size "+this.diskClusters.totalSize());
-        
-//        for(Entry<Integer,Centroid> entry : this.clustersCentroids.entrySet()){
-//            entry.getValue().print();
-//        }
-//        for(int i=0; i<=this.diskClusters.getLastClusterId(); i++){
-//            if(this.clustersCentroids[i]!=null)
-//                this.clustersCentroids[i].print();
-//        }
     }
 
-//    private void fillClusters(){
-//        Slave.setCase(0);
-//        int reputation = 1;
-//        int counterRecs=0;
-//        RangeDouble rangeMain = new RangeDouble(0.0,(double)this.numRecordsMain) ;
-//        RangeDouble range;
-////        List<Double[]> records = this.diskData.getSpecificDataset(rangeMain.lowerBound.intValue(), rangeMain.upperBound.intValue());
-////        Slave.setRecords(reputation, records);
-////        System.out.println("Reputaton "+reputation+"range "+rangeMain);
-//        
-////        while(counterRecs<= this.diskData.getRecordsTotal()){
-//            
-//            for(int i=0; i< this.numOfSlaves; i++){
-//                slaves[i].start();
-//            }
-//            
-//            
-//            
-//            while(true){
-//                for(int i=0; i< this.numOfSlaves; i++){
-//
-//                    if(slaves[i]!=null && slaves[i].getState()==Thread.State.TERMINATED ){ 
-//                        int numRecs = slaves[i].getRange().upperBound.intValue() - slaves[i].getRange().lowerBound.intValue()+1;
-//                        counterRecs += numRecs;
-//                        if(slaves[i].getReputation() < 2){
-//                            range= new RangeDouble(((this.numRecsSlave*(i+1+this.numOfSlaves))-((double)this.numRecsSlave))+1,(this.numRecsSlave*(i+1+(double)this.numOfSlaves)));
-//                            slaves[i] = new Slave(i+1,this.diskData,this.hierarchies,slaves[i].getReputation()+1,range);
-//                            slaves[i].start();
-//                        }
-//                        else{
-//                           slaves[i] = null; 
-//                        }
-//                    }
-//    //                    if(rangeMain.upperBound!=this.diskData.getRecordsTotal() && i==this.numOfSlaves-1){
-//    //                        rangeMain = new RangeDouble(rangeMain.upperBound,rangeMain.upperBound+this.numRecordsMain>this.diskData.getRecordsTotal() ? (double)this.diskData.getRecordsTotal() : rangeMain.upperBound+this.numRecordsMain) ;
-//    //                        records = this.diskData.getSpecificDataset(rangeMain.lowerBound.intValue(), rangeMain.upperBound.intValue());
-//    //                        Slave.setRecords(++reputation, records);
-//    //                        Slave.removePreviousRecs(reputation-1);
-//    //                        System.out.println("Reputaton "+reputation+"range "+rangeMain);
-//    //                    }
-//    //                    slaves[i] = new Slave(i+1,this.diskData,this.hierarchies,reputation,this.rangeThreads.get(i));
-//    //                    slaves[i].start();
-//
-//                }
-//                if(counterRecs >= this.diskData.getRecordsTotal()){
-//                    break;
-//                }
-//            }
-//            
-//            
-//            
-////            if(rangeMain.upperBound==this.diskData.getRecordsTotal()){
-////                break;
-////            }
-////        }
-////        for(int i=0; i< this.numOfSlaves; i++){
-////            try {
-////                slaves[i].join();
-////            } catch (InterruptedException ex) {
-////                ex.printStackTrace();
-////                Logger.getLogger(ClusterBasedAlgorithm.class.getName()).log(Level.SEVERE, null, ex);
-////            }
-////        }
-////        Slave.removePreviousRecs(reputation-1);
-//        this.diskClusters.executeBatch();
-//        System.out.println("Total Size "+this.diskClusters.totalSize());
-//        
-//        for(Integer clusterId : this.diskClusters.getClustersIds()){
-//            this.clustersCentroids[clusterId].print();
-//        }
-//    }
-    
     private void removeSmallclusters(){
         List<Integer> smallClustersId = this.diskClusters.getSmallClusters();
-        Slave.setCase(1);
-//        this.diskData.getDictionary().print();
-        Slave.setCentroids(clustersCentroids);
-        System.out.println("small clusters "+Arrays.toString(smallClustersId.toArray()));
-//        semaphores = new Semaphore[4];
-//        for(int i=0; i<semaphores.length; i++){
-//            semaphores[i] = new Semaphore(1);
-//        }
-//        Slave.setSemaphores();
-        boolean exit=false;
-        while(!smallClustersId.isEmpty()){
-            switch(smallClustersId.size()){
-                case 1:
-                    System.out.println("Case 1 "+smallClustersId.get(0));
-                    shiftToClosest(smallClustersId.get(0));
-//                    this.diskClusters.deleteTable(smallClustersId.get(0));
-                    this.diskClusters.removeSize(smallClustersId.get(0));
-                    exit=true;
-                    break;
-//                case 2:
-//                    System.out.println("Case 2 "+smallClustersId.get(0)+" "+smallClustersId.get(1));
-//                    merge(smallClustersId.get(0),smallClustersId.get(1));
-//                    exit = true;
-//                    break;
-                default:
-                    System.out.println("Switch case "+smallClustersId.size());
-                    Slave.setCentroids(clustersCentroids);
-                    Slave.setConsumer(smallClustersId);
-                    if(smallClustersId.size() < this.numOfSlaves){
-                        this.numOfSlaves = smallClustersId.size();
-                        slaves = new Slave[this.numOfSlaves];
+        if(very_small_k()){
+            if(!smallClustersId.isEmpty()){
+                
+                Double[][] smallClusterRecords = this.diskClusters.removeSmallClusters(this.clustersCentroids,smallClustersId);
+                
+                System.out.println("Start tree");
+                System.out.println("Cluster info "+this.diskClusters.numOfClusters()+" "+this.diskClusters.getmaxIdCluster());
+                this.cltree = new ClusterDistTree(this.clustersCentroids,((int)(this.diskClusters.getmaxIdCluster()*this.clustersProportion)),this.diskClusters.getmaxIdCluster());
+                this.cltree.print();
+                System.out.println("End tree");
+                System.out.println("Unique "+smallClusterRecords.length);
+                int numRecordsSlave = (smallClusterRecords.length + numOfSlaves -1)/numOfSlaves;
+                System.out.println("Unique "+smallClusterRecords.length+" Rec per slave "+numRecordsSlave);
+                RangeDouble rangeRec = new RangeDouble(0.0,(double)numRecordsSlave-1);
+                
+                for(int i=0; i<this.numOfSlaves; i++){
+                    slaves[i] = new Slave(i+1,this.diskClusters,this.clustersCentroids,this.diskData,this.hierarchies,rangeRec);
+                    if(i==0){
+                        Slave.setCase(0);
+                        Slave.setRecords(smallClusterRecords,this.cltree);
                     }
-                    
-                    for(int i=0; i<slaves.length; i++){
-                        slaves[i] = new Slave(i+1,this.diskData,this.hierarchies);
+                    slaves[i].start();
+                    rangeRec = new RangeDouble(rangeRec.upperBound+1,rangeRec.upperBound+numRecordsSlave >= smallClusterRecords.length ? smallClusterRecords.length-1  : rangeRec.upperBound+numRecordsSlave);
+                }
+                
+                for(int i=0; i< this.numOfSlaves; i++){
+                    try {
+                        slaves[i].join();
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(ClusterBasedAlgorithm.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+                this.diskClusters.executeBatch();
+                
+                System.out.println("Start split");
+                int slaveBig = this.numOfSlaves;
+                List<Integer> bigClusters = this.diskClusters.getBigclusters();
+                if(slaveBig > bigClusters.size()){
+                    slaveBig = bigClusters.size();
+                }
+                if(slaveBig > 0){
+                    int numClusters = (bigClusters.size() + slaveBig -1)/slaveBig;
+                    RangeDouble rangeBigCl = new RangeDouble(0.0,(double)numClusters);
+                    Slave.setCase(3);
+                    Slave.setSplit(this.diskClusters);
+                    Slave.setCentroids(this.clustersCentroids);
+                    for(int i=0; i< slaveBig; i++){
+                        System.out.println("Sublist range"+rangeBigCl);
+                        slaves[i] =  new Slave(i+1,this.hierarchies,bigClusters.subList(rangeBigCl.lowerBound.intValue(), rangeBigCl.upperBound.intValue()));
+                        rangeBigCl = new RangeDouble((double)rangeBigCl.lowerBound.intValue()+numClusters,(double)rangeBigCl.upperBound.intValue()+numClusters);
                         slaves[i].start();
+                        if(rangeBigCl.getUpperBound().intValue() > bigClusters.size()){
+                            rangeBigCl.setUpperBound((double)bigClusters.size());
+                        }
                     }
-//                    for(int i=0; i<slaves.length; i++){
-//                        slaves[i].start();
-//                    }
+
+                    for(int i=0; i< slaveBig; i++){
+                        try {
+                            slaves[i].join();
+                        } catch (InterruptedException ex) {
+                            Logger.getLogger(ClusterBasedAlgorithm.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                    this.diskClusters.executeBatch();
+                    this.diskClusters.executeUpdateBatch();
+                    this.diskClusters.setLastClusterId(this.diskClusters.getmaxIdCluster());
+                    System.out.println("End split");
+                }
+                
+                System.out.println("Total Size "+this.diskClusters.totalSize());
+                smallClustersId = this.diskClusters.getSmallClusters();
+            }
+        }
+        else{
+            
+            Slave.setCase(1);
+            Slave.setCentroids(clustersCentroids);
+            this.numOfSlaves = new ForkJoinPool().getParallelism();
+            this.slaves = new Slave[numOfSlaves];
+            boolean exit=false;
+            while(!smallClustersId.isEmpty()){
+                switch(smallClustersId.size()){
+                    case 1:
+                        System.out.println("Case 1 "+smallClustersId.get(0));
+                        shiftToClosest(smallClustersId.get(0));
+                        exit=true;
+                        break;
+                    default:
+                        System.out.println("Switch case "+smallClustersId.size());
+                        Slave.setCentroids(clustersCentroids);
+                        Slave.setConsumer(smallClustersId);
+                        if(smallClustersId.size() < this.numOfSlaves){
+                            this.numOfSlaves = smallClustersId.size();
+                            slaves = new Slave[this.numOfSlaves];
+                        }
+
+                        for(int i=0; i<slaves.length; i++){
+                            slaves[i] = new Slave(i+1,this.diskData,this.hierarchies);
+                            slaves[i].start();
+                        }
+                        
+                        for(int i=0; i<slaves.length; i++){
+                            try {
+                                slaves[i].join();
+                            } catch (InterruptedException ex) {
+                                ex.printStackTrace();
+                                Logger.getLogger(ClusterBasedAlgorithm.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                        }
+
+                        this.diskClusters.executeBatch();
+                        List<Integer> emptyClusters = this.diskClusters.removeEmptyClusters();
+                        if(!emptyClusters.isEmpty()){
+                            for(Integer cluster : emptyClusters){
+                                this.clustersCentroids[cluster]=null;
+                            }
+                        }
+                        break;
+
+                }
+                if(exit){
+                    break;
+                }
+                smallClustersId = this.diskClusters.getSmallClusters();
+            }
+        }
+        System.out.println("Total size "+this.diskClusters.totalSize());
+        System.out.println("Done!");
+    }
+    
+    private void shiftToClosest(int clusterId){
+        int newCluster;
+        Centroid cOld=null,cNew=null;
+        if(this.diskClusters.numOfClusters() == 1){
+            int sizeCluster = this.diskClusters.getSize(clusterId);
+            Double[][] recordsTofill = this.diskData.getRandomAnonymizedRecords(this.k,sizeCluster,this.hierarchies.keySet());
+            for(int i=0; i<recordsTofill.length; i++){
+                this.diskClusters.put(clusterId,recordsTofill[i][0].intValue(),0,null);
+                this.clustersCentroids[clusterId].update(recordsTofill[i],true);
+            }
+            this.diskClusters.executeBatch();
+        }
+        else{
+            this.clustersCentroids[clusterId] = null;
+            Double[][] records = this.diskClusters.getRecords(clusterId,false);
+            for(int i=0; i<records.length; i++){
+                double minDistance = 100000000.0;
+                int centroidCluster = -1;
+
+                for(int j=0; j<=this.diskClusters.getLastClusterId(); j++){
+                    Centroid c = this.clustersCentroids[j];
+                    if(c!=null){
+                        double distance = c.computeDistance(records[i],true);
+                        if(distance < minDistance){
+                            minDistance = distance; 
+                            centroidCluster = j;
+                        }
+                    }
+
+                }
+
+
+                this.diskClusters.remove(clusterId, records[i][0].intValue());
+                newCluster = this.diskClusters.put(centroidCluster,records[i][0].intValue(),minDistance,null);
+                if(newCluster > 0){
+                    cOld = this.diskClusters.getCentroid(centroidCluster,this.hierarchies);
+                    cNew = this.diskClusters.getCentroid(newCluster,this.hierarchies);
+                }
+
+                if(newCluster < 0){
+                    this.clustersCentroids[centroidCluster].update(records[i],true);
+                }
+                else{
+                    this.clustersCentroids[centroidCluster] = cOld;
+                    this.clustersCentroids[newCluster] = cNew;
+                }
+
+            }
+            this.diskClusters.executeBatch();
+            this.diskClusters.removeSize(clusterId);
+        }
+    }
+    
+    private void anonymization(){
+        if(this.very_small_k()){
+            this.treeChildClusters = (int) (this.diskClusters.numOfClusters()*0.01);
+        }
+        else{
+            this.treeChildClusters = (int) (this.diskClusters.numOfClusters()*0.2);
+        }
+        long recordSize = this.treeChildClusters * 2*(this.k-1) * Double.BYTES;    //// records from clusters which will come in the main memory 
+        long heapFreeSize = Runtime.getRuntime().maxMemory() - (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory());
+        if(recordSize > heapFreeSize){
+            long availableSize = ((Long)(heapFreeSize*10/100));
+            this.treeChildClusters = ((Long)(availableSize/(2*(this.k-1) * Double.BYTES))).intValue();
+        }
+        if(this.treeChildClusters == 0){
+            this.diskData.createAnonymizedQuery();
+            this.diskData.initialiseStatement();
+            System.out.println("Very small num of clusters");
+            Integer[] clusterIds = this.diskClusters.getClustersIds();
+            Map<Integer,Double[][]> recordsClusters = this.diskClusters.getClusterDatasetRecs(Arrays.asList(clusterIds),false);
+            Double[][][] clusterRecords = new Double[clusterIds.length][][];
+            int i=0;
+            for(Integer clusterId : clusterIds){
+                diskClusters.anonymizeCluster(clusterId,clustersCentroids[clusterId],diskData,clusterRecords,recordsClusters.get(clusterId),i);
+            }
+            this.diskData.executeAnonymizedClusterBatch(clusterRecords);
+            this.diskData.closeConnection();
+            
+        }
+        else{
+            ClusterTree tree = new ClusterTree(this.clustersCentroids,this.treeChildClusters,this.diskClusters);
+            this.diskData.createAnonymizedQuery();
+            this.diskData.initialiseStatement();
+            this.diskData.copyDB();
+            this.diskClusters.setTempDb(this.diskData.getUrlTempDb());
+            Integer[] clusters;
+            int totalClusters=0;
+            
+            while((clusters=tree.getNextClusters())!=null){
+                totalClusters += clusters.length;
+                System.out.println("Clusters "+clusters.length+" total "+totalClusters);
+
+                Double[][][] clusterRecords = new Double[clusters.length][][];
+                Map<Integer,Double[][]> recordsClusters = this.diskClusters.getClusterDatasetRecs(Arrays.asList(clusters),true);
+                if(clusters.length > numOfSlaves){
+                    int numClusters = (clusters.length + numOfSlaves -1)/numOfSlaves;
+                    RangeDouble rangeSlaveClusters = new RangeDouble(0.0,(double)numClusters-1);
+                    Slave.setCase(4);
+                    Slave.setAnonymize(recordsClusters,clusterRecords,clusters);
+                    for(int i=0; i<this.numOfSlaves; i++){
+                        slaves[i] = new Slave(i+1,clustersCentroids,diskData,diskClusters,rangeSlaveClusters);
+                        slaves[i].start();
+                        rangeSlaveClusters = new RangeDouble(rangeSlaveClusters.getUpperBound()+1,rangeSlaveClusters.getUpperBound()+numClusters > clusters.length-1 ? clusters.length-1 : rangeSlaveClusters.getUpperBound()+numClusters);
+                    }
+
                     for(int i=0; i<slaves.length; i++){
                         try {
                             slaves[i].join();
@@ -602,245 +693,34 @@ public class ClusterBasedAlgorithm implements Algorithm {
                             Logger.getLogger(ClusterBasedAlgorithm.class.getName()).log(Level.SEVERE, null, ex);
                         }
                     }
-//                    this.diskClusters.executeDeleteBatch();
-                    this.diskClusters.executeBatch();
-                    List<Integer> emptyClusters = this.diskClusters.removeEmptyClusters();
-                    if(!emptyClusters.isEmpty()){
-                        for(Integer cluster : emptyClusters){
-                            this.clustersCentroids[cluster]=null;
+                }
+                else{
+                    RangeDouble rangeSlaveClusters = new RangeDouble(0.0,0.0);
+                    Slave.setCase(4);
+                    Slave.setAnonymize(recordsClusters,clusterRecords,clusters);
+                    for(int i=0; i<clusters.length; i++){
+                        slaves[i] = new Slave(i+1,clustersCentroids,diskData,diskClusters,rangeSlaveClusters);
+                        slaves[i].start();
+                        rangeSlaveClusters = new RangeDouble(rangeSlaveClusters.getUpperBound()+1,rangeSlaveClusters.getUpperBound()+1);
+                    }
+
+                    for(int i=0; i<clusters.length; i++){
+                        try {
+                            slaves[i].join();
+                        } catch (InterruptedException ex) {
+                            ex.printStackTrace();
+                            Logger.getLogger(ClusterBasedAlgorithm.class.getName()).log(Level.SEVERE, null, ex);
                         }
                     }
-                    break;
-                    
-            }
-            if(exit){
-                break;
-            }
-            smallClustersId = this.diskClusters.getSmallClusters();
-        }
-        System.out.println("Total size "+this.diskClusters.totalSize());
-        System.out.println("Done!");
-    }
-    
-    private void shiftToClosest(int clusterId){
-        this.clustersCentroids[clusterId] = null;
-        Double[][] records = this.diskClusters.getRecords(clusterId,false);
-        int newCluster;
-        Centroid cOld=null,cNew=null;
-        int countDatesVal=0;
-//        String[] datesVals=null;
-//        for(Entry<Integer,Hierarchy> entryH : this.hierarchies.entrySet()){
-//            if(entryH.getValue().getNodesType().equals("date")){
-//                countDatesVal++;
-//            }
-//        }
-//        
-//        if(countDatesVal!=0){
-//            datesVals = new String[countDatesVal];
-//        }
-        for(int i=0; i<records.length; i++){
-            countDatesVal=0;
-            double minDistance = 100000000.0;
-            int centroidCluster = -1;
-//            for(Entry<Integer,Hierarchy> entryH : this.hierarchies.entrySet()){
-//                if(entryH.getValue().getNodesType().equals("date")){
-//                    datesVals[countDatesVal] = entryH.getValue().getDictionary().getIdToString(records[i][entryH.getKey()+1].intValue());
-//                    countDatesVal++;
-//                }
-//            }
-            
-            for(int j=0; j<=this.diskClusters.getLastClusterId(); j++){
-                Centroid c = this.clustersCentroids[j];
-                if(c!=null){
-                    double distance = c.computeDistance(records[i],true);
-                    if(distance < minDistance){
-                        minDistance = distance; 
-                        centroidCluster = j;
-                    }
                 }
-            
+                this.diskData.executeAnonymizedClusterBatch(clusterRecords);
             }
-            this.diskClusters.remove(clusterId, records[i][0].intValue());
-            newCluster = this.diskClusters.put(centroidCluster,records[i][0].intValue(),minDistance,null);
-            if(newCluster > 0){
-                cOld = this.diskClusters.getCentroid(centroidCluster,this.hierarchies);
-                cNew = this.diskClusters.getCentroid(newCluster,this.hierarchies);
-            }
-            
-            if(newCluster < 0){
-                this.clustersCentroids[centroidCluster].update(records[i],true);
-            }
-            else{
-                this.clustersCentroids[centroidCluster] = cOld;
-                this.clustersCentroids[newCluster] = cNew;
-            }
+            this.diskData.deleteDB();
+            this.diskData.closeConnection();
+            System.out.println("Total clusters tree "+totalClusters);
         }
-        this.diskClusters.executeBatch();
-    }
-    
-    private void merge(int clusterIdFrom, int clusterIdTo){
-        
-    }
-    
-//    private void buildClusteringTree(){
-//        
-//        
-//    }
-    
-    private void anonymization(){
-        ClusterTree tree = new ClusterTree(this.clustersCentroids,this.treeChildClusters,this.diskClusters);
-        this.diskData.createAnonymizedQuery();
-        this.diskData.initialiseStatement();
-        this.diskData.copyDB();
-        this.diskClusters.setTempDb(this.diskData.getUrlTempDb());
-//        tree.print();
-        Integer[] clusters;
-        int totalClusters=0;
-        List<Thread> listThreads = new ArrayList();
-        Algorithm mixedApriori = new MixedApriori(); /// this for km anonymity 
-        Map<String,List<Double[][]>> threadAnonymizedRecs = new HashMap();
-        while((clusters=tree.getNextClusters())!=null){
-            totalClusters += clusters.length;
-//            List<Double[][]> clusterRecords = new ArrayList();
-            System.out.println("Clusters "+Arrays.toString(clusters));
-//            Double[][][] clusterRecords = this.diskClusters.getRecords(clusters);
-//            for(int i=0; i<clusters.length; i++){
-//                clusterRecords[i] = clustersCentroids[clusters[i]].anonymize(clusterRecords[i]);
-//            }
-            Double[][][] clusterRecords = new Double[clusters.length][][];
-            for(int i=0; i<clusters.length; i++){
-                diskClusters.anonymizeCluster(clusters[i],clustersCentroids[clusters[i]],diskData,clusterRecords,i);
-            }
-            this.diskData.executeAnonymizedClusterBatch(clusterRecords);
-//            this.diskClusters.setAnonymizedPointer(0);
-        }
-        this.diskData.deleteDB();
-        this.diskData.closeConnection();
-        System.out.println("Total clusters tree "+totalClusters);
         System.out.println("Total clusters database "+this.diskClusters.numOfClusters());
     }
-//    private void anonymization(){
-//        ClusterTree tree = new ClusterTree(this.clustersCentroids,this.treeChildClusters,this.diskClusters);
-//        this.diskData.createAnonymizedQuery();
-//        tree.print();
-//        Integer[] clusters;
-//        int totalClusters=0;
-//        List<Thread> listThreads = new ArrayList();
-//        Algorithm mixedApriori = new MixedApriori(); /// this for km anonymity 
-//        Map<String,Integer> threadAnonymizedRecs = new HashMap();
-//        while((clusters=tree.getNextClusters())!=null){
-//            totalClusters += clusters.length;
-//            System.out.println("Clusters "+Arrays.toString(clusters));
-////            if(clusters.length != 1){
-////                int end = this.numOfSlaves <= clusters.length ? this.numOfSlaves : clusters.length-1;
-//                Double[][][] clusterRecords = this.diskClusters.getRecords(clusters);
-//                for(int i=0; i<clusters.length-1; i++){
-//                    final int clusterId = clusters[i];
-////                    final int clustersLength = clusters.length;
-//                    final int pointer = i;
-//                    Thread t = new Thread(new Runnable() {
-//                        public void run() {
-//                            
-////                            diskClusters.anonymizeCluster(clusterId,clustersCentroids[clusterId],diskData,clusterRecords,pointer);
-////                            synchronized(diskData){
-////                                diskData.executeAnonymizedClusterBatch(clusterRecords[pointer]);
-////                            }
-//                            clusterRecords[pointer] = clustersCentroids[clusterId].anonymize(clusterRecords[pointer]);
-//                            synchronized(diskData){
-//                                diskData.executeAnonymizedClusterBatch(clusterRecords[pointer]);
-//                            }
-////                            threadAnonymizedRecs.put(Thread.currentThread().getName(), pointer);
-//                        }
-//                    });
-//                    t.start();
-//                    listThreads.add(t);
-//                }
-////                diskClusters.anonymizeCluster(clusters[clusters.length-1],clustersCentroids[clusters[clusters.length-1]],diskData,clusterRecords,clusters.length-1);
-//                clusterRecords[clusters.length-1] = clustersCentroids[clusters[clusters.length-1]].anonymize(clusterRecords[clusters.length-1]);
-//                synchronized(diskData){
-//                    this.diskData.executeAnonymizedClusterBatch(clusterRecords[clusters.length-1]);
-//                }
-////                int count =0;
-////                List<Thread> listThreadsTemp = new ArrayList(listThreads);
-////                while(!listThreads.isEmpty()){
-////                    List<Thread> listThreadsTemp = new ArrayList(listThreads);
-////                    for(Thread t : listThreadsTemp) {
-////    //                    try {
-////    //                        t.join();
-////    //                        this.diskData.executeAnonymizedClusterBatch(threadAnonymizedRecs.get(t.getName()));
-////    //                    } catch (InterruptedException ex) {
-////    //                        Logger.getLogger(ClusterBasedAlgorithm.class.getName()).log(Level.SEVERE, null, ex);
-////    //                    }
-////                        if(t.getState()==Thread.State.TERMINATED){ 
-////                            count++;
-////                            this.diskData.executeAnonymizedClusterBatch(clusterRecords[threadAnonymizedRecs.get(t.getName())]);
-////                            listThreads.remove(t);
-////                            if(listThreads.isEmpty()){
-////                                break;
-////                            }
-////                        }
-////                    }
-////                }
-//                
-////                listThreads.clear();
-//                
-////                for(int i=end; i<clusters.length; i++){
-////                    List<Double[][]> clusterRecords = new ArrayList();
-////                    diskClusters.anonymizeCluster(clusters[i],clustersCentroids.get(clusters[i]),diskData,clusterRecords);
-//////                    synchronized(this.diskData){
-////                    this.diskData.executeAnonymizedClusterBatch(clusterRecords);
-//////                    }
-////                }
-//                
-//                
-//                
-////                listThreads.clear();
-////                threadAnonymizedRecs.clear();
-//                
-////            }
-////            else{
-////                
-////                List<Double[][]> clusterRecords = new ArrayList();
-////                diskClusters.anonymizeCluster(clusters[0],clustersCentroids.get(clusters[0]),diskData,clusterRecords);
-////                this.diskData.executeAnonymizedClusterBatch(clusterRecords);
-////                
-////                
-////            }
-////            final Integer[] clusterThread = clusters;
-////            System.out.println("Clusters "+Arrays.toString(clusters));
-////            totalClusters += clusters.length;
-////            Thread t = new Thread(new Runnable() {
-////                public void run() {
-////                    List<Double[][]> clusterRecords = new ArrayList();
-////                    for(Integer cluster : clusterThread){
-////                        diskClusters.anonymizeCluster(cluster,clustersCentroids.get(cluster),diskData,clusterRecords);
-////                    }
-////                    threadAnonymizedRecs.put(Thread.currentThread().getName(), clusterRecords);
-////                }
-////            });
-////            t.start();
-////            listThreads.add(t);
-//                for(Thread t : listThreads){
-//                    try {
-//                        t.join();
-////                        this.diskData.executeAnonymizedClusterBatch(clusterRecords[threadAnonymizedRecs.get(t.getName())]);
-//                    } catch (InterruptedException ex) {
-//                        Logger.getLogger(ClusterBasedAlgorithm.class.getName()).log(Level.SEVERE, null, ex);
-//                    }
-//                }
-////                this.diskData.executeAnonymizedClusterBatch(clusterRecords);
-////                clusterRecords = null;
-//                listThreads.clear();
-//        }
-//        
-//       
-////        this.diskData.executeAnonymizedClusterBatch();
-//        
-//        System.out.println("Total clusters tree "+totalClusters);
-//        System.out.println("Total clusters database "+this.diskClusters.numOfClusters());
-//        
-//        
-//    }
     
 
     @Override

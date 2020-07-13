@@ -33,6 +33,7 @@ import hierarchy.Hierarchy;
 import static hierarchy.Hierarchy.online_limit;
 import static hierarchy.Hierarchy.online_version;
 import hierarchy.NodeStats;
+import hierarchy.ranges.RangeDouble;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
@@ -42,6 +43,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -129,7 +131,7 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
         try {
             FileInputStream fstream = new FileInputStream(inputFile);
             DataInputStream in = new DataInputStream(fstream);
-            br = new BufferedReader(new InputStreamReader(in));
+            br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
             processingMetadata();
             loadHierarchy();
             findAllParents();
@@ -1195,7 +1197,7 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
         int counter = 0;
         
         if (nodesType.equals("double")){
-            if ( !node.equals("null") && !node.equals("") && nodeLevel != 0 ){
+            if ( !node.equals("null") && !node.equals("(null)") && !node.equals("") && nodeLevel != 0 ){
             
                 //System.out.println("i am here");
             
@@ -1213,7 +1215,7 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
                                     color = null;
                                 }
                                
-                                if (nodeChilds.get(j).isNaN()){
+                                if (nodeChilds.get(j).intValue() == 2147483646 || nodeChilds.get(j).isNaN()){
                                     label = "(null)";
                                 }
                                 else{
@@ -1250,7 +1252,7 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
                                     color = null;
                                 }
                              
-                                if (nodeChilds.get(j).isNaN()){
+                                if (nodeChilds.get(j).intValue() == 2147483646 || nodeChilds.get(j).isNaN()){
                                     label = "(null)";
                                 }
                                 else{
@@ -1289,7 +1291,7 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
                                     color = null;
                                 }
                               
-                                if (nodeChilds.get(j).isNaN()){
+                                if (nodeChilds.get(j).intValue() == 2147483646 || nodeChilds.get(j).isNaN()){
                                     label = "(null)";
                                 }
                                 else{
@@ -1315,7 +1317,7 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
             }
         }
         else{
-            if ( !node.equals("null") && !node.equals("") && nodeLevel != 0 ){
+            if ( !node.equals("null") && !node.equals("(null)") && !node.equals("") && nodeLevel != 0 ){
             
                 //nodeDouble = Double.parseDouble(node);
             
@@ -1334,7 +1336,7 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
                                     color = null;
                                 }
                                 
-                                if (nodeChilds.get(j).intValue() == 2147483646){
+                                if (nodeChilds.get(j).intValue() == 2147483646 || nodeChilds.get(j).isNaN()){
                                     label = "(null)";
                                 }
                                 else{
@@ -1372,7 +1374,7 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
                                     color = null;
                                 }
                                 
-                                if (nodeChilds.get(j).intValue() == 2147483646){
+                                if (nodeChilds.get(j).intValue() == 2147483646 || nodeChilds.get(j).isNaN()){
                                     label = "(null)";
                                 }
                                 else{
@@ -1411,7 +1413,7 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
                                     color = null;
                                 }
                                 
-                                if (nodeChilds.get(j).intValue() == 2147483646){
+                                if (nodeChilds.get(j).intValue() == 2147483646 || nodeChilds.get(j).isNaN()){
                                     label = "(null)";
                                 }
                                 else{
@@ -1468,6 +1470,14 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
             }
             List<Double> missingValues = diskData.checkValues(values, col);
             if(!missingValues.isEmpty()){
+                for(int i=0; i<missingValues.size(); i++){
+                    if(Double.isNaN(missingValues.get(i)) || missingValues.get(i).equals(2147483646.0)){
+                        if(this.getParent(2147483646.0) == null){
+                           return "Node (null) for spaces values and non-Numeric values, is not defined in the hierarchy \""+this.name+"\"" ;
+                        }
+                        missingValues.remove(i);
+                    }
+                }
                 if(missingValues.size() == 1){
                     if(diskData.getColNamesType().get(col).equals("int")){
                         return "Value \""+missingValues.get(0).intValue()+"\" are not defined in hierarchy \""+this.name+"\"";
@@ -1477,7 +1487,7 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
                         return "Value \""+missingValues.get(0)+"\" are not defined in hierarchy \""+this.name+"\"";
                     }
                 }
-                else{
+                else if(!missingValues.isEmpty()){
                     if(diskData.getColNamesType().get(col).equals("int")){
                         return "Values \""+missingValues.toString().replace(".0", "").replace("[", "(").replace("]", ")")+"\" are not defined in hierarchy \""+this.name+"\"";
                     }
@@ -1495,17 +1505,24 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
                 if(parent==null){
                     System.out.println("check root "+(dataset[i][col] != root.doubleValue()));
                     if(dataset[i][col] != root.doubleValue()){
-                        System.out.println("Mapinei edv metas to check");
-                        Object value;
-                        String type = d.getColNamesType().get(col);
-                        if(type.equals("int")){
-                            value = (int)dataset[i][col];
+                        if(Double.isNaN(dataset[i][col]) || dataset[i][col] == 2147483646.0){
+                            if(this.getParent(2147483646.0) == null){
+                               return "Node (null) for spaces values and non-Numeric values, is not defined in the hierarchy \""+this.name+"\"" ;
+                            }
                         }
                         else{
-                            value = dataset[i][col];
+                            System.out.println("Mapinei edv metas to check");
+                            Object value;
+                            String type = d.getColNamesType().get(col);
+                            if(type.equals("int")){
+                                value = (int)dataset[i][col];
+                            }
+                            else{
+                                value = dataset[i][col];
+                            }
+                            System.out.println("Value \""+value+"\" in "+d.getColumnByPosition(col)+" does not set in the hierarchy "+this.name+" prin to return ");
+                            return "Value \""+value+"\" in "+d.getColumnByPosition(col)+" column is not defined in the hierarchy \""+this.name+"\"";
                         }
-                        System.out.println("Value \""+value+"\" in "+d.getColumnByPosition(col)+" does not set in the hierarchy "+this.name+" prin to return ");
-                        return "Value \""+value+"\" in "+d.getColumnByPosition(col)+" column is not defined in the hierarchy \""+this.name+"\"";
                     }
                 }
             }

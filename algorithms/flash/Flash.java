@@ -176,7 +176,7 @@ public class Flash implements Algorithm{
     
     public boolean checkAndTag(LatticeNode node) throws ParseException{
         Buffer curBuffer = null;
-//        System.out.println("Check and Tag "+node.id+" transf "+Arrays.toString(node.getTransformation()));
+        System.out.println("Check and Tag "+node.id+" transf "+Arrays.toString(node.getTransformation()));
         LatticeNode bestNode = this.buffers.findClosestNode(node);
         
         if (bestNode != null){

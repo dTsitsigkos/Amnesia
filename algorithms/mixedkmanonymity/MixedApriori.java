@@ -360,9 +360,11 @@ public class MixedApriori implements Algorithm {
                 System.out.println("ok with fix "+this.anonymize_property+" m = "+j);
             }
             
-            for(Entry<Integer,Hierarchy> entry : this.hierarchies.entrySet()){
-                entry.getValue().clearAprioriStructures();
-            }
+            
+        }
+        
+        for(Entry<Integer,Hierarchy> entry : this.hierarchies.entrySet()){
+            entry.getValue().clearAprioriStructures();
         }
     }
     
@@ -850,13 +852,17 @@ public class MixedApriori implements Algorithm {
                         if(leafId instanceof Integer)
                             res += costsRelational.get(this.convertToPair(entry.getKey(),gen_val))*hierarchy.getWeight(((Integer)leafId).doubleValue());
                         else{
-                            if(leafId instanceof Double){
+                            if(leafId instanceof Double && !((Double)leafId).equals(Double.NaN)){
+//                                System.out.println("Leaf "+leafId);
                                 res += costsRelational.get(this.convertToPair(entry.getKey(),gen_val))*hierarchy.getWeight(((Double)leafId).doubleValue());
 //                                System.out.println("Cost val"+gen_val+"cost "+costsRelational.get(this.convertToPair(entry.getKey(),gen_val))*hierarchy.getWeight(((Double)leafId).doubleValue()));
                             }
-                            else{
+                            else if(leafId instanceof RangeDouble && !((RangeDouble)leafId).getLowerBound().equals(Double.NaN)){
                                 res += costsRelational.get(this.convertToPair(entry.getKey(),gen_val))*hierarchy.getWeight(leafId);
 //                                System.out.println("Cost val"+gen_val+"cost "+ costsRelational.get(this.convertToPair(entry.getKey(),gen_val))*hierarchy.getWeight(leafId));
+                            }
+                            else if(leafId instanceof RangeDouble && !((RangeDate)leafId).getLowerBound().equals(new RangeDate(null,null))){
+                                res += costsRelational.get(this.convertToPair(entry.getKey(),gen_val))*hierarchy.getWeight(leafId);
                             }
                             
                         }
@@ -975,7 +981,12 @@ public class MixedApriori implements Algorithm {
                             else{
     //                            System.out.println("Parents ");
                                 Set<Double> children = this.hierarchySet.getChildrenIds(nodeId);
-                                costsSet.put(nodeId, (double)children.size() / (double)domainSize);
+                                if(children == null){
+                                    testGensSet.put(nodeId.intValue(), -1);
+                                }
+                                else{
+                                    costsSet.put(nodeId, (double)children.size() / (double)domainSize);
+                                }
 
                             }
                         }

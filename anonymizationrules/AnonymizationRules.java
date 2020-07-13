@@ -39,6 +39,9 @@ import dictionary.DictionaryString;
 import hierarchy.Hierarchy;
 import hierarchy.ranges.RangeDate;
 import hierarchy.ranges.RangeDouble;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -74,7 +77,7 @@ public class AnonymizationRules {
         
 //        System.out.println("inputfile = " + inputFile);
         
-        BufferedReader br = new BufferedReader(new FileReader(inputFile));
+        BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(inputFile),StandardCharsets.UTF_8));
         String line;
         
         if ((line = br.readLine()) != null){

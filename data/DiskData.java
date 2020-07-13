@@ -104,6 +104,7 @@ public class DiskData implements Data,Serializable{
     private String urlDbTemp = null;
     public static String Lock = "dblock";
     private String[] formatsDate = null;
+    private int counterRow;
    
     
     private static final String[] formats = { 
@@ -130,7 +131,6 @@ public class DiskData implements Data,Serializable{
         this.anonymizedRecordsClusters = new ArrayList();
         
         System.out.println("Input path "+inputFile);
-//        String[] folders = inputFile.split(File.separator);
         String name = "anonymization.db";
         
         
@@ -243,6 +243,10 @@ public class DiskData implements Data,Serializable{
     public double[][] getDataSet() {
         return this.getOriginalDataSet();
     }
+    
+    public int getRows(){
+        return this.counterRow;
+    }
 
     @Override
     public void setData(double[][] _data) {
@@ -266,7 +270,6 @@ public class DiskData implements Data,Serializable{
 
     @Override
     public void exportOriginalData() {
-//        double[][] dataSet = this.getDataSet();
         try (PrintWriter writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(this.inputFile, true), StandardCharsets.UTF_8)))) {
             boolean FLAG = false;
                 
@@ -325,7 +328,7 @@ public class DiskData implements Data,Serializable{
        //                    String str = dict.getIdToString((int)dataSet[i][j]);
 
                             if (str.equals("NaN")){
-                                writer.print("");
+                                writer.print("(null)");
                             }
                             else{
                                 writer.print(str);
@@ -349,47 +352,8 @@ public class DiskData implements Data,Serializable{
                     }
                 }
             }
-            
-//            for(int i=0; i<this.sizeOfRows; i++){
-//                for(int j=0; j<this.sizeOfCol; j++){
-//                    if (colNamesType.get(j).equals("double")){
-//                        if (Double.isNaN(dataSet[i][j]) || dataSet[i][j] == 2147483646.0){
-//                            writer.print("");
-//                        }
-//                        else{
-//                            Object a = dataSet[i][j];
-//                            writer.print( dataSet[i][j]);
-//                        }
-//                    }
-//                    else if(colNamesType.get(j).equals("int")){
-//                        if (dataSet[i][j] == 2147483646.0){
-//                            writer.print("");
-//                        }
-//                        else{
-//                            writer.print( Integer.toString((int)dataSet[i][j])+"");
-//                        }
-//                    }
-//                    else{
-//                        String str = dictionary.getIdToString((int)dataSet[i][j]);
-//    //                    DictionaryString dict = dictionary.get(j);
-//    //                    String str = dict.getIdToString((int)dataSet[i][j]);
-//
-//                        if (str.equals("NaN")){
-//                            writer.print("");
-//                        }
-//                        else{
-//                            writer.print(str);
-//                        }
-//                    }
-//                    
-//                    if(j!=this.sizeOfCol-1){
-//                        writer.print(",");
-//                    }
-//                }
-//                writer.println();
-//            }
         }catch (FileNotFoundException ex) {
-            //Logger.getLogger(AnonymizedDatasetPanel.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -410,8 +374,8 @@ public class DiskData implements Data,Serializable{
         ArrayList<String> columns = new ArrayList<String>();
         int counter = 0;
         int counterSdf = 0;
-//        int stringCount = dictionary.getMaxUsedId()+1;
         int stringCount;
+        
         if(dictionary.isEmpty() && dictHier.isEmpty()){
             stringCount = 1;
         }
@@ -461,7 +425,7 @@ public class DiskData implements Data,Serializable{
             conn.setAutoCommit(false);
             fstream = new FileInputStream(inputFile);
             in = new DataInputStream(fstream);
-            br = new BufferedReader(new InputStreamReader(in));
+            br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
             
             strLine = br.readLine();
             for(int i=0; i<checkColumns.length; i++){
@@ -505,10 +469,8 @@ public class DiskData implements Data,Serializable{
                             Date d;
                             if (var!=null ||  !temp[i].equals("")){
                                 var = temp[i];
-//                                var = TXTData.timestampToDate(var);
                                 try{
                                     if(this.formatsDate[counter1].equals("dd/MM/yyyy")){
-    //                                    var = sdf[counter1].parse(var) == null ? null : var;
                                         d = sdf[counter1].parse(var);
                                         if(d==null){
                                             var = null;
@@ -530,10 +492,6 @@ public class DiskData implements Data,Serializable{
                                 var = "NaN";
                                 d = null;
                             }
-
-
-                            //transform timestamp to date
-                            //var = this.timestampToDate(var);
                             if(var == null || var.equals("NaN")){
                                 var = "NaN";
                                 if(!dictionary.containsId(2147483646) && !this.dictHier.containsId(2147483646)){
@@ -548,31 +506,6 @@ public class DiskData implements Data,Serializable{
                             else{
                                 dataSet[0][counter1] = new Long(d.getTime()).doubleValue();
                             }
-
-//                            if (var != null) {
-//
-//                            //if string is not present in the dictionary
-//                                if (!dictionary.containsString(var) && !this.dictHier.containsString(var)){
-//                                    if(var.equals("NaN")){
-//                                        dictionary.putIdToString(2147483646, var);
-//                                        dictionary.putStringToId(var,2147483646);
-////                                        dictionary.put(counter1, tempDict);
-//                                        dataSet[0][counter1] = 2147483646.0;
-//                                    }
-//                                    else{
-////                                        dictionary.putIdToString(stringCount, var);
-////                                        dictionary.putStringToId(var,stringCount);
-////                                        dictionary.put(counter1, tempDict);
-//                                        dataSet[0][counter1] = new Long(AnonymizedDataset.getDateFromString(var).getTime()).doubleValue();
-//                                        stringCount++;
-//                                    }
-//                                }
-//                                else{
-//                                    //if string is present in the dictionary, get its id
-//                                    int stringId = dictionary.getStringToId(var);
-//                                    dataSet[0][counter1] = (double) stringId;
-//                                }
-//                            }
                         }
                         else{
                             String var = null;
@@ -584,7 +517,7 @@ public class DiskData implements Data,Serializable{
                                 var = "NaN";
                             }
 
-                            //if string is not present in the dictionary
+                            //if string is not present in any of the dictionaries
                             if (!dictionary.containsString(var) && !this.dictHier.containsString(var)){
                                  if(var.equals("NaN")){
                                     dictionary.putIdToString(2147483646, var);
@@ -599,9 +532,6 @@ public class DiskData implements Data,Serializable{
                                 }
                             }
                             else{
-                                //if string is present in the dictionary, get its id
-//                                int stringId = dictionary.getStringToId(var);
-//                                dataSet[0][counter1] = (double) stringId;
                                 
                                 if(dictionary.containsString(var)){
                                     int stringId = dictionary.getStringToId(var);
@@ -616,7 +546,6 @@ public class DiskData implements Data,Serializable{
                         counter1++;
                     }
                 }
-//                "INSERT INTO dataset(name,capacity) VALUES(?,?)"
                 
                 if(firstInsert){
                     String insertSql = "INSERT INTO dataset(";
@@ -715,8 +644,6 @@ public class DiskData implements Data,Serializable{
 
     @Override
     public String readDataset(String[] columnTypes, boolean[] checkColumns) throws LimitException, DateParseException {
-        /// Save data to Database 
-//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         SaveClmnsAndTypeOfVar(columnTypes,checkColumns);
         return save(checkColumns);
     }
@@ -785,7 +712,7 @@ public class DiskData implements Data,Serializable{
                             writer.print(value);
                         }
                         
-                        if(column != temp[column].length-1){
+                        if(column != temp[0].length-1){
                             writer.print(",");
                         }
                     }
@@ -793,7 +720,7 @@ public class DiskData implements Data,Serializable{
                 }
             
         } catch (FileNotFoundException ex) {
-            //Logger.getLogger(AnonymizedDatasetPanel.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -872,7 +799,7 @@ public class DiskData implements Data,Serializable{
                 }
             
         } catch (FileNotFoundException ex) {
-            //Logger.getLogger(AnonymizedDatasetPanel.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -922,7 +849,7 @@ public class DiskData implements Data,Serializable{
         try {
             fstream = new FileInputStream(inputFile);
             in = new DataInputStream(fstream);
-            br = new BufferedReader(new InputStreamReader(in));
+            br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
             int counter = 0 ;
             
             while ((strLine = br.readLine()) != null)   {
@@ -996,7 +923,7 @@ public class DiskData implements Data,Serializable{
         try {
             fstream = new FileInputStream(inputFile);
             in = new DataInputStream(fstream);
-            br = new BufferedReader(new InputStreamReader(in));
+            br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
             while ((strLine = br.readLine()) != null)   {
                 //escape first row
                 if (FLAG == true){
@@ -1017,7 +944,6 @@ public class DiskData implements Data,Serializable{
                     
                     if( temp.length != columnNames.length){
                         System.out.println("columnNames = " + columnNames.length +"\t temp = " + temp.length );
-                        //ErrorWindow.showErrorWindow("Parse problem.Different size between title row and data row");
                         this.errorMessage = "1";//"Parse problem.Different size between title row and data row"
                         System.out.println("Parse problem.Different size between title row and data row");
                         return errorMessage;
@@ -1119,7 +1045,7 @@ public class DiskData implements Data,Serializable{
     
     public Pair<Double,Double> getMinMax(int column, String table){
         String columnName = this.getColumnByPosition(column);
-        String sqlMinMax = "SELECT MIN("+columnName+"), MAX("+columnName+") FROM "+table;
+        String sqlMinMax = "SELECT MIN("+columnName+"), MAX("+columnName+") FROM "+table+" WHERE "+columnName+" != 2147483646";
         Statement stm = null;
         ResultSet rs = null;
         Pair<Double,Double> result = null;
@@ -1154,7 +1080,7 @@ public class DiskData implements Data,Serializable{
     }
     
     public List<Double> checkRange(Double max, Double min, int col){
-        String sqlQuery = "SELECT DISTINCT "+this.columnNames[col]+" FROM dataset WHERE "+this.columnNames[col]+" NOT BETWEEN "+min+" AND "+max;
+        String sqlQuery = "SELECT DISTINCT "+this.columnNames[col]+" FROM dataset WHERE "+this.columnNames[col]+" NOT BETWEEN "+min+" AND "+max+" OR "+this.columnNames[col]+" == 2147483646";
         Statement stm = null;
         ResultSet rs = null;
         List<Double> missingValues = new ArrayList<Double>();
@@ -1245,19 +1171,17 @@ public class DiskData implements Data,Serializable{
             pstmt.setInt(2, max);
             rs = pstmt.executeQuery();
             ResultSetMetaData metaData = rs.getMetaData();
-//            rs.last();
             data = new Double[max-start][metaData.getColumnCount()];
-//            rs.beforeFirst();
-            int counterRow = 0;
+            counterRow = 0;
             while(rs.next()){
-//                Double[] record = new Double[metaData.getColumnCount()];
                 data[counterRow][0] = rs.getDouble(1);
                 for (Entry<Integer,String> entry : this.colNamesType.entrySet()){
                     data[counterRow][entry.getKey()+1] = rs.getDouble(this.columnNames[entry.getKey()]);
                 }
-//                data.add(record);
                 counterRow++;
             }
+            
+            System.out.println("Records "+counterRow);
             
         }catch (OutOfMemoryError e) {
             System.err.println("Error outofMemory free"+Runtime.getRuntime().freeMemory()+" Curent "+Runtime.getRuntime().totalMemory()+" max "+Runtime.getRuntime().maxMemory());
@@ -1451,11 +1375,18 @@ public class DiskData implements Data,Serializable{
                         }
                     }
                     else if(entry.getValue().equals("date")){
-                        Double value = rs.getDouble(this.columnNames[entry.getKey()]);
                         String strValue;
-                        Date date = new Date(value.longValue());
-                        SimpleDateFormat df2 = new SimpleDateFormat("dd/MM/yyyy");
-                        strValue = df2.format(date);
+                        Double value = rs.getDouble(this.columnNames[entry.getKey()]);
+                        if(value.equals(2147483646.0)){
+                            strValue = "";
+                        }
+                        else{
+                            
+                            Date date = new Date(value.longValue());
+                            SimpleDateFormat df2 = new SimpleDateFormat("dd/MM/yyyy");
+                            strValue = df2.format(date);
+                           
+                        }
                         linkedHashTemp.put(columnNames[entry.getKey()], strValue);
                     }
                     else{
@@ -1556,11 +1487,6 @@ public class DiskData implements Data,Serializable{
     }
     
     public static Set<Integer> getRandomNumberBetweenRange(int size, int max){
-
-//        int x = (int) ((Math.random()*((max-min)+1))+min);
-//
-//        return x;
- 
         Set<Integer> set = new HashSet<Integer>(size);
 
         while(set.size()< size) {
@@ -1611,271 +1537,210 @@ public class DiskData implements Data,Serializable{
         return record;
     }
     
-//    public List<Pair<Double[],List<Integer>>> getRandomRecords(int num, Set<Integer> quasiIdentifiers) {
-//        int numCounter = num;
-//        List<Integer> recordsIds = null;
-//        Set<Integer> recordsIdsTemp = null;
-//        List<Integer> records = new ArrayList<Integer>();
-//        Set<Integer> allRecordsIds = new HashSet<Integer>();
-//        int counter=1;
-//        Statement stmnt = null, stmnt2 = null;
-//        String sqlSelect = "SELECT * FROM dataset WHERE id IN ";
-//        ResultSet result = null;
-//        ResultSet resultIdentical = null;
-//        String orderBy = " ORDER BY ";
-//        List<Pair<Double[],List<Integer>>> clusterRecsIds = new ArrayList();
-//        Map<String,Set<Double>> identicalMap = new HashMap();
-//        
-//        this.createChekedTable();
-//        
-//        try{
-//            for(Integer col : quasiIdentifiers){
-//                orderBy += this.colNamesPosition.get(col)+", ";
-//                identicalMap.put(this.colNamesPosition.get(col), new HashSet());
-//            }
-//            
-//            if(orderBy.endsWith(", ")){
-//                orderBy = this.replaceLast(orderBy,", ","");
-//            }
-//            recordsIdsTemp = this.getRandomNumberBetweenRange(numCounter,this.recordsTotal);
-//            
-////            while(numCounter != 0){
-////                int recordId = this.getRandomNumberBetweenRange(1,this.recordsTotal);
-////                if(!recordsIds.contains(recordId)){
-////                    recordsIds.add(recordId);
-////                    numCounter--;
-////                }
-////            }
-//            
-//            System.out.println("End random number "+recordsIdsTemp.size());
-//            this.conn.setAutoCommit(false);
-//            stmnt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY); 
-//            stmnt2 = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY); 
-//            stmnt2.setFetchSize(50);
-////            recordsIds = recordsIdsTemp.size() >= 1000 ?  recordsIdsTemp.stream().limit(999).collect(Collectors.toList()) : new ArrayList(recordsIdsTemp);
-////            int start=0, end=recordsIds.size() >= 1000 ? 999 :fillAnonymizedRecords recordsIds.size();
-////            while(!recordsIdsTemp.isEmpty()){
-//                
-////                for(int i=0; i< end; i++){fillAnonymizedRecords
-////                    Integer id = recordsIds.get(i);
-////                    recordsIdsTemp.remove(id);
-////                    if(i == end-1){
-////                        sqlSelect += id;
-////                    }
-////                    else{
-////                        sqlSelect += id +" OR id=";
-////                    }
-////                    
-////                }
-////                System.out.println("End of string query "+sqlSelect+Arrays.toString(recordsIds.toArray()).replace("[", "(").replace("]", ")"));
-//                stmnt.setFetchSize(50);
-//
-//                result = stmnt.executeQuery(sqlSelect+recordsIdsTemp.toString().replace("[", "(").replace("]", ")"));
-////                recordsIds.clear();
-////                recordsIdsTemp.clear();
-//                
-//                String sqlSelectIdentical = "SELECT * FROM dataset WHERE ";
-//                System.out.println("SQL "+counter);
-//                
-//                
-//                ResultSetMetaData metaData = result.getMetaData();
-//                while(result.next()){
-//                    for(int i=2; i<=metaData.getColumnCount(); i++){
-//                        if(quasiIdentifiers.contains(i-2)){
-//                            identicalMap.get(metaData.getColumnName(i)).add(result.getDouble(i));
-//                        }
-//                    }
-//                }
-//                
-//                for(Entry<String,Set<Double>> identicalValues : identicalMap.entrySet()){
-//                    sqlSelectIdentical += identicalValues.getKey()+" IN "+identicalValues.getValue().toString().replace("[", "(").replace("]", ")")+" AND ";
-//                }
-//                
-//                if(sqlSelectIdentical.endsWith("AND ")){
-//                    sqlSelectIdentical = this.replaceLast(sqlSelectIdentical,"AND ","");
-//                }
-////                while(result.next()){
-////                    ResultSetMetaData metaData = result.getMetaData();
-//////                    int idInitialTemp = result.getInt(1);
-//////                    recordValues[0] = result.getDouble(1);
-////                    for(int i=2; i<=metaData.getColumnCount(); i++){
-//////                        recordValues[i-1] = result.getDouble(i);
-////                        if(quasiIdentifiers.contains(i-2)){
-////                            if(i==metaData.getColumnCount()){
-////                                sqlSelectIdentical += metaData.getColumnName(i)+"="+result.getString(i);
-////                            }
-////                            else{
-////                                sqlSelectIdentical += metaData.getColumnName(i)+"="+result.getString(i)+" AND ";
-////                            }
-////                        }
-////                    }
-////
-////                    if(sqlSelectIdentical.endsWith("AND ")){
-////                        sqlSelectIdentical = this.replaceLast(sqlSelectIdentical,"AND ",")");
-////                    }
-////                    else{
-////                       sqlSelectIdentical += ")" ;
-////                    }
-////                    sqlSelectIdentical += " OR (";
-////                }
-////    //                System.out.println("Sql select: "+sqlSelectIdentical+"jgfdg");
-////                if(sqlSelectIdentical.endsWith(" OR (")){
-//////                    sqlSelectIdentical = sqlSelectIdentical.substring(0, sqlSelectIdentical.lastIndexOf(" OR ("));
-////                    sqlSelectIdentical = this.replaceLast(sqlSelectIdentical,"OR \\("," ");
-////                }
-//                
-//                stmnt2.setFetchSize(50);
-//                System.out.println("Identical "+sqlSelectIdentical+orderBy);
-//                resultIdentical = stmnt2.executeQuery(sqlSelectIdentical+orderBy);
-//                
-//                ResultSetMetaData metaDataIdentical = resultIdentical.getMetaData();
-//                Double[] previousRec = null;
-//                Double[] recordValues = new Double[this.sizeOfCol+1];
-//                
-//                if(resultIdentical.next()){
-//                    do{
-//                        int idTemp = resultIdentical.getInt(1);
-//                        boolean samePrevious=true;
-//                        recordsIdsTemp.remove(idTemp);
-//                        recordValues[0] = resultIdentical.getDouble(1);
-//                        for(int i=2; i<=metaDataIdentical.getColumnCount(); i++){
-//                            recordValues[i-1] = resultIdentical.getDouble(i);
-//                            if(quasiIdentifiers.contains(i-2)){
-//                                if(previousRec!=null && !previousRec[i-1].equals(recordValues[i-1])){
-//                                    samePrevious=false;
-//                                }
-//                            }
-//                            
-//                            
-//                        }
-//                        if(samePrevious){
-//                            records.add(idTemp);
-//                        }
-//                        else{
-//                            clusterRecsIds.add(new Pair (previousRec,records));
-//                            records = new ArrayList<Integer>();
-//                            records.add(idTemp);
-//                        }
-//                        
-//                        allRecordsIds.add(idTemp);
-//                        if(allRecordsIds.size()==8000){
-//                            this.insertChekedTable(allRecordsIds);
-//                            allRecordsIds.clear();
-//                        }
-//                        previousRec = recordValues; 
-//                        recordValues = new Double[this.sizeOfCol+1];
-////                        System.out.println("Previous "+Arrays.toString(previousRec)+" now "+Arrays.toString(recordValues));
-//                    }while(resultIdentical.next());
-//                }
-//                clusterRecsIds.add(new Pair (previousRec,records));
-//                counter++;
-////                recordsIds = new ArrayList(recordsIdsTemp);
-////                end=recordsIds.size() >= 1000 ? 999 : recordsIds.size();
-////                recordsIds = recordsIdsTemp.size() >= 1000 ?  recordsIdsTemp.stream().limit(999).collect(Collectors.toList()) : new ArrayList(recordsIdsTemp);
-////            }
-//        }catch(Exception e){
-//            e.printStackTrace();
-//            System.out.println("Error: "+e.getMessage());
-//        }finally {
-//            if(stmnt!=null){
-//                try {
-//                    stmnt.close();
-//                } catch (SQLException ex) {
-//                    Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
-//                }
-//            }
-//            
-//            if(stmnt2!=null){
-//                try {
-//                    stmnt2.close();
-//                } catch (SQLException ex) {
-//                    Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
-//                }
-//            }
-//            
-//            if(result!=null){
-//                try {
-//                    result.close();
-//                } catch (SQLException ex) {
-//                    Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
-//                }
-//            }
-//            
-//            if(resultIdentical!=null){
-//                try {
-//                    resultIdentical.close();
-//                } catch (SQLException ex) {
-//                    Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
-//                }
-//            }
-//            
-//            try {
-//                this.conn.setAutoCommit(true);
-//            } catch (SQLException ex) {
-//                ex.printStackTrace();
-//                Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-//        }
-//        
-//        this.insertChekedTable(allRecordsIds);
-//        allRecordsIds.clear();
-//        return clusterRecsIds;
-//    }
-    
-    
-    /*SELECT
-    y.id,y.name,y.email
-    FROM @YourTable y
-        INNER JOIN (SELECT
-                        name,email, COUNT(*) AS CountOf
-                        FROM @YourTable
-                        GROUP BY name,email
-                        HAVING COUNT(*)>1
-                    ) dt ON y.name=dt.name AND y.email=dt.email // AND y.id in (1,2,3,....) 
-    example query
-    
-    */
-    public void removeAnonymizedRec(int k,Set<Integer> quasiId){
-        Set<Integer> recordsIds = new HashSet();
-        String selectSql = "SELECT id FROM dataset d INNER JOIN";
-        String identifiersSql = "SELECT ";
-        String sqlColumnsNames = "";
-        String onInnerSql="";
-        
-        
-        for(Integer col : quasiId){
-            sqlColumnsNames += this.columnNames[col]+",";
-            onInnerSql += "d."+this.columnNames[col]+"="+"dt."+this.columnNames[col]+" AND ";
-        }
-        
-        sqlColumnsNames = replaceLast(sqlColumnsNames,",","");
-        onInnerSql = replaceLast(onInnerSql," AND ","");
-        identifiersSql += sqlColumnsNames+" FROM dataset GROUP BY "+sqlColumnsNames+" HAVING COUNT(*)>="+k;
-        selectSql += "("+identifiersSql+") dt ON "+onInnerSql;
-    }
+ 
     
     
     /*build function for random 
-        /// TODO 
         SELECT * From dataset WHERE (age) In (SELECT age From dataset GROUP by age HAVING Count(*)>=3)
         SELECT * FROM table ORDER BY RANDOM() LIMIT 1;
     
     
-    SELECT *
-  FROM mytable
- WHERE (group_id, group_type) IN (
+        SELECT * FROM mytable
+        WHERE (group_id, group_type) IN (
                                   VALUES ('1234-567', 2), 
                                          ('4321-765', 3), 
                                          ('1111-222', 5)
                                  );*/
+    public List<Pair<Double[],List<Integer>>> getSmallRecordsClusters(int k,Set<Integer> quasiIds){
+        String sqlSelect = "SELECT * FROM dataset AS d INNER JOIN";
+        String innerJoin = "SELECT ";
+        String onSql = "ON ";
+        String orderBy="ORDER BY ";
+        String groupBy = "GROUP BY ";
+        Statement stmnt = null;
+        ResultSet result = null;
+        Set<Integer> allRecordsIds = new HashSet();
+        List<Pair<Double[],List<Integer>>> returnedClusters = new ArrayList();
+        try{
+            for(Integer col : quasiIds){
+                innerJoin += this.columnNames[col]+",";
+                groupBy += this.columnNames[col]+",";
+                onSql += "dt."+this.columnNames[col]+"=d."+this.columnNames[col]+" AND ";
+                orderBy += "d."+this.columnNames[col]+","; 
+            }
+           
+            innerJoin = replaceLast(innerJoin,",","");
+            groupBy = replaceLast(groupBy,",","");
+            onSql = replaceLast(onSql," AND ","");
+            orderBy = replaceLast(orderBy,",","");
+            
+            innerJoin += " FROM dataset "+groupBy+" HAVING COUNT(*)<"+k;
+            
+            sqlSelect += " ("+innerJoin+") dt "+onSql+" "+orderBy;
+            this.conn.setAutoCommit(false);
+            stmnt = conn.createStatement();
+            System.out.println("SQL select small "+sqlSelect);
+            result = stmnt.executeQuery(sqlSelect);
+            ResultSetMetaData resultMeta = result.getMetaData();
+            
+            Double[] previous = null;
+            Double[] recordValues;
+            List<Integer> idsCluster = new ArrayList();
+            while(result.next()){
+                boolean samePrevious=true;
+                int recordId = result.getInt(1);
+                allRecordsIds.add(recordId);
+                recordValues = new Double[this.sizeOfCol+1];
+                recordValues[0] = (double)recordId;
+                for(int i=2; i<=resultMeta.getColumnCount()-quasiIds.size(); i++){
+                    recordValues[i-1] = result.getDouble(i);
+                    if(quasiIds.contains(i-2)){
+                        if(previous!=null && !previous[i-1].equals(recordValues[i-1])){
+                            samePrevious = false;
+                        }
+                    }
+                }
+                
+                if(samePrevious){
+                    idsCluster.add(recordId);
+                }
+                else{
+                    returnedClusters.add(new Pair(previous,idsCluster));
+                    idsCluster = new ArrayList();
+                    idsCluster.add(recordId);
+                }
+                previous = recordValues;
+            }
+            if(previous!=null){
+                returnedClusters.add(new Pair(previous,idsCluster));
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+            System.out.println("Error: "+e.getMessage());
+        }finally {
+            if(stmnt!=null){
+                try {
+                    stmnt.close();
+                } catch (SQLException ex) {
+                    Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            if(result!=null){
+                try {
+                    result.close();
+                } catch (SQLException ex) {
+                    Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            
+            try {
+                this.conn.setAutoCommit(true);
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+                Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        System.out.println("IDs choicked "+allRecordsIds);
+        this.insertChekedTable(allRecordsIds);
+        return returnedClusters;
+    }
+    
+    
+    public Double[][] getRandomAnonymizedRecords(int k,int sizeSmallCluster,Set<Integer> quasiIdentifiers){
+        Double[][] records = new Double[k-sizeSmallCluster][this.sizeOfCol+1];
+        Statement stmnt = null;
+        String sqlSelect = "SELECT * FROM dataset GROUP BY ";
+        ResultSet result = null;
+        Set<Integer> idsToDelete = new HashSet();
+        try{
+            for(Integer quasi : quasiIdentifiers){
+                sqlSelect += this.columnNames[quasi]+",";
+            }
+            sqlSelect = replaceLast(sqlSelect,",","");
+            sqlSelect += " HAVING COUNT(*)>="+(k+(k-sizeSmallCluster))+" LIMIT "+(k-sizeSmallCluster);
+            System.out.println("SQLSELECT SMALL: "+sqlSelect);
+            this.conn.setAutoCommit(false);
+            stmnt = conn.createStatement();
+            result = stmnt.executeQuery(sqlSelect);
+            ResultSetMetaData resultMeta = result.getMetaData();
+            
+            this.counterRow = 0;
+            while(result.next()){
+                int id = result.getInt(1);
+                idsToDelete.add(id);
+                records[this.counterRow][0] = (double) id;
+                for(int i=2; i<=resultMeta.getColumnCount(); i++){
+                    records[this.counterRow][i-1] = result.getDouble(i);
+                }
+                
+                this.counterRow++;
+            }
+           
+        }catch(Exception e){
+            e.printStackTrace();
+            System.out.println("Error: getRandomAnonymizedRecords"+e.getMessage());
+        }finally{
+            if(stmnt!=null){
+                try {
+                    stmnt.close();
+                } catch (SQLException ex) {
+                    Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            
+            if(result!=null){
+                try {
+                    result.close();
+                } catch (SQLException ex) {
+                    Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            
+            try {
+                this.conn.setAutoCommit(true);
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+                Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        this.deleteFromAnonymized(idsToDelete);
+        return records;
+    }
+    
+    public void deleteFromAnonymized(Set<Integer> ids){
+        Statement stmnt = null; 
+        String sqlDelete ="DELETE from anonymized_dataset WHERE id_an IN "+ids.toString().replace("[", "(").replace("]", ")");
+        try{
+            System.out.println("Delete sql "+sqlDelete);
+            this.conn.setAutoCommit(false);
+            stmnt = this.conn.createStatement();
+            stmnt.executeUpdate(sqlDelete);
+        }catch(Exception e){
+            e.printStackTrace();
+            System.err.println("Error: deleteFromAnonymized"+e.getMessage());
+        }finally{
+            if(stmnt!=null){
+                try {
+                    stmnt.close();
+                } catch (SQLException ex) {
+                    Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            
+            try {
+                this.conn.setAutoCommit(true);
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+                Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
     
     public Pair<Pair<Double[],List<Integer>>[],Integer> getRandomRecords(int num, Set<Integer> quasiIdentifiers) {
         int numCounter = num;
-        List<Integer> recordsIds = null;
         Set<Integer> recordsIdsTemp = null;
         List<Integer> records = new ArrayList<Integer>();
         Set<Integer> allRecordsIds = new HashSet<Integer>();
-        int counter=1;
         Statement stmnt = null;
         String sqlSelect = "SELECT * FROM dataset WHERE id IN ";
         ResultSet result = null;
@@ -1884,8 +1749,6 @@ public class DiskData implements Data,Serializable{
         Pair<Double[],List<Integer>>[] clusterRecsIds = new Pair[numCounter];
         int pointer = 0;
         ResultSetMetaData metaDataIdentical;
-        
-//        this.createChekedTable();
         
         try{
             for(Integer col : quasiIdentifiers){
@@ -1898,16 +1761,10 @@ public class DiskData implements Data,Serializable{
             recordsIdsTemp = this.getRandomNumberBetweenRange(numCounter,this.recordsTotal);
             this.conn.setAutoCommit(false);
             stmnt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY); 
-//            stmnt2 = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY); 
-//            stmnt2.setFetchSize(50);
             stmnt.setFetchSize(50);
             result = stmnt.executeQuery(sqlSelect+Arrays.toString(recordsIdsTemp.toArray()).replace("[", "(").replace("]", ")"));
             String sqlSelectIdentical = "SELECT * FROM dataset WHERE ";
             if(quasiIdentifiers.size()==1){
-                
-//                stmnt.setFetchSize(50);
-//                result = stmnt.executeQuery(sqlSelect+Arrays.toString(recordsIdsTemp.toArray()).replace("[", "(").replace("]", ")"));
-//                String sqlSelectIdentical = "SELECT * FROM dataset WHERE ";
                 int column =quasiIdentifiers.iterator().next();
                 String columnName = this.columnNames[column];
                 sqlSelectIdentical += columnName +" IN ";
@@ -1919,51 +1776,8 @@ public class DiskData implements Data,Serializable{
                     j++;
                 }
                 
-//                sqlSelectIdentical = replaceLast(sqlSelectIdentical,",", ")");
-                
                 System.out.println("Identical "+sqlSelectIdentical+Arrays.toString(recordsAttr).replace("[", "(").replace("]", ")")+orderBy);
                 resultIdentical = stmnt.executeQuery(sqlSelectIdentical+Arrays.toString(recordsAttr).replace("[", "(").replace("]", ")")+orderBy);
-//                metaDataIdentical = resultIdentical.getMetaData();
-//                
-//                Double[] previousRec = null;
-//                Double[] recordValues = new Double[this.sizeOfCol+1];
-//
-//                if(resultIdentical.next()){
-//                    do{
-//                        int idTemp = resultIdentical.getInt(1);
-//                        boolean samePrevious=true;
-//                        recordValues[0] = resultIdentical.getDouble(1);
-//                        for(int i=2; i<=metaDataIdentical.getColumnCount(); i++){
-//                            recordValues[i-1] = resultIdentical.getDouble(i);
-//                            if(quasiIdentifiers.contains(i-2)){
-//                                if(previousRec!=null && !previousRec[i-1].equals(recordValues[i-1])){
-//                                    samePrevious=false;
-//                                }
-//                            }
-//
-//
-//                        }
-//                        if(samePrevious){
-//                            records.add(idTemp);
-//                        }
-//                        else{
-//                            clusterRecsIds.add(new Pair (previousRec,records));
-//                            records = new ArrayList<Integer>();
-//                            records.add(idTemp);
-//                        }
-//
-//                        allRecordsIds.add(idTemp);
-//                        if(allRecordsIds.size()==8000){
-//                            this.insertChekedTable(allRecordsIds);
-//                            allRecordsIds.clear();
-//                        }
-//                        previousRec = recordValues; 
-//                        recordValues = new Double[this.sizeOfCol+1];
-////                        System.out.println("Previous "+Arrays.toString(previousRec)+" now "+Arrays.toString(recordValues));
-//                    }while(resultIdentical.next());
-//                }
-//                clusterRecsIds.add(new Pair (previousRec,records));
-//                counter++;
                 
             }
             else{
@@ -1977,11 +1791,6 @@ public class DiskData implements Data,Serializable{
                 columnNamesTuple = replaceLast(columnNamesTuple,",",")") +" IN (VALUES ";
                 int line=0;
                 while(result.next()){
-//                    String valuesTuple = "(";
-//                    for(Integer col : quasiIdentifiers){
-//                        valuesTuple += result.getString(col+2)+",";
-//                    }
-//                    columnNamesTuple += replaceLast(valuesTuple,",",")")+",";
                     int column=0;
                     for(Integer col : quasiIdentifiers){
                         recordsAttr[line][column] = result.getString(col+2);
@@ -1990,104 +1799,14 @@ public class DiskData implements Data,Serializable{
                     line++;
                 }
                 
-//                columnNamesTuple = replaceLast(columnNamesTuple,",",")");
-                
                 System.out.println("Identical2 "+sqlSelectIdentical+columnNamesTuple+Arrays
                     .stream(recordsAttr)
                     .map(Arrays::toString) 
                     .collect(Collectors.joining(",")).replace("[", "(").replace("]", ")")+")"+orderBy);
-//                stmnt2.setFetchSize(50);
                 resultIdentical = stmnt.executeQuery(sqlSelectIdentical+columnNamesTuple+Arrays
                     .stream(recordsAttr)
                     .map(Arrays::toString) 
                     .collect(Collectors.joining(",")).replace("[", "(").replace("]", ")")+")"+orderBy);
-                
-                
-                
-                
-                /*System.out.println("End random number "+recordsIdsTemp.size());
-                recordsIds = recordsIdsTemp.size() >= 1000 ?  recordsIdsTemp.stream().limit(990).collect(Collectors.toList()) : new ArrayList(recordsIdsTemp);
-   
-                while(!recordsIdsTemp.isEmpty()){
-
-    
-                    stmnt.setFetchSize(50);
-
-                    result = stmnt.executeQuery(sqlSelect+Arrays.toString(recordsIds.toArray()).replace("[", "(").replace("]", ")"));
-
-                    String sqlSelectIdentical = "SELECT * FROM dataset WHERE (";
-                    System.out.println("SQL "+counter);
-                    ResultSetMetaData metaData = result.getMetaData();
-                    while(result.next()){
-                        for(int i=2; i<=metaData.getColumnCount(); i++){
-                            if(quasiIdentifiers.contains(i-2)){
-                                if(i==metaData.getColumnCount()){
-                                    sqlSelectIdentical += metaData.getColumnName(i)+"="+result.getString(i);
-                                }
-                                else{
-                                    sqlSelectIdentical += metaData.getColumnName(i)+"="+result.getString(i)+" AND ";
-                                }
-                            }
-                        }
-
-                        if(sqlSelectIdentical.endsWith("AND ")){
-                            sqlSelectIdentical = this.replaceLast(sqlSelectIdentical,"AND ",")");
-                        }
-                        else{
-                           sqlSelectIdentical += ")" ;
-                        }
-                        sqlSelectIdentical += " OR (";
-                    };
-                    if(sqlSelectIdentical.endsWith(" OR (")){
-                        sqlSelectIdentical = this.replaceLast(sqlSelectIdentical,"OR \\("," ");
-                    }
-
-                    stmnt2.setFetchSize(50);
-                    System.out.println("Identical "+sqlSelectIdentical+orderBy);
-                    resultIdentical = stmnt2.executeQuery(sqlSelectIdentical+orderBy);
-
-                    ResultSetMetaData metaDataIdentical = resultIdentical.getMetaData();
-                    Double[] previousRec = null;
-                    Double[] recordValues = new Double[this.sizeOfCol+1];
-
-                    if(resultIdentical.next()){
-                        do{
-                            int idTemp = resultIdentical.getInt(1);
-                            boolean samePrevious=true;
-                            recordsIdsTemp.remove(idTemp);
-                            recordValues[0] = resultIdentical.getDouble(1);
-                            for(int i=2; i<=metaDataIdentical.getColumnCount(); i++){
-                                recordValues[i-1] = resultIdentical.getDouble(i);
-                                if(quasiIdentifiers.contains(i-2)){
-                                    if(previousRec!=null && !previousRec[i-1].equals(recordValues[i-1])){
-                                        samePrevious=false;
-                                    }
-                                }
-
-
-                            }
-                            if(samePrevious){
-                                records.add(idTemp);
-                            }
-                            else{
-                                clusterRecsIds.add(new Pair (previousRec,records));
-                                records = new ArrayList<Integer>();
-                                records.add(idTemp);
-                            }
-
-                            allRecordsIds.add(idTemp);
-                            if(allRecordsIds.size()==8000){
-                                this.insertChekedTable(allRecordsIds);
-                                allRecordsIds.clear();
-                            }
-                            previousRec = recordValues; 
-                            recordValues = new Double[this.sizeOfCol+1];
-                        }while(resultIdentical.next());
-                    }
-                    clusterRecsIds.add(new Pair (previousRec,records));
-                    counter++;
-                    recordsIds = recordsIdsTemp.size() >= 1000 ?  recordsIdsTemp.stream().limit(990).collect(Collectors.toList()) : new ArrayList(recordsIdsTemp);
-                }*/ 
             }
             
             metaDataIdentical = resultIdentical.getMetaData();
@@ -2126,11 +1845,9 @@ public class DiskData implements Data,Serializable{
                     }
                     previousRec = recordValues; 
                     recordValues = new Double[this.sizeOfCol+1];
-//                        System.out.println("Previous "+Arrays.toString(previousRec)+" now "+Arrays.toString(recordValues));
                 }while(resultIdentical.next());
             }
             clusterRecsIds[pointer++]=new Pair (previousRec,records);
-            counter++;
             
             
         }catch(Exception e){
@@ -2145,13 +1862,6 @@ public class DiskData implements Data,Serializable{
                 }
             }
             
-//            if(stmnt2!=null){
-//                try {
-//                    stmnt2.close();
-//                } catch (SQLException ex) {
-//                    Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
-//                }
-//            }
             
             if(result!=null){
                 try {
@@ -2188,9 +1898,6 @@ public class DiskData implements Data,Serializable{
         try{
             if(!recordsIds.isEmpty()){
                 stm = this.conn.createStatement();
-
-
-//                System.out.println("Records ids "+Arrays.toString(recordsIds.toArray()).replace("[", "(").replace("]", ")").replaceAll(",", "),("));
                 stm.execute(sqlInsert+Arrays.toString(recordsIds.toArray()).replace("[", "(").replace("]", ")").replaceAll(",", "),("));
             }
         }catch(Exception e){
@@ -2231,86 +1938,6 @@ public class DiskData implements Data,Serializable{
         }
     }
     
-    public void sortDatabase(Integer[] columnsQuasi){
-//        try{
-//            String sqlCreateTable = "CREATE TABLE ordered_dataset (\n"
-//                + " id integer PRIMARY KEY,\n";
-//            String sqlOrder = "SELECT * FROM dataset ORDER BY ";
-//            String insertTable = "INSERT INTO ordered_dataset (id,";
-//            String dataType;
-//            String StrQuestionMark = "";
-//            int counter=0;
-//            
-//            for(Entry<Integer,String> entry : this.colNamesPosition.entrySet()){
-//                counter++;
-//                dataType = this.colNamesType.get(entry.getKey());
-//                sqlCreateTable += " "+entry.getValue();
-//                
-//                if(dataType.equals("int")){
-//                    dataType = " integer";
-//                }
-//                else if(dataType.equals("double")){
-//                    dataType = " real";
-//                }
-//                else if(dataType.equals("date") || dataType.equals("string")){
-//                    dataType = " real";
-//                }
-//                
-//                if(counter == this.colNamesPosition.size()){
-//                    insertTable += ""+entry.getValue()+") VALUES(?,";
-//                    sqlCreateTable += dataType+"\n);";
-//                    StrQuestionMark += "?)";
-//                    
-//                }
-//                else{
-//                    insertTable += ""+entry.getValue()+",";
-//                    sqlCreateTable += dataType+",\n";
-//                    StrQuestionMark += "?,";
-//                }
-//                
-//            }
-//            for(int j=0; j<columnsQuasi.length; j++){
-//                if(j==columnsQuasi.length-1){
-//                    sqlOrder += ""+this.colNamesPosition.get(columnsQuasi[j]);
-//                }
-//                else{
-//                    sqlOrder += ""+this.colNamesPosition.get(columnsQuasi[j])+",";
-//                }
-//            }
-//            
-//            String sql = insertTable+" "+sqlOrder;
-//            
-//            Statement stmnt = conn.createStatement();
-//            stmnt.execute(sqlCreateTable);
-//            System.out.println("Ordered Table created!");
-//            System.out.println("insert "+insertTable+StrQuestionMark);
-//            ResultSet resultSet = stmnt.executeQuery(sqlOrder);
-//            ResultSetMetaData rsmd = resultSet.getMetaData();
-//            int columnsNumber = rsmd.getColumnCount();
-//            while (resultSet.next()) {
-//                PreparedStatement pstmt = conn.prepareStatement(insertTable+StrQuestionMark);
-//                for (int i = 1; i <= columnsNumber; i++) {
-////                    if (i > 1) System.out.print(",  ");
-////                    String columnValue = resultSet.getString(i);
-////                    System.out.print(columnValue + " " + rsmd.getColumnName(i));
-////                    System.out.println("Type"+rsmd.getColumnTypeName(i));
-//                    if(rsmd.getColumnTypeName(i).toLowerCase().equals("integer")){
-//                        pstmt.setInt(i, resultSet.getInt(i));
-//                    }
-//                    else {
-//                        pstmt.setDouble(i, resultSet.getDouble(i));
-//                    }
-//                }
-//                System.out.println("");
-//                pstmt.executeUpdate();
-//            }
-//        }
-//        catch(Exception e){
-//            e.printStackTrace();
-//            System.err.println("Error: "+e.getMessage());
-//        }
-        
-    }
 
     @Override
     public Map<Integer, String> getColNamesType() {
@@ -2410,10 +2037,8 @@ public class DiskData implements Data,Serializable{
         Statement stm = null;
         String insertSql = "INSERT INTO anonymized_dataset SELECT * FROM dataset WHERE id IN ";
         try{
-//            System.out.println("Intert Anonymize "+insertSql+this.anonymizedRecords.toString().replace("[", "(").replace("]", ")"));
             stm = this.conn.createStatement();
-            stm.execute(insertSql+this.anonymizedRecords.toString().replace("[", "(").replace("]", ")"));
-//            
+            stm.execute(insertSql+this.anonymizedRecords.toString().replace("[", "(").replace("]", ")"));           
             this.anonymizedRecords.clear();
         }catch(Exception e){
             e.printStackTrace();
@@ -2465,43 +2090,13 @@ public class DiskData implements Data,Serializable{
         Double[] errMesg = null;
         System.out.println("Execute Anonymized batch");
         try{
-//            String insertSql = "INSERT INTO anonymized_dataset(";
-//            String valuesStr ="";
-//            for(int j=0; j<this.sizeOfCol; j++){
-//                if(j==this.sizeOfCol-1){
-//                    insertSql += this.colNamesPosition.get(j)+") VALUES(";
-//                    valuesStr += "?)";
-//                }
-//                else{
-//                    if(j==0){
-//                        insertSql += "id_an,"+this.colNamesPosition.get(j)+",";
-//                        valuesStr += "?,?,";
-//                    }
-//                    else{
-//                       insertSql += this.colNamesPosition.get(j)+","; 
-//                       valuesStr += "?,";
-//                    }
-//                }
-//            }
             this.conn.setAutoCommit(false);
             pstm = conn.prepareStatement(this.anonymizeQuery);
             for(int i=0; i<records.length; i++){
-//                    System.out.println("Record "+Arrays.toString(records[i]));
                 for(int j=0; j<this.sizeOfCol+1; j++){
                     errMesg = records[i];
-//                    System.out.println("recRow "+i+" col "+j);
-//                    System.out.println("rec "+Arrays.toString(records[i]));
                     if(j==0){
                         pstm.setInt(j+1, records[i][j].intValue());
-//                            if(ids.contains(records[i][j])){
-//                                System.out.println("Problem with record "+Arrays.toString(records[i]));
-//                            }
-//                            else{
-//                                ids.add(records[i][j]);
-//                            }
-//                            ids.add(records[i][j]);
-
-
                     }
                     else if(this.colNamesType.get(j-1).equals("int")){
                         pstm.setInt(j+1, records[i][j].intValue());
@@ -2597,53 +2192,17 @@ public class DiskData implements Data,Serializable{
     }
     
     public void executeAnonymizedClusterBatch(Double[][][] clusterRecords){
-        String sqlUpdate = "";
-//        PreparedStatement pstm = null;
-        Set<Double> ids = new HashSet();
         Double[] errMesg = null;
         System.out.println("Execute Anonymized batch");
         try{
-//            String insertSql = "INSERT INTO anonymized_dataset(";
-//            String valuesStr ="";
-//            for(int j=0; j<this.sizeOfCol; j++){
-//                if(j==this.sizeOfCol-1){
-//                    insertSql += this.colNamesPosition.get(j)+") VALUES(";
-//                    valuesStr += "?)";
-//                }
-//                else{
-//                    if(j==0){
-//                        insertSql += "id_an,"+this.colNamesPosition.get(j)+",";
-//                         valuesStr += "?,?,";
-//                    }
-//                    else{
-//                       insertSql += this.colNamesPosition.get(j)+","; 
-//                       valuesStr += "?,";
-//                    }
-//                }
-//            }
-//            this.conn.setAutoCommit(false);
-//            pstm = conn.prepareStatement(this.anonymizeQuery);
-//            System.out.println("SQl : "+insertSql+valuesStr);
             
             for(int l=0; l<clusterRecords.length; l++){
                 Double[][] records = clusterRecords[l];
                 for(int i=0; i<records.length; i++){
-//                    System.out.println("Record "+Arrays.toString(records[i]));
                     errMesg = records[i];
                     for(int j=0; j<this.sizeOfCol+1; j++){
-    //                    System.out.println("recRow "+i+" col "+j);
-    //                    System.out.println("rec "+Arrays.toString(records[i]));
                         if(j==0){
                             this.anonymizeStatement.setInt(j+1, records[i][j].intValue());
-//                            if(ids.contains(records[i][j])){
-//                                System.out.println("Problem with record "+Arrays.toString(records[i]));
-//                            }
-//                            else{
-//                                ids.add(records[i][j]);
-//                            }
-//                            ids.add(records[i][j]);
-
-
                         }
                         else if(this.colNamesType.get(j-1).equals("int")){
                             this.anonymizeStatement.setInt(j+1, records[i][j].intValue());
@@ -2655,9 +2214,6 @@ public class DiskData implements Data,Serializable{
                     this.anonymizeStatement.executeUpdate();
                 }
             }
-            
-//            this.anonymizedRecordsClusters.clear();
-//            conn.commit();
             System.out.println("Done execute Anonymized batch");
         }catch(Exception e){
             e.printStackTrace();
@@ -2666,7 +2222,6 @@ public class DiskData implements Data,Serializable{
     }
     
     public void executeAnonymizedClusterBatch(){
-        String sqlUpdate = "";
         PreparedStatement pstm = null;
         Set<Double> ids = new HashSet();
         System.out.println("Execute Anonymized batch");
@@ -2691,14 +2246,10 @@ public class DiskData implements Data,Serializable{
             }
             this.conn.setAutoCommit(false);
             pstm = conn.prepareStatement(insertSql+valuesStr);
-//            System.out.println("SQl : "+insertSql+valuesStr);
             synchronized(anonymizedRecordsClusters){
                 for(Double[][] records : this.anonymizedRecordsClusters){
                     for(int i=0; i<records.length; i++){
-    //                    System.out.println("Record "+Arrays.toString(records[i]));
                         for(int j=0; j<this.sizeOfCol+1; j++){
-        //                    System.out.println("recRow "+i+" col "+j);
-        //                    System.out.println("rec "+Arrays.toString(records[i]));
                             if(j==0){
                                 pstm.setInt(j+1, records[i][j].intValue());
                                 if(ids.contains(records[i][j])){
