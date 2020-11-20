@@ -273,10 +273,22 @@ public class ClusterBasedAlgorithm implements Algorithm {
         this.diskClusters.setLastClusterId(this.diskClusters.getmaxIdCluster());
         this.initialClusters = this.diskClusters.getLastClusterId();
         if(very_small_k()){
-            Double[] simple_rec = this.randomRecords[0].getKey();
+            int i=0; 
+            
+            while(this.randomRecords[i]==null){
+                i++;
+            }
+            Double[] simple_rec = this.randomRecords[i].getKey();
             this.randomRecords=null;
             this.diskClusters.setSplit(!very_small_k());
-            this.cltree = new ClusterDistTree(this.clustersCentroids,((int)(this.diskClusters.getLastClusterId() * this.clustersProportion))/*30*/,this.diskClusters.getmaxIdCluster());
+            int childsTree;
+            if(((int)(this.diskClusters.getLastClusterId() * this.clustersProportion)) >1 ){
+                childsTree = ((int)(this.diskClusters.getLastClusterId() * this.clustersProportion));
+            }
+            else{
+               childsTree = 30; 
+            }
+            this.cltree = new ClusterDistTree(this.clustersCentroids,childsTree,this.diskClusters.getmaxIdCluster());
             System.out.println("Tree dist build");
             cltree.print();
             RangeDouble simpleRange = cltree.findRange(simple_rec);
@@ -286,7 +298,7 @@ public class ClusterBasedAlgorithm implements Algorithm {
     }
     
     private boolean very_small_k(){
-        return ((double)this.k / this.diskData.getRecordsTotal()) < 0.0001 && (this.initialClusters * 0.01) > 1;
+        return ((double)this.k / this.diskData.getRecordsTotal()) < 0.0001 && (this.initialClusters * 0.01) > 1 /*&& ((int)(this.initialClusters * this.clustersProportion)) > 1*/;
     }
      
     private void initialiseSlaves(){
@@ -395,6 +407,10 @@ public class ClusterBasedAlgorithm implements Algorithm {
                         if(rangeBigCl.getUpperBound().intValue() > bigClusters.size()){
                             rangeBigCl.setUpperBound((double)bigClusters.size());
                         }
+                        
+                        if(rangeBigCl.getUpperBound().intValue() < rangeBigCl.getLowerBound()){
+                            break;
+                        }
                     }
 
                     for(int i=0; i< numSlavesBig; i++){
@@ -410,8 +426,14 @@ public class ClusterBasedAlgorithm implements Algorithm {
                     System.out.println("End split");
                 }
 
-
-                this.cltree = new ClusterDistTree(this.clustersCentroids,((int)(this.diskClusters.getLastClusterId() * clustersProportion))/*30*/,this.diskClusters.getmaxIdCluster());
+                int childsTree;
+                if(((int)(this.diskClusters.getLastClusterId() * this.clustersProportion)) > 1){
+                    childsTree = ((int)(this.diskClusters.getLastClusterId() * this.clustersProportion));
+                }
+                else{
+                   childsTree = 30; 
+                }
+                this.cltree = new ClusterDistTree(this.clustersCentroids,childsTree,this.diskClusters.getmaxIdCluster());
             }
             
             if(rangeMain.upperBound>=this.diskData.getRecordsTotal()){
@@ -448,6 +470,7 @@ public class ClusterBasedAlgorithm implements Algorithm {
 
     private void removeSmallclusters(){
         List<Integer> smallClustersId = this.diskClusters.getSmallClusters();
+        System.out.println("Max ID "+this.diskClusters.getmaxIdCluster());
         if(very_small_k()){
             if(!smallClustersId.isEmpty()){
                 
@@ -455,8 +478,20 @@ public class ClusterBasedAlgorithm implements Algorithm {
                 
                 System.out.println("Start tree");
                 System.out.println("Cluster info "+this.diskClusters.numOfClusters()+" "+this.diskClusters.getmaxIdCluster());
-                this.cltree = new ClusterDistTree(this.clustersCentroids,((int)(this.diskClusters.getmaxIdCluster()*this.clustersProportion)),this.diskClusters.getmaxIdCluster());
-                this.cltree.print();
+//                int childsTree;
+//                if(((int)(this.diskClusters.getmaxIdCluster() * this.clustersProportion)) == 1){
+//                    childsTree = ((int)(this.diskClusters.getLastClusterId() * this.clustersProportion));
+//                }
+//                else{
+//                   childsTree = 30; 
+//                }
+                if(this.diskClusters.getmaxIdCluster() > 100){
+                    this.cltree = new ClusterDistTree(this.clustersCentroids,((int)(this.diskClusters.getmaxIdCluster()*this.clustersProportion)),this.diskClusters.getmaxIdCluster());
+                    this.cltree.print();
+                }   
+                else{
+                    this.cltree = null;
+                }
                 System.out.println("End tree");
                 System.out.println("Unique "+smallClusterRecords.length);
                 int numRecordsSlave = (smallClusterRecords.length + numOfSlaves -1)/numOfSlaves;
@@ -496,6 +531,9 @@ public class ClusterBasedAlgorithm implements Algorithm {
                     Slave.setCentroids(this.clustersCentroids);
                     for(int i=0; i< slaveBig; i++){
                         System.out.println("Sublist range"+rangeBigCl);
+                        if(rangeBigCl.getLowerBound() > rangeBigCl.getUpperBound()){
+                            break;
+                        }
                         slaves[i] =  new Slave(i+1,this.hierarchies,bigClusters.subList(rangeBigCl.lowerBound.intValue(), rangeBigCl.upperBound.intValue()));
                         rangeBigCl = new RangeDouble((double)rangeBigCl.lowerBound.intValue()+numClusters,(double)rangeBigCl.upperBound.intValue()+numClusters);
                         slaves[i].start();

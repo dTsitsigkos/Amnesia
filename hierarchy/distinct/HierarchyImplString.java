@@ -199,6 +199,9 @@ public class HierarchyImplString implements Hierarchy<Double> {
                         
                         if(dictData.containsString(tkn)){
                             strId = dictData.getStringToId(tkn).doubleValue();
+                            
+                            dict.putIdToString(strId.intValue(), tkn);
+                            dict.putStringToId(tkn, strId.intValue());
                         }
                         else{
                            
@@ -258,6 +261,9 @@ public class HierarchyImplString implements Hierarchy<Double> {
                     
                     if(dictData.containsString(token)){
                         strId = dictData.getStringToId(token).doubleValue();
+                        
+                        dict.putIdToString(strId.intValue(), token);
+                        dict.putStringToId(token, strId.intValue());
                     }
                     else{
                         if(!dict.containsString(token)){
@@ -322,6 +328,8 @@ public class HierarchyImplString implements Hierarchy<Double> {
                     else if(isChild){
                         if(dictData.containsString(token)){
                             strId = dictData.getStringToId(token).doubleValue();
+                            dict.putIdToString(strId.intValue(), token);
+                            dict.putStringToId(token, strId.intValue());
                         }
                         else {
                             strId = dict.getStringToId(token).doubleValue();
@@ -1822,6 +1830,7 @@ public class HierarchyImplString implements Hierarchy<Double> {
                     if(parent == null && root.doubleValue()!=dataset[i][j]){
                         String value = d.getDictionary().getIdToString((int)dataset[i][j]);
                         if(value == null){
+                            System.out.println("Null in dictionary");
                             value = dict.getIdToString((int)dataset[i][j]);
                         }
                         if(value.equals("NaN")){

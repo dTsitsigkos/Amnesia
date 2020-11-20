@@ -444,16 +444,22 @@ public class DiskData implements Data,Serializable{
                     if (checkColumns[i] == true){
                         if (colNamesType.get(counter1).contains("int") ){
                             if ( !temp[i].equals("")){
+                                try {
+                                    dataSet[0][counter1] = Integer.parseInt(temp[i]);
+                                } catch (java.lang.NumberFormatException exc) {
+                                    exc.printStackTrace();
                                     try {
-                                        dataSet[0][counter1] = Integer.parseInt(temp[i]);
-                                    } catch (java.lang.NumberFormatException exc) {
-                                        System.out.println("Column : " + colNames[i] + " is chosen as integer and you have double values");
+                                        dataSet[0][counter1] = new Double(temp[i]).intValue();
+                                    } catch (Exception exc1) {
+                                        exc1.printStackTrace();
+//                                        System.out.println("Column : " + colNames[i] + " is chosen as integer and you have double values");
                                         return null;
-                                    }   
-                                }
-                                else{
-                                    dataSet[0][counter1] = 2147483646;
-                                }
+                                    }  
+                                }   
+                            }
+                            else{
+                                dataSet[0][counter1] = 2147483646;
+                            }
                         }
                         else if (colNamesType.get(counter1).contains("double")){
                             if ( !temp[i].equals("")){

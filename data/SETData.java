@@ -186,6 +186,7 @@ public class SETData implements Data,Serializable {
         int counter = 0;
         int stringCount;
         if(dictionary.isEmpty() && dictHier.isEmpty()){
+            System.out.println("Both Empty");
             stringCount = 1;
         }
         else {
@@ -233,6 +234,9 @@ public class SETData implements Data,Serializable {
                             var = "NaN";
                         }
                         if (!dictionary.containsString(var) && !this.dictHier.containsString(var)){
+                            if(var.equals("79902")){
+                                System.out.println("No in dictionaries");
+                            }
                             if(var.equals("NaN")){
                                dictionary.putIdToString(2147483646, var);
                                dictionary.putStringToId(var,2147483646);
@@ -250,10 +254,16 @@ public class SETData implements Data,Serializable {
                        else{
                            //if string is present in the dictionary, get its id
                            if(dictionary.containsString(var)){
+                               if(var.equals("79902")){
+                                    System.out.println("In dictionary data");
+                                }
                                int stringId = dictionary.getStringToId(var);
                                dataSet[counter][i] = stringId;
                            }
                            else{
+                               if(var.equals("79902")){
+                                    System.out.println("In dictionary hier");
+                                }
                                int stringId = this.dictHier.getStringToId(var);
                                dataSet[counter][i] = stringId;
                            }

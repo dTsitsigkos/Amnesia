@@ -489,7 +489,12 @@ public class Apriori implements Algorithm {
                         else{
 //                            System.out.println("Parents ");
                             Set<Double> children = this.hierarchy.getChildrenIds(nodeId);
-                            costs.put(nodeId.intValue(), (double)children.size() / (double)domainSize);
+                            if(children!=null){
+                                costs.put(nodeId.intValue(), (double)children.size() / (double)domainSize);
+                            }
+                            else{
+                               testGens.put(nodeId.intValue(), -1); 
+                            }
 //                            System.out.println("Node id first"+nodeId+" str "+this.hierarchy.getDictionary().getIdToString(nodeId.intValue())+"  "+costs.get(nodeId.intValue()));
 
                         }

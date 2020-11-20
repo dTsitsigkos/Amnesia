@@ -300,8 +300,6 @@ public class TXTData implements Data,Serializable{
                     for (int i = 0; i < temp.length ; i ++ ){
                         if (checkColumns[i] == true){
                         
-                            if ( temp[i].equals("")){
-                            }
 
                             if ( colNamesType.get(counter1).contains("int") ){
                                 if ( !temp[i].equals("")){
@@ -309,8 +307,14 @@ public class TXTData implements Data,Serializable{
                                         dataSet[counter][counter1] = Integer.parseInt(temp[i]);
                                     } catch (java.lang.NumberFormatException exc) {
                                         //ErrorWindow.showErrorWindow("Column : " + colNames[i] + " is chosen as integer and you have double values");
-                                        System.out.println("Column : " + colNames[i] + " is chosen as integer and you have double values");
-                                        return null;
+                                        exc.printStackTrace();
+                                        try {
+                                            dataSet[counter][counter1] = new Double(temp[i]).intValue();
+                                        } catch (Exception exc1) {
+                                            exc1.printStackTrace();
+    //                                        System.out.println("Column : " + colNames[i] + " is chosen as integer and you have double values");
+                                            return null;
+                                        }
                                     }   
                                 }
                                 else{

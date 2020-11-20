@@ -48,6 +48,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -281,7 +282,8 @@ class AppController {
                 file = request.getFile(uploadedFile);
                 mimeType = file.getContentType();
                 filename = file.getOriginalFilename();
-                bytes = file.getBytes();
+//                bytes = file.getBytes();
+                
 
 //                System.out.println("uploadedFile = " + uploadedFile +"\tfile =" + file +"\t mimeType =" + mimeType + "\tilename = "+ filename +"\tbytes = " + bytes);
 
@@ -293,10 +295,19 @@ class AppController {
             try{ // Create the file on server
                 File serverFile = new File(dir.getAbsolutePath()
                                 + File.separator + filename);
-                BufferedOutputStream stream = new BufferedOutputStream(
-                                new FileOutputStream(serverFile));
-                stream.write(bytes);
-                stream.close();
+//                BufferedOutputStream stream = new BufferedOutputStream(
+//                                new FileOutputStream(serverFile));
+//                stream.write(bytes);
+//                stream.close();
+                
+                InputStream fis = file.getInputStream();
+                DataOutputStream dout = new DataOutputStream(new FileOutputStream(serverFile));
+                byte[] buffer = new byte[1024*1000];
+                
+                int b;
+                while ((b = fis.read(buffer)) >= 0) {
+                    dout.write(buffer,0,b);
+                }
 
                 //logger.info("Server File Location="
                 //		+ serverFile.getAbsolutePath());
@@ -526,16 +537,27 @@ class AppController {
                 }*/
 //                throw new Exception("kalos kalos!! kalos..");
                     
-                byte[] bytes = file.getBytes();
+//                byte[] bytes = file.getBytes();
 
                 // Create the file on server
                 File serverFile = new File(dir.getAbsolutePath()
                                 + File.separator + file.getOriginalFilename());
-                BufferedOutputStream stream = new BufferedOutputStream(
-                                new FileOutputStream(serverFile));
-                stream.write(bytes);
-                stream.close();
-
+//                BufferedOutputStream stream = new BufferedOutputStream(
+//                                new FileOutputStream(serverFile));
+//                stream.write(bytes);
+//                stream.close();
+                
+                InputStream fis = file.getInputStream();
+                DataOutputStream dout = new DataOutputStream(new FileOutputStream(serverFile));
+                byte[] buffer = new byte[1024*1000];
+                
+                int b;
+                while ((b = fis.read(buffer)) >= 0) {
+                    dout.write(buffer,0,b);
+                }
+                
+                dout.close();
+                fis.close();
                 //logger.info("Server File Location="
                 //		+ serverFile.getAbsolutePath());
 
@@ -597,6 +619,7 @@ class AppController {
         
         dict = HierarchyImplString.getWholeDictionary();
         if(dict == null){
+            System.out.println("Whole Dictionary is null");
             dict = new DictionaryString();
         }
 //        if(hierarchies!=null){
@@ -1523,7 +1546,7 @@ class AppController {
         Future<String> future = null;
         System.out.println("Algorithm starts");
         try {
-            if(os.equals("online")){
+            if(os.equals("")){
                 ExecutorService executor = Executors.newCachedThreadPool();
                 final Algorithm temp = algorithm;
                 future = executor.submit( new Callable<String>() {
@@ -2236,8 +2259,8 @@ System.out.println("url = " + url);
                 for(Map.Entry<String,Hierarchy> entry : hierarchies.entrySet()){
                     Hierarchy h = entry.getValue();
                     if(h instanceof HierarchyImplString){
-                        if(h.getDictionaryData().getMaxUsedId() > dict.getMaxUsedId()){
-                            dict = h.getDictionaryData();
+                        if(h.getDictionary().getMaxUsedId() > dict.getMaxUsedId()){
+                            dict = h.getDictionary();
                         }
                     }
 
@@ -2760,7 +2783,7 @@ System.out.println("url = " + url);
         boolean FLAG = false;
         Map<Integer, Set<String>> toSuppress;
         int []qids;
-        Map<Integer, Hierarchy> quasiIdentifiers = new HashMap<Integer, Hierarchy>();
+        Map<Integer, Hierarchy> quasiIdentifiers =  (Map<Integer, Hierarchy>)session.getAttribute("quasiIdentifiers");
         int dataSizeSuppress = 0;
         
         
@@ -2838,7 +2861,7 @@ System.out.println("url = " + url);
                         if(solStat.getSupport(values) < k){
                             count += solStat.getSupport(values);
                             setAnon.add(values.toString());
-                            if(entry.getKey().toString().equals(selectedAttrNames)){
+                            if(entry.getKey().toString().equals(selectedAttrNames) && checkQuasi(dataset, quasiIdentifiers,selectedAttrNames)){
                                 suppress = true;
                             }
                         }
@@ -2951,6 +2974,16 @@ System.out.println("url = " + url);
 
         return solutions;
         
+    }
+    
+    private boolean checkQuasi(Data dataset,Map<Integer, Hierarchy> quasi,String attrNames){
+        String quasiNames="";
+        Map<Integer,String> namesCol = dataset.getColNamesPosition();
+        for(Map.Entry<Integer, Hierarchy> entry : quasi.entrySet()){
+            quasiNames += namesCol.get(entry.getKey());
+        }
+        
+        return attrNames.replaceAll(" ", "").equals(quasiNames);
     }
     
     

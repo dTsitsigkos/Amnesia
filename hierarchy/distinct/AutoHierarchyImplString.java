@@ -210,6 +210,12 @@ public class AutoHierarchyImplString extends HierarchyImplString {
                     tempArray[j] = chId;
                     parents.put(chId, ranId);
                     stats.put(chId, new NodeStats(curHeight));
+                    
+                    
+                    if(dictData.containsId(chId.intValue()) && curHeight==height-1){
+                        dict.putIdToString(chId.intValue(), dictData.getIdToString(chId.intValue()));
+                        dict.putStringToId(dictData.getIdToString(chId.intValue()), chId.intValue());
+                    }
                 }
                 
                 //array size is not curFanout (elements finished), resize 
