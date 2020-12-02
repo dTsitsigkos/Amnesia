@@ -1,6 +1,13 @@
 # Amnesia
 https://amnesia.openaire.eu/
 
+version: 1.2.2 (release date: 18/11/2020):
+
+-Increased upload file size
+
+-Bugs fixed in hierarchy section
+
+-Bug fixed in date values localization
 
 version: 1.2.1 (release date: 11/07/2020):
 
