@@ -4193,7 +4193,10 @@ System.out.println("url = " + url);
         }
         
         }catch(Exception e){
+            e.printStackTrace();
             this.errorHandling(e.toString(), session);
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.getOutputStream().println("Failed anonymization procedure!");
         }
 //        response.setContentType("text/plain");
 //        response.getOutputStream().println("katiksgsf");
