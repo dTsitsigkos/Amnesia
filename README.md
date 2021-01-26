@@ -1,122 +1,236 @@
 # Amnesia
-https://amnesia.openaire.eu/
 
-version: 1.2.2 (release date: 18/11/2020):
+Main website: https://amnesia.openaire.eu/
 
--Increased upload file size
+Download app for windows or linux: https://amnesia.openaire.eu/download.html
 
--Bugs fixed in hierarchy section
+**The code shared here is the whole code of Amnesia back-end, i.e., the anonymization engine. Amnesia has a clear distinction between the GUI (which is in javascript) and the back end engine, which is in Java. Unfortunately, the current Amnesia version uses a commercial library for the GUI (we plan to change this in the future) and we cannot share the code. The whole anonymization process is performed in the backend and it communicated with the GUI through a ReST API. The backend can be used through ReST calls or command line. The engine provided here is always the full and the most updated version of Amnesia.**
 
--Bug fixed in date values localization
+**To successfully build the Amensia engine follow these steps:**
 
-version: 1.2.1 (release date: 11/07/2020):
+1. Clone the project
+2. Go to controller/AppCon.java and set the variable "os" with desired operation system ("windows" or "linux")
+3. Build the project
+4. Take the .jar from the "scr/target" directory
+5. Run via terminal java -Xms1024m -Xmx4096m -Dorg.eclipse.jetty.server.Request.maxFormKeys=1000000 -Dorg.eclipse.jetty.server.Request.maxFormContentSize=1000000 -jar  "path_to_jar_file" --server.port=8181
+    
+The code above will run the Amnesia engine as a service listening to port 8181 (you can change this) with 1G initial main memory and 4G maximum main memory. Feel free to change these according to your needs. We recommend to use at least the aforementioned amount of memory.
 
--Optimized clustering disk based algorithm.
+Using Amnesia
 
--Better handling for "(null)" hierarchy node for unspecified values e.g. empty cells.
+## Anonymization via curl
+**/anonymizedata [POST]**
+This web service is responsible for anonymizing a dataset using template. There are two different ways to call this web service. The first one is, when you have fill out the template file and you would like to anonymize a dataset file. While the second one is, when you don’t have the template, and you would like to create and download the template file.
 
--Bug fixed in km-anonymity algorithm.
+- In the first case, the arguments for the web services are:
 
--Bug fixed in online version.
+     1. files: the absolute path of all the files, that you would like to upload (originaldataset file, template file and hierarchy files). There are some restrictions in this argument, the first file must be the original dataset and the second file must be the template file and then all the hierarchy files.
+     2. del: the split delimiter
+After the execution of the web service, the anonymized dataset is stored in a file, with the name of your choice.
+    Example via terminal:
+    curl -s --form files=@/data/amnesiaAPI/data1/newData.txt --form     files=@/data/amnesiaAPI/template.txt --form     files=@/data/amnesiaAPI/data1/distinct_hier_salary.txt --form     files=@/data/amnesiaAPI/data1/distinct_hier_age.txt --form del=, --out ./(name of output     file) http://localhost:8181/anonymizedata
 
--Bug fixed for non-english character set.
+- In the second case, the arguments are:
+  1. files: only the absolute path of the original dataset.
+  2. del: the split delimiter
+After the execution of the web service, the template file is stored in a file, name of your choice.
+    Example via terminal:
+    curl -s --form files=@/data/amnesiaAPI/data1/newData.txt --form del=, --out ./(name of template file) http://localhost:8181/anonymizedata
 
--Bug fixed for parsing dates with specific localization.
+## Invoke Amnesia via command line
+To facilitate the use of the Amnesia engine through command line, we have created a script that performs the complete anonymization of a datafile through a single function call. All anonymization parameters are provided through an anonymization template. The script can be found in the current repository as AmnesiaApi.sh
+Invoking the script with an instantiated template, where all anonymization parameters have been set, will result to an anonymized dataset. 
+In this case, the arguments for the web services are:
+del: split delimiter
+d: absolute path of the dataset
+t: absolute paths of the template and hierarchies
+    The output of this web service is a success message and downloads the anonymized dataset, which is stored in a file, with the name of your choice.
+    Example via terminal:
+    ./amnesiaApi.sh -del “delimiter” -d path/to/dataset -t path/to/filled/template     path/to/hierarchy1 path/to/hierarchy2 –out (name of output file)
+If the script is invoked with the 3rd argument then it creates an empty template to be filled by the user. In this case, the arguments are:
+del: split delimiter
+d: absolute path of the dataset
+    The output of this web service is a success message and downloads the template file, which is stored in a file, with the name template.txt.
+    Example via terminal:
+    ./amnesiaApi.sh -del “delimiter” -d path/to/dataset –out (name of template file)
+The big difference between the API and the script is that the script has error handling, which is very helpful. 
 
-version: 1.2.0
+## Template Specification
+The script of the amnesia API is separated in two procedures, as we mention above. In the first function the user asks for a specific dataset to create a template, in which the user give the appropriate information about the dataset and how the algorithms of the amnesia will handle the dataset in order to anonymize it. So, in the second procedure the user gives the dataset, the filled template and the appropriate hierarchies in order to anonymize the data.
 
--Checked values existence in hierarchy tree.
+**1st functionality: Creating the template**
+  The downloaded template has the below form: 
+  ////////////////////// check columns, vartypes /////////////////////////////
 
--Fixed bug on Safari browser.
+  columName1: true,string
+  columName2: true,int
+  columName3: true,string
+  columName4: true,decimal
+  columName5: false,string
+  columName6: true,int
 
--Fixed bugs on hierarchy's operations (add, edit, delete).
+  //////////////////// END ////////////////////////////////////////////
 
--Fixed bug on suppression functionality.
+  /////////////////// set k /////////////////////////////////////
 
--Better handling of the empty cells for range type of hierarchy.
+  k:
 
--Fixed bug for windows OS related on java version.
+  As we can observe the template contains all the column names followed by varied values. The first is a Boolean value which indicates if the specific column will participate in the anonymization procedure. The second value is the type (int, decimal, string, date) of the data of the specific column. Also, there is an optional third value which is the name of the hierarchy that will be applied in the specific column. Lastly, the user must set the value of k.
 
--New clustering disk based algorithm.
+**2nd functionality: Anonymize the data**
+  parameters: the path of the dataset, the delimiter of the dataset, the path of filled template, a list of paths of the appropriate hierarchy files and the path of the file where the anonymized data are going to be downloaded
 
--Setted limits on dataset's records and on hierarchy's nodes for on-line version.
+  Example of the command line rule
+  ./amnesiaApi.sh -del “delimiter” -d path/to/dataset -t path/to/filled/template path/to/hierarchy1 path/to/hierarchy2 –out path/to/anonymized/data (the last file path may not exist and it will be automatically created)
 
--Faster loading of date values in dataset.
+  Example of filled template
 
--Fixed bug for decimal values with comma.
+  ////////////////////// check columns, vartypes /////////////////////////////
 
--Changed loading data-types.
+  columName1: true,string,hierarchy1name
+  columName2: true,int
+  columName3: true,string,hierarchy2name
+  columName4: true,decimal
+  columName5: false,string
+  columName6: true,int
 
--Fixed bug on rage date type with the same bounds.
+  //////////////////// END ////////////////////////////////////////////
 
-version: 1.1.1
+  /////////////////// set k /////////////////////////////////////
 
--Increased the Java heap size.
+  k: 3
 
--Fixed a bug causing crushed in the windows' version of Amnesia.
+Explanation: After -del the user puts the delimiter of the dataset (. , ! etc.), in the case of the semicolon (;) the user must put the “s” character because of the fact that the terminal recognises the semicolon as seperator of the command line rule. Then after -d and -t the path of the dataset and of the template must be put respectively and finally after –out the user must put the location and the filename where the anonymized data will be downloaded e.g –out /home/exampleuser/downloads/anomData.txt.
 
--The on-line version of Amnesia is restricted to 3 minutes of processing time per anonymization task.
 
--Fixed bug with characher encoding on several Linux distributions.
 
-version: 1.1.0
 
--New algorithm for Object-relational dataset (combination between relational dataset and set-valued dataset).
+## Version History
 
--Update error handling.
+**version 1.2.3 (release date: 26/01/2021)**
+- New feature, autogeneration masking based hierarc for strings
 
--Bugs fixed in hierarchy editing.
+- Fixed bug in date formatting
 
--Hierarchy removing.
+- Fixed bug in dataset loading
 
--Bugs fixed when the results are appeared.
+**version: 1.2.2**
 
-version: 1.0.7
+- Increased upload file size
 
--Updated interface.
+- Bugs fixed in hierarchy section
 
--Several bugs fixed.
+- Bug fixed in date values localization
 
-version: 1.0.6
--Template implementation via terminal.
+**version: 1.2.1**
 
--Template implementation via rest service.
+- Optimized clustering disk based algorithm.
 
-version: 1.0.5
+- Better handling for "(null)" hierarchy node for unspecified values e.g. empty cells.
 
--Date hierarchy editing.
+- Bug fixed in km-anonymity algorithm.
 
--Updated interface.
+- Bug fixed in online version.
 
--Several bugs fixed.
+- Bug fixed for non-english character set.
 
-version: 1.0.4
+- Bug fixed for parsing dates with specific localization.
 
--Wizard for numeric ranges has been updated.
+**version: 1.2.0**
 
--Upgraded scalability capabilities (Bigger files, can now be uploaded).
+- Checked values existence in hierarchy tree.
 
-version: 1.0.3
+- Fixed bug on Safari browser.
 
--Bugs fixed in suppressing and km-anonymity algorithm.
+- Fixed bugs on hierarchy's operations (add, edit, delete).
 
--Changes in text descriptions.
+- Fixed bug on suppression functionality.
 
-version: 1.0.2
+- Better handling of the empty cells for range type of hierarchy.
 
--Bugs fixed in front-end and back-end.
+- Fixed bug for windows OS related on java version.
 
-version: 1.0.1
+- New clustering disk based algorithm.
 
--Better inteface in pie graph.
+- Setted limits on dataset's records and on hierarchy's nodes for on-line version.
 
--Changes in suppressing.
+- Faster loading of date values in dataset.
 
--Hierarchy editing.
+- Fixed bug for decimal values with comma.
 
--Bugs fixed.
+- Changed loading data-types.
 
-version: 1.0.0
+- Fixed bug on rage date type with the same bounds.
 
--Initial release.
+**version: 1.1.1**
+
+- Increased the Java heap size.
+
+- Fixed a bug causing crushed in the windows' version of Amnesia.
+
+- The on-line version of Amnesia is restricted to 3 minutes of processing time per anonymization task.
+
+- Fixed bug with characher encoding on several Linux distributions.
+
+**version: 1.1.0**
+
+- New algorithm for Object-relational dataset (combination between relational dataset and set-valued dataset).
+
+- Update error handling.
+
+- Bugs fixed in hierarchy editing.
+
+- Hierarchy removing.
+
+- Bugs fixed when the results are appeared.
+
+**version: 1.0.7**
+
+- Updated interface.
+
+- Several bugs fixed.
+
+**version: 1.0.6**
+
+- Template implementation via terminal.
+
+- Template implementation via rest service.
+
+**version: 1.0.5**
+
+- Date hierarchy editing.
+
+- Updated interface.
+
+- Several bugs fixed.
+
+**version: 1.0.4**
+
+- Wizard for numeric ranges has been updated.
+
+- Upgraded scalability capabilities (Bigger files, can now be uploaded).
+
+**version: 1.0.3**
+
+- Bugs fixed in suppressing and km-anonymity algorithm.
+
+- Changes in text descriptions.
+
+**version: 1.0.2**
+
+- Bugs fixed in front-end and back-end.
+
+**version: 1.0.1**
+
+- Better inteface in pie graph.
+
+- Changes in suppressing.
+
+- Hierarchy editing.
+
+- Bugs fixed.
+
+**version: 1.0.0**
+
+- Initial release.
 
