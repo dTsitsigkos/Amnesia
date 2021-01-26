@@ -108,7 +108,7 @@ Explanation: After -del the user puts the delimiter of the dataset (. , ! etc.),
 ## Version History
 
 **version 1.2.3 (release date: 26/01/2021)**
-- New feature, autogeneration masking based hierarc for strings
+- New feature, autogeneration masking based hierarchy for strings
 
 - Fixed bug in date formatting
 
