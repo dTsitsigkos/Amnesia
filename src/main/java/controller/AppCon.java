@@ -32,6 +32,7 @@ import hierarchy.HierToJson;
 import hierarchy.Hierarchy;
 import hierarchy.distinct.AutoHierarchyImplDate;
 import hierarchy.distinct.AutoHierarchyImplDouble;
+import hierarchy.distinct.AutoHierarchyImplMaskString;
 import hierarchy.distinct.AutoHierarchyImplString;
 import hierarchy.distinct.HierarchyImplDouble;
 import hierarchy.distinct.HierarchyImplString;
@@ -1072,7 +1073,7 @@ class AppController {
                 this.deleteFiles(session);
             }
 
-            return "xaxaxa";
+            return "OK";
 //        }catch(Exception e){
 //            System.out.println("Edwww exception");
 //            return "Problem with loading anonymization rules "+e.getMessage();
@@ -1131,7 +1132,7 @@ class AppController {
     
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @RequestMapping(value="/action/autogeneratehierarchy", method = RequestMethod.POST) //method = RequestMethod.POST
-    public @ResponseBody String autogeneratehierarchy (@RequestParam("typehier") String typehier, @RequestParam("vartype") String vartype,@RequestParam("onattribute") int onattribute,@RequestParam("step") double step, @RequestParam("sorting") String sorting, @RequestParam("hiername") String hiername, @RequestParam("fanout") int fanout, @RequestParam("limits") String limits, @RequestParam("months") int months, @RequestParam("days") int days, @RequestParam("years") int years, HttpSession session) throws LimitException  {
+    public @ResponseBody String autogeneratehierarchy (@RequestParam("typehier") String typehier, @RequestParam("vartype") String vartype,@RequestParam("onattribute") int onattribute,@RequestParam("step") double step, @RequestParam("sorting") String sorting, @RequestParam("hiername") String hiername, @RequestParam("fanout") int fanout, @RequestParam("limits") String limits, @RequestParam("months") int months, @RequestParam("days") int days, @RequestParam("years") int years,  @RequestParam("length") int length, HttpSession session) throws LimitException  {
         Map<String, Hierarchy> hierarchies  = null;
         hierarchies = (Map<String, Hierarchy>) session.getAttribute("hierarchies");
         Hierarchy h = null;
@@ -1145,8 +1146,11 @@ class AppController {
         Data data = (Data) session.getAttribute("data");
         
         String attribute = data.getColumnByPosition(onattribute);
-
-        if (typehier.equals("distinct")){
+        
+        if(typehier.equals("mask")){
+            h = new AutoHierarchyImplMaskString(hiername, vartype, "distinct",attribute, data,length);
+        }
+        else if (typehier.equals("distinct")){
             if(vartype.equals("int") ||vartype.equals("double")){
                 h = new AutoHierarchyImplDouble(hiername, vartype, "distinct", attribute, sorting, fanout, data);
 
@@ -2890,7 +2894,7 @@ System.out.println("url = " + url);
                     percentageSuppress = ((double)nonAnonymizedCount.get(entry.getKey())/dataSizeSuppress) * 100;
  
                     DecimalFormat df = new DecimalFormat("#.##");      
-                    percentageSuppress = Double.valueOf(df.format(percentageSuppress));
+                    percentageSuppress = Double.valueOf((df.format(percentageSuppress)).replaceAll(",", "."));
                 }
                 solStat = entry.getValue();
                 
@@ -4194,7 +4198,7 @@ System.out.println("url = " + url);
         
         }catch(Exception e){
             e.printStackTrace();
-            this.errorHandling(e.toString(), session);
+            this.errorHandling(e.getLocalizedMessage(), session);
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             response.getOutputStream().println("Failed anonymization procedure!");
         }
@@ -4255,16 +4259,16 @@ System.out.println("url = " + url);
         
         String algorithmSelected = algo;
         
-//        System.out.println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-//        for ( int  i = 0 ; i < relations.length ; i ++){
-//            System.out.println(" relation = " + relations[i]);
-//        }
+        System.out.println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        for ( int  i = 0 ; i < relations.length ; i ++){
+            System.out.println(" relation = " + relations[i]);
+        }
         
         
         
         
         for ( int  i = 0 ; i < relations.length ; i ++){
-            if (!relations[i].equals("")){
+            if (!relations[i].equals("") && hierarchies.get(relations[i])!=null){
                 quasiIdentifiers.put(i, hierarchies.get(relations[i]));
             }
         }
@@ -4279,17 +4283,20 @@ System.out.println("url = " + url);
         String checkHier = null;
         for (Map.Entry<Integer, Hierarchy> entry : quasiIdentifiers.entrySet()) {
             Hierarchy h = entry.getValue();
+            if(h !=null){
 //            if (h.getHierarchyType().equals("range")){
 //                checkHier = h.checkHier(data,entry.getKey());
 //            }
-            if(h instanceof HierarchyImplString){
-                h.syncDictionaries(entry.getKey(),data);
-            }
-            
-            //provlima stin  hierarchia
-            checkHier = h.checkHier(data,entry.getKey());
-            if(checkHier != null && !checkHier.endsWith("Ok")){
-                return checkHier;
+                if(h instanceof HierarchyImplString){
+                    h.syncDictionaries(entry.getKey(),data);
+                }
+
+                //provlima stin  hierarchia
+                checkHier = h.checkHier(data,entry.getKey());
+                if(checkHier != null && !checkHier.endsWith("Ok")){
+                    return checkHier;
+                }
+                System.out.println("Not Null");
             }
         }
 

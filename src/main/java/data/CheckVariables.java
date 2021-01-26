@@ -20,6 +20,7 @@ package data;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * Class for checking type of variables
@@ -36,7 +37,7 @@ public class CheckVariables {
                 "yyyy:MM:dd HH:mm:ss",         "dd/MM/yyyy",
                 "yyyy:MM:dd HH:mm:ss.SS",     "yyyy/MM/dd",
                 "dd MMM yyyy",                "dd-MMM-yyy",
-                "dd-MM-yyyy"};   
+                "dd-MM-yyyy",                   "yyyy-MM-dd"};   
     public String lastFormat;
                                                 
                                                 
@@ -82,8 +83,10 @@ public class CheckVariables {
             for (String parse : formats) {
                 SimpleDateFormat sdf = new SimpleDateFormat(parse);
                 try {
-                    if (sdf.parse(s)!= null){
+                    Date date = sdf.parse(s);
+                    if (s.equals(sdf.format(date))){
                         this.lastFormat = parse;
+                        System.out.println("Printing the value of requst parse " + parse);
                         return true;
                     }
                     System.out.println("Printing the value of " + parse);

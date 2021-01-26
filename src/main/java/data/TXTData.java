@@ -1272,4 +1272,9 @@ public class TXTData implements Data,Serializable{
         return this.sizeOfCol;
     }
 
+    @Override
+    public SimpleDateFormat getDateFormat(int column) {
+        return new SimpleDateFormat("dd/MM/yyyy");
+    }
+
 }

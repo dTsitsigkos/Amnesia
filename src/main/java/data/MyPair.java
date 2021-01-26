@@ -7,8 +7,12 @@ package data;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import dictionary.DictionaryString;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import jsoninterface.View;
 import javafx.util.Pair;
 
@@ -84,16 +88,22 @@ public class MyPair {
                 String []temp;
                 String date;
                 DictionaryString dictionary = dataset.getDictionary();
+                SimpleDateFormat df = dataset.getDateFormat(columnIndex);
+                Calendar cal1 = Calendar.getInstance();
 
                 for(int i=0; i<data.length; i++){
                     Double d = (Double)data[i][columnIndex];
                     date = dictionary.getIdToString(d.intValue());
                     if ( !date.equals("NaN") ){
-                        temp = date.split("/");
-                        min = Integer.parseInt(temp[2]);
-                        max = Integer.parseInt(temp[2]);
-                        counter ++;
-                        break;
+                        try {
+                            cal1.setTime(df.parse(date));
+                            min = cal1.get(Calendar.YEAR);
+                            max = cal1.get(Calendar.YEAR);
+                            counter ++;
+                            break;
+                        } catch (ParseException ex) {
+                            Logger.getLogger(MyPair.class.getName()).log(Level.SEVERE, null, ex);
+                        }
                     }
 
                 }
@@ -101,15 +111,21 @@ public class MyPair {
                 for( int i=counter; i<data.length; i++){
                     Double d = (Double)data[i][columnIndex];   
                     date = dictionary.getIdToString(d.intValue());
+                    cal1 = Calendar.getInstance();
                     if ( !date.equals("NaN") ){
-                        temp = date.split("/");
-                        int tempDate = Integer.parseInt(temp[2]);
-                        if(tempDate > max){
-                            max = tempDate;
-                        } 
-                        else if(tempDate < min ){
-                            min = tempDate;
+                        try {
+                            cal1.setTime(df.parse(date));
+                            int tempDate = cal1.get(Calendar.YEAR);
+                            if(tempDate > max){
+                                max = tempDate;
+                            } 
+                            else if(tempDate < min ){
+                                min = tempDate;
+                            }
+                        } catch (ParseException ex) {
+                            Logger.getLogger(MyPair.class.getName()).log(Level.SEVERE, null, ex);
                         }
+                        
                     }
                 }
 

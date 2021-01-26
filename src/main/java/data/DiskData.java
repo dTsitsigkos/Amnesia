@@ -2385,5 +2385,10 @@ public class DiskData implements Data,Serializable{
         
         return false;
     }
+
+    @Override
+    public SimpleDateFormat getDateFormat(int column) {
+        return new SimpleDateFormat("dd/MM/yyyy");
+    }
     
 }

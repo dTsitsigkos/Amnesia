@@ -1144,5 +1144,10 @@ public class RelSetData implements Data {
         String[] temp = inputFile.split(delimiter,-1);
         return temp[temp.length-1];
     }
+
+    @Override
+    public SimpleDateFormat getDateFormat(int column) {
+        return new SimpleDateFormat("dd/MM/yyyy");
+    }
     
 }

@@ -196,9 +196,15 @@ public class AutoHierarchyImplString extends HierarchyImplString {
             while(prevLevelIndex < prevLevel.length){
                 
                 String ran = randomNumber();
-                dict.putIdToString(strCount, ran);
-                dict.putStringToId(ran, strCount++);
-                Double ranId = (double) strCount - 1;
+                Double ranId;
+                if(dict.containsString(ran)){
+                    ranId = (double) dict.getStringToId(ran);
+                }
+                else{
+                    dict.putIdToString(strCount, ran);
+                    dict.putStringToId(ran, strCount++);
+                    ranId = (double) strCount - 1;
+                }
                 
                 Double[] tempArray = new Double[fanout];
                 

@@ -25,6 +25,7 @@ import javax.swing.JTable;
 import dictionary.DictionaryString;
 import exceptions.DateParseException;
 import hierarchy.Hierarchy;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
@@ -36,7 +37,7 @@ import java.util.LinkedHashMap;
  */
 public interface Data {
     public int online_rows = 5000;
-    public String online_version = "onlinesdaf";
+    public String online_version = "online";
     public double[][] getDataSet();
     public void setData(double[][] _data);
     public int getDataLenght();
@@ -63,5 +64,6 @@ public interface Data {
     public int getRecordsTotal();
     public Map<Integer, String> getColNamesType();
     public String getInputFile();
+    public SimpleDateFormat getDateFormat(int column);
 
 }
