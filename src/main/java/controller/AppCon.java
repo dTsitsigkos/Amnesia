@@ -2987,7 +2987,7 @@ System.out.println("url = " + url);
             quasiNames += namesCol.get(entry.getKey());
         }
         
-        return attrNames.replaceAll(" ", "").equals(quasiNames);
+        return attrNames.replaceAll(" ", "").equals(quasiNames.replaceAll(" ", ""));
     }
     
     
@@ -3405,8 +3405,8 @@ System.out.println("url = " + url);
                 if (nonAnonymizedCount.get(entry.getKey()) != null){
                     percentageSuppress = ((double)nonAnonymizedCount.get(entry.getKey())/dataSizeSuppress) * 100;
  
-                    DecimalFormat df = new DecimalFormat("#.##");      
-                    percentageSuppress = Double.valueOf(df.format(percentageSuppress));
+                    DecimalFormat df = new DecimalFormat("#.##");  
+                    percentageSuppress = Double.valueOf((df.format(percentageSuppress)).replaceAll(",", "."));
                 }
                 solStat = entry.getValue();
                 
@@ -4463,5 +4463,3 @@ System.out.println("url = " + url);
     }
     
 }
-
-

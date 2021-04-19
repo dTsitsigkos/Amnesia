@@ -241,7 +241,7 @@ public class SolutionStatistics {
             
             double percentage = ((double)pageLength/dataLength) * 100;
             DecimalFormat df = new DecimalFormat("#.##");      
-            percentage = Double.valueOf(df.format(percentage));
+            percentage = Double.valueOf((df.format(percentage)).replaceAll(",", "."));
             solutions.setPagePercentange(percentage);
             //solutions.setEndPage(1);
             
