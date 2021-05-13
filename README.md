@@ -108,13 +108,13 @@ Explanation: After -del the user puts the delimiter of the dataset (. , ! etc.),
 ## Version History
 
 **version 1.2.4 (release date: 19/04/2021)**
--Bug fixed in masking based autogeneration hierarchy.
+- Bug fixed in masking based autogeneration hierarchy
 
--Resolved front-end issues.
+- Resolved front-end issues
 
--Bug fixed in suppression.
+- Bug fixed in suppression
 
--Bug fixed in statistics.
+- Bug fixed in statistics
 
 
 
