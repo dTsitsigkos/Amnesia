@@ -63,10 +63,15 @@ The script of the amnesia API is separated in two procedures, as we mention abov
   ////////////////////// check columns, vartypes /////////////////////////////
 
   columName1: true,string
+  
   columName2: true,int
+  
   columName3: true,string
+  
   columName4: true,decimal
+  
   columName5: false,string
+  
   columName6: true,int
 
   //////////////////// END ////////////////////////////////////////////
@@ -88,10 +93,15 @@ The script of the amnesia API is separated in two procedures, as we mention abov
   ////////////////////// check columns, vartypes /////////////////////////////
 
   columName1: true,string,hierarchy1name
+  
   columName2: true,int
+  
   columName3: true,string,hierarchy2name
+  
   columName4: true,decimal
+  
   columName5: false,string
+  
   columName6: true,int
 
   //////////////////// END ////////////////////////////////////////////
