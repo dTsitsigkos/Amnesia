@@ -20,7 +20,7 @@ Using Amnesia
 
 ## Anonymization via curl
 **/anonymizedata [POST]**
-This web service is responsible for anonymizing a dataset using template. There are two different ways to call this web service. The first one is, when you have fill out the template file and you would like to anonymize a dataset file. While the second one is, when you don’t have the template, and you would like to create and download the template file.
+This web service is responsible for anonymizing a dataset using template. There are two different ways to call this web service. The first one is, when you have fill out the template file and you would like to anonymize a dataset file. While the second one is, when you don’t have the template, and you would like to create and download the template file. The anonymization procedure uses the parallel Flash algorithm in order to anonymize the data.
 
 - In the first case, the arguments for the web services are:
 
