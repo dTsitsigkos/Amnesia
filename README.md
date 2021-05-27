@@ -4,7 +4,7 @@ Main website: https://amnesia.openaire.eu/
 
 Download app for windows or linux: https://amnesia.openaire.eu/download.html
 
-**The code shared here is the whole code of Amnesia back-end, i.e., the anonymization engine. Amnesia has a clear distinction between the GUI (which is in javascript) and the back end engine, which is in Java. Unfortunately, the current Amnesia version uses a commercial library for the GUI (we plan to change this in the future) and we cannot share the code. The whole anonymization process is performed in the backend and it communicated with the GUI through a ReST API. The backend can be used through ReST calls or command line. The engine provided here is always the full and the most updated version of Amnesia.**
+**The code shared here is the whole code of Amnesia back-end, i.e., the anonymization engine. Amnesia has a clear distinction between the GUI (which is in javascript) and the back end engine, which is in Java. Unfortunately, the current Amnesia version uses a commercial library for the GUI (we plan to change this in the future) and we cannot share the code. The whole anonymization process is performed in the backend and it communicated with the GUI through a ReST API. The backend can be used through ReST calls or command line. The engine provided here is always the full and the most updated version of Amnesia. The anonymization procedure through ReST AP uses the parallel Flash algorithm in order to anonymize the data.**
 
 **To successfully build the Amensia engine follow these steps:**
 
@@ -20,7 +20,7 @@ Using Amnesia
 
 ## Anonymization via curl
 **/anonymizedata [POST]**
-This web service is responsible for anonymizing a dataset using template. There are two different ways to call this web service. The first one is, when you have fill out the template file and you would like to anonymize a dataset file. While the second one is, when you don’t have the template, and you would like to create and download the template file. The anonymization procedure uses the parallel Flash algorithm in order to anonymize the data.
+This web service is responsible for anonymizing a dataset using template. There are two different ways to call this web service. The first one is, when you have fill out the template file and you would like to anonymize a dataset file. While the second one is, when you don’t have the template, and you would like to create and download the template file.
 
 - In the first case, the arguments for the web services are:
 
