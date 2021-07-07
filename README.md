@@ -122,7 +122,7 @@ Explanation: After -del the user puts the delimiter of the dataset (. , ! etc.),
  
 - Keep 128 characters from the titles of columns 
 
--Cleaning titles of columns from undesired characters
+- Cleaning titles of columns from undesired characters
 
 **version 1.2.4**
 - Bug fixed in masking based autogeneration hierarchy
