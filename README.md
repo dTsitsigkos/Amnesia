@@ -117,7 +117,14 @@ Explanation: After -del the user puts the delimiter of the dataset (. , ! etc.),
 
 ## Version History
 
-**version 1.2.4 (release date: 19/04/2021)**
+**version 1.2.5 (release date: 07/07/2021)**
+- Cleaning non-printable characters
+ 
+- Keep 128 characters from the titles of columns 
+
+-Cleaning titles of columns from undesired characters
+
+**version 1.2.4**
 - Bug fixed in masking based autogeneration hierarchy
 
 - Resolved front-end issues
