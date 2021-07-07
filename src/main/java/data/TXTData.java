@@ -220,7 +220,9 @@ public class TXTData implements Data,Serializable{
             
             //counts lines of the dataset
             while ((strLine = br.readLine()) != null)   {
-                counter++;
+                if(!strLine.trim().isEmpty()){
+                    counter++;
+                }
                 if(AppCon.os.equals(online_version) && counter > online_rows){
                     throw new LimitException("Dataset is too large, the limit is "+online_rows+" rows, please download desktop version, the online version is only for simple execution.");
                 }
@@ -280,6 +282,10 @@ public class TXTData implements Data,Serializable{
                     temp = strLine.split(delimeter,-1);
                     for ( int i = 0 ; i < temp.length ; i ++){
                         if (checkColumns[i] == true){
+                            temp[i] = temp[i].trim().replaceAll("\"", "").replaceAll("[\uFEFF-\uFFFF]", "").replace(".", "").replace("[","(").replace("]", ")");;
+                            if (temp[i].length() > 128){
+                                temp[i] = temp[i].substring(0, 128);
+                            }
                             columns.add(temp[i]);
                             if(colNamesType.get(counterSdf).contains("date")){
                                 sdf[counterSdf] = new SimpleDateFormat(this.formatsDate[counterSdf]);
@@ -294,13 +300,16 @@ public class TXTData implements Data,Serializable{
                     System.out.println("Size "+sizeOfRows+ " and "+columnNames.length);
                     dataSet = new double[sizeOfRows][columnNames.length];
                 }
+                else if(strLine.trim().isEmpty()){
+                    continue;
+                }
                 else{
                     temp = strLine.split(delimeter,-1);
                     counter1 = 0;
                     for (int i = 0; i < temp.length ; i ++ ){
                         if (checkColumns[i] == true){
                         
-
+                            temp[i] = temp[i].trim().replaceAll("[\uFEFF-\uFFFF]", "");
                             if ( colNamesType.get(counter1).contains("int") ){
                                 if ( !temp[i].equals("")){
                                     try {
@@ -780,6 +789,10 @@ public class TXTData implements Data,Serializable{
                     for ( int i = 0 ; i < colNames.length ; i ++){
                         if ( checkColumns[i] == true){
                             colNamesType.put(counter,null);
+                            colNames[i] = colNames[i].trim().replaceAll("\"", "").replaceAll("[\uFEFF-\uFFFF]", "").replace(".", "").replace("[","(").replace("]", ")");
+                            if (colNames[i].length() > 128){
+                                colNames[i] = colNames[i].substring(0, 128);
+                            }
                             colNamesPosition.put(counter,colNames[i]);
                             counter++;
                         }
@@ -858,11 +871,20 @@ public class TXTData implements Data,Serializable{
                     smallDataSet = new String[6][temp.length];
                     this.formatsDate = new String[temp.length];
                     for ( int i = 0 ; i < temp.length ; i ++){
-                        columnNames[i] = temp[i];
+                        temp[i] = temp[i].trim().replaceAll("\"", "").replace(".", "").replaceAll("[\uFEFF-\uFFFF]", "").replace("[","(").replace("]", ")");;
+                        if (temp[i].length() > 128){
+                            columnNames[i] = temp[i].substring(0, 128);
+                        }
+                        else{
+                            columnNames[i] = temp[i];
+                        }
                     }
                     FLAG = false;
                     
                     
+                }
+                else if(strLine.trim().isEmpty()){
+                    continue;
                 }
                 //save column types
                 else{
@@ -885,6 +907,7 @@ public class TXTData implements Data,Serializable{
                     if (FLAG2 == true){
                         for ( int i = 0 ; i < temp.length ; i ++ ){
                             counter = 0;
+                            temp[i] = temp[i].trim().replaceAll("[\uFEFF-\uFFFF]", "");;
                             if ( !temp[i].equals("")){
                                 if (chVar.isInt(temp[i])){
                                     smallDataSet[counter][i] = "int";
@@ -909,8 +932,9 @@ public class TXTData implements Data,Serializable{
                     else if ( counter < 6 ){
                         
                         for ( int i = 0 ; i < temp.length ; i ++ ){
+                            temp[i] = temp[i].trim().replaceAll("[\uFEFF-\uFFFF]", "");;
                             smallDataSet[counter][i] = temp[i];
-
+                              
                             
                             if ( !temp[i].equals("")){
                                 if ( smallDataSet[0][i] != null ){

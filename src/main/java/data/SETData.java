@@ -206,9 +206,16 @@ public class SETData implements Data,Serializable {
                 
                 //do not read the fist line
                 if (FLAG == true){
-                    colNames = strLine;
+                    colNames = strLine.trim().replaceAll("\"", "").replaceAll("[\uFEFF-\uFFFF]", "").replace(".", "").replace("[","(").replace("]", ")");;
+                    if (colNames.length() > 128){
+                        colNames = colNames.substring(0, 128);
+                    }
+                    
                     FLAG = false;
-                    smallDataSet[0][0] = strLine;
+                    smallDataSet[0][0] = colNames;
+                }
+                else if(strLine.trim().isEmpty()){
+                    continue;
                 }
                 else{
 //                    System.out.println("strLine = " + strLine);
@@ -220,14 +227,14 @@ public class SETData implements Data,Serializable {
                     
                     dataSet[counter] = new double[temp.length];
                     if ( counter < 5){
-                        smallDataSet[counter+1][0] = strLine;
+                        smallDataSet[counter+1][0] = strLine.replaceAll("[\uFEFF-\uFFFF]", "");
                     }
                     
                     for (int i = 0; i < temp.length ; i ++ ){
 //                        System.out.println("Set Data "+temp[i]);
 //                        DictionaryString tempDict = dictionary.get(0);
                         String var = null;
-
+                        temp[i] = temp[i].trim().replaceAll("[\uFEFF-\uFFFF]", "");
                         if ( !temp[i].equals("")){
                             var = temp[i];
                         }
@@ -313,7 +320,9 @@ public class SETData implements Data,Serializable {
             
             //counts lines of the dataset
             while ((strLine = br.readLine()) != null)   {
-                counter++;
+                if(!strLine.trim().isEmpty()){
+                    counter++;
+                }
                 if(AppCon.os.equals(online_version) && counter > online_rows){
                     throw new LimitException("Dataset is too large, the limit is "+online_rows+" rows, please download desktop version, the online version is only for simple execution.");
                 }
@@ -521,6 +530,10 @@ public class SETData implements Data,Serializable {
                 //save column names
                 if (FLAG == true){
                     colNamesType.put(0,null);
+                    strLine = strLine.trim().replaceAll("\"", "").replaceAll("[\uFEFF-\uFFFF]", "").replace(".", "").replace("[","(").replace("]", ")");
+                    if (strLine.length() > 128){
+                        strLine = strLine.substring(0, 128);
+                    }
                     colNamesPosition.put(0,strLine);
                     columnNames = new String[1];
                     columnNames[0] = strLine;

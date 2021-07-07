@@ -17,11 +17,11 @@ public class SolutionsArrayList {
     @JsonView(View.Solutions.class)
     ArrayList<Solutions> solutions = null;
     @JsonView(View.Solutions.class)
-    double pagePercentange = 0;
+    double pagePercentage = 0;
     @JsonView(View.Solutions.class)
     boolean suppress = false;
     @JsonView(View.Solutions.class)
-    double percentangeSuppress =0.0;
+    double percentageSuppress =0.0;
     @JsonView(View.Solutions.class)
     int k = 0;
     
@@ -34,7 +34,7 @@ public class SolutionsArrayList {
     }
 
     public double getPagePercentange() {
-        return pagePercentange;
+        return pagePercentage;
     }
 
     public boolean isSuppress() {
@@ -42,7 +42,7 @@ public class SolutionsArrayList {
     }
 
     public double getPercentangeSuppress() {
-        return percentangeSuppress;
+        return percentageSuppress;
     }
 
     public int getK() {
@@ -55,7 +55,7 @@ public class SolutionsArrayList {
     }
 
     public void setPagePercentange(double pagePercentange) {
-        this.pagePercentange = pagePercentange;
+        this.pagePercentage = pagePercentange;
     }
     
     public void addNewSolution( Solutions sol){
@@ -68,7 +68,7 @@ public class SolutionsArrayList {
     }
 
     public void setPercentangeSuppress(double percentangeSuppress) {
-        this.percentangeSuppress = percentangeSuppress;
+        this.percentageSuppress = percentangeSuppress;
     }
 
     public void setK(int k) {

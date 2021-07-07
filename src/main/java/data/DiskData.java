@@ -437,11 +437,14 @@ public class DiskData implements Data,Serializable{
                 }
             }
             while ((strLine = br.readLine()) != null){
-                
+                if(strLine.trim().isEmpty()){
+                    continue;
+                }
                 temp = strLine.split(delimeter,-1);
                 counter1 = 0;
                 for (int i = 0; i < temp.length ; i ++ ){
                     if (checkColumns[i] == true){
+                        temp[i] = temp[i].trim().replaceAll("[\uFEFF-\uFFFF]", "");
                         if (colNamesType.get(counter1).contains("int") ){
                             if ( !temp[i].equals("")){
                                 try {
@@ -866,6 +869,10 @@ public class DiskData implements Data,Serializable{
                     for ( int i = 0 ; i < colNames.length ; i ++){
                         if ( checkColumns[i] == true){
                             colNamesType.put(counter,null);
+                            colNames[i] = colNames[i].trim().replaceAll("\"", "").replaceAll("[\uFEFF-\uFFFF]", "").replace(".", "").replace("[","(").replace("]", ")");
+                            if (colNames[i].length() > 128){
+                                colNames[i] = colNames[i].substring(0, 128);
+                            }
                             colNamesPosition.put(counter,colNames[i].replaceAll(" ", "_"));
                             counter++;
                         }
@@ -938,11 +945,20 @@ public class DiskData implements Data,Serializable{
                     smallDataSet = new String[6][temp.length];
                     this.formatsDate = new String[temp.length];
                     for ( int i = 0 ; i < temp.length ; i ++){
-                        columnNames[i] = temp[i];
+                        temp[i] = temp[i].trim().replaceAll("\"", "").replace(".", "").replaceAll("[\uFEFF-\uFFFF]", "").replace("[","(").replace("]", ")");;
+                        if (temp[i].length() > 128){
+                            columnNames[i] = temp[i].substring(0, 128);
+                        }
+                        else{
+                            columnNames[i] = temp[i];
+                        }
                     }
                     FLAG = false;
                     
                     
+                }
+                else if(strLine.trim().isEmpty()){
+                    continue;
                 }
                 //save column types
                 else{
@@ -958,6 +974,7 @@ public class DiskData implements Data,Serializable{
                     if (FLAG2 == true){
                         for ( int i = 0 ; i < temp.length ; i ++ ){
                             counter = 0;
+                            temp[i] = temp[i].trim().replaceAll("[\uFEFF-\uFFFF]", "");
                             if ( !temp[i].equals("")){
                                 if (chVar.isInt(temp[i])){
                                     smallDataSet[counter][i] = "int";
@@ -984,7 +1001,7 @@ public class DiskData implements Data,Serializable{
                         for ( int i = 0 ; i < temp.length ; i ++ ){
                             smallDataSet[counter][i] = temp[i];
 
-                            
+                            temp[i] = temp[i].trim().replaceAll("[\uFEFF-\uFFFF]", "");
                             if ( !temp[i].equals("")){
                                 if ( smallDataSet[0][i] != null ){
                                     if (smallDataSet[0][i].equals("int")){

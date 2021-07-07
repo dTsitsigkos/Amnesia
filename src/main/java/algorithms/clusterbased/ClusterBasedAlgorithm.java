@@ -731,6 +731,7 @@ public class ClusterBasedAlgorithm implements Algorithm {
                             Logger.getLogger(ClusterBasedAlgorithm.class.getName()).log(Level.SEVERE, null, ex);
                         }
                     }
+                    this.diskData.executeAnonymizedClusterBatch(clusterRecords);
                 }
                 else{
                     RangeDouble rangeSlaveClusters = new RangeDouble(0.0,0.0);
