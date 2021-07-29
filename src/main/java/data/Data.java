@@ -55,6 +55,7 @@ public interface Data {
 //    public void setDictionary(Integer column, DictionaryString dict);
     public int getColumnByName(String column);
     public String getColumnByPosition(Integer columnIndex);
+    public String[] getColumnNames();
 //    public void replaceColumnDictionary(Integer column, DictionaryString dict);
     public void SaveClmnsAndTypeOfVar(String[] columnTypes,boolean[] checkColumns);
     public String findColumnTypes();

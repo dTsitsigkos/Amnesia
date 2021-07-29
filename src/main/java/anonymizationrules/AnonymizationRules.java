@@ -91,6 +91,13 @@ public class AnonymizationRules {
                 rules = new HashMap<>();
                 while ((line = br.readLine()) != null) {
                     if ( !line.equals("")){
+//                        if(line.contains(del)){
+//                            temp = line.split(del);
+//                            rules.put(temp[0], temp[1]);
+//                        }
+//                        else{
+//                            
+//                        }
                         temp = line.split(del);
                         rules.put(temp[0], temp[1]);
                     }
@@ -219,7 +226,7 @@ public class AnonymizationRules {
                 
                 //anonymizedData = (Double)dataset[line][column];
                 
-                //System.out.println("temp data = " + tempData + "\t level = " + level);
+//                System.out.println("temp data = " + tempData + "\t level = " + level);
                 if ( level != 0 ){
                     if(colNamesType.get(column).contains("date")){
                         if(tempData instanceof String){
@@ -464,7 +471,8 @@ public class AnonymizationRules {
 
 
                                     String anonymValue = qis.get(entry.getKey()).getDictionary().getIdToString(numAnonymValue.intValue()) == null ? dictionary.getIdToString(numAnonymValue.intValue()) : qis.get(entry.getKey()).getDictionary().getIdToString(numAnonymValue.intValue());
-                                    writer.println(dictionary.getIdToString((int)setValues[i][j]) + del + anonymValue);
+                                    String originalVal = dictionary.getIdToString((int)setValues[i][j]) == null ? qis.get(entry.getKey()).getDictionary().getIdToString((int)setValues[i][j]) : dictionary.getIdToString((int)setValues[i][j]);
+                                    writer.println(originalVal + del + anonymValue);
                                     visitedSet.add(setValues[i][j]);
                                 }
                                 

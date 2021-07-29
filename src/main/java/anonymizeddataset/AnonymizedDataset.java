@@ -96,6 +96,10 @@ public class AnonymizedDataset {
     public void setStart(int start) {
         this.start = start;
     }
+    
+    public void setLength(int l){
+        this.length = l;
+    }
 
     /**
      * renders anonymized dataset
@@ -451,6 +455,8 @@ public class AnonymizedDataset {
             max = dataset.getRecordsTotal();
             length = dataset.getRecordsTotal()-start;
         }
+        
+        System.out.println("max "+max+" start "+start+" length "+length);
         
         try{
             originalAnon = diskData.getOriginalAnonSet(start, max);
@@ -1803,7 +1809,7 @@ public class AnonymizedDataset {
         return d;
     }
      
-    public void anonymizeWithImportedRulesForDisk(Map<String,Map<String,String>> rules){
+    public void anonymizeWithImportedRulesForDisk(Map<String,Map<String,String>> rules, String file){
         Map <Integer,String> colNamesType = null;
         Map <Integer,String> colNamesPosition = null;
 //        Map <Integer,DictionaryString> dictionaries = null;
@@ -1920,13 +1926,18 @@ public class AnonymizedDataset {
             }
             dataAnon.add(linkedHashTemp);
         }
+        
+        if(file!=null){
+            DiskData data = (DiskData) this.dataset;
+            data.export(file, null, columnData, qids, quasiIdentifiers, suppressedValues,true);
+        }
     }
     
     /**
      * anonymize dataset with imported rules
      * @param rules the imported rules
      */
-    public void anonymizeWithImportedRules(Map<String, Map<String, String>> rules) {
+    public void anonymizeWithImportedRules(Map<String, Map<String, String>> rules, String file) {
         
         double [][]dataSet = this.dataset.getDataSet();
         Map <Integer,String> colNamesType = null;
@@ -2062,9 +2073,14 @@ public class AnonymizedDataset {
             }
             dataAnon.add(linkedHashTemp);
         }
+        
+        if(file!=null){
+            
+            this.dataset.export(file, null, columnData,qids, this.quasiIdentifiers, suppressedValues);
+        }
     }
     
-    public void anonymizeRelSetWithImportedRules(Map<String, Map<String, String>> allRules){
+    public void anonymizeRelSetWithImportedRules(Map<String, Map<String, String>> allRules, String file){
         RelSetData dataSet = (RelSetData) this.dataset;
         double[][] setData = dataSet.getSet();
         double[][] relData = dataSet.getDataSet();
@@ -2293,9 +2309,14 @@ public class AnonymizedDataset {
             }
             dataAnon.add(linkedHashTemp);
         }
+        RelSetData  data  = (RelSetData) this.dataset;
+        if(file!=null)
+            data.export(file, null, columnData, qids, quasiIdentifiers, suppressedValues);
     }
     
-    public void anonymizeSETWithImportedRules(Map<String, Map<String, String>> allRules) {
+    
+
+    public void anonymizeSETWithImportedRules(Map<String, Map<String, String>> allRules, String file) {
         Map<String,String> rules = null;
         
         for (Map.Entry<String,  Map<String,String>> entry : allRules.entrySet()) {
@@ -2368,9 +2389,13 @@ public class AnonymizedDataset {
             }
             linkedHashTemp.put(colNamesPosition.get(0), newRow);
             dataAnon.add(linkedHashTemp);
+            columnData[i][0] = newRow;
 //            System.out.println();
             row = null;
         }
+        
+        if(file!=null)
+            this.dataset.export(file, null, columnData, null, null, suppressedValues);
     }
     
     /**

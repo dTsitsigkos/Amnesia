@@ -330,6 +330,8 @@ public class SETData implements Data,Serializable {
             
             //System.out.println("counter = " + counter);
             sizeOfRows = counter;
+            recordsTotal = sizeOfRows;
+            recordsFiltered = sizeOfRows;
             in.close();
             
         }catch (IOException e){

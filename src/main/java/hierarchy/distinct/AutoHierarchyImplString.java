@@ -26,6 +26,7 @@ import data.SETData;
 import dictionary.DictionaryString;
 import graph.Edge;
 import hierarchy.NodeStats;
+import static hierarchy.distinct.HierarchyImplString.dict;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -166,7 +167,13 @@ public class AutoHierarchyImplString extends HierarchyImplString {
                 public int compare(Double d1, Double d2) {
 //                    return s1.getTo().compareToIgnoreCase(s2.getTo());
                     String s1 = dictData.getIdToString(d1.intValue());
+                    if(s1 == null){
+                        s1 = dict.getIdToString(d1.intValue());
+                    }
                     String s2 = dictData.getIdToString(d2.intValue());
+                    if(s2 == null){
+                        s2 = dict.getIdToString(d2.intValue());
+                    }
                     return s1.compareToIgnoreCase(s2);
                 }
             });

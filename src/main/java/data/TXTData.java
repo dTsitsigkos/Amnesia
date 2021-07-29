@@ -231,6 +231,8 @@ public class TXTData implements Data,Serializable{
             //System.out.println("counter = " + counter);
             
             sizeOfRows = counter;
+            recordsTotal = sizeOfRows;
+            recordsFiltered = sizeOfRows;
             in.close();
             
         }catch (IOException e){
@@ -592,6 +594,7 @@ public class TXTData implements Data,Serializable{
             int[] qids, Map<Integer, Hierarchy> hierarchies, Map<Integer, Set<String>> suppressedValues) {
         
         System.out.println("Export in data...");
+        PrintWriter writer = null;
         
         Object[][] temp = null;
         if ( initialTable != null ){
@@ -605,8 +608,7 @@ public class TXTData implements Data,Serializable{
         
         try {
             
-            
-            try (PrintWriter writer = new PrintWriter( file, "UTF-8")) {
+            writer = new PrintWriter( file, "UTF-8");
                 //TableModel model =  anonymizedTable.getModel();
                 //int columnCount = model.getColumnCount();
                 //int rowCount = model.getRowCount();
@@ -719,9 +721,13 @@ public class TXTData implements Data,Serializable{
                     }
                     writer.println();
                 }
-            }
         } catch (FileNotFoundException | UnsupportedEncodingException ex) {
             //Logger.getLogger(AnonymizedDatasetPanel.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        finally{
+            if(writer != null){
+                writer.close();
+            }
         }
         
         System.out.println("done");

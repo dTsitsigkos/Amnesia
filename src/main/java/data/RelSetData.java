@@ -590,6 +590,8 @@ public class RelSetData implements Data {
             //System.out.println("counter = " + counter);
             
             sizeOfRows = counter;
+            recordsTotal = sizeOfRows;
+            recordsFiltered = sizeOfRows;
             in.close();
             
         }catch (IOException e){
@@ -773,6 +775,10 @@ public class RelSetData implements Data {
         }catch(Exception e){
             System.err.println("Error: "+e.getMessage());
         }
+    }
+    
+    public String[] getColumnNames() {
+        return columnNames;
     }
 
     @Override

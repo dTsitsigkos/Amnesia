@@ -109,6 +109,7 @@ import jsoninterface.View;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -171,7 +172,7 @@ public class AppCon extends SpringBootServletInitializer {
     }
 
     private static Class<AppCon> applicationClass = AppCon.class;
-    public static String os = "linux";
+    public static String os = "windows";
 }
 
 
@@ -333,6 +334,7 @@ class AppController {
         }
         return null;
     }
+    
     
     @RequestMapping(value = "/action/errorhandle", method = RequestMethod.POST)
     public @ResponseBody void errorHandling(@RequestParam("error") String error, HttpSession session) throws IOException{
@@ -538,7 +540,6 @@ class AppController {
                 if (input == null){
                     session.setAttribute("inputpath",dir.toString());
                 }*/
-//                throw new Exception("kalos kalos!! kalos..");
                     
 //                byte[] bytes = file.getBytes();
 
@@ -767,7 +768,11 @@ class AppController {
                     }
                 }
                 if(deleteDir){
-                    FileUtils.forceDelete(file);
+                    try{
+                        FileUtils.forceDelete(file);
+                    }catch(Exception e){
+                        this.errorHandling(e.getMessage(), session);
+                    }
                 }
             }
             else if(!file.getName().equals("errorLog") && diff > 2 * 60 * 60 * 1000){
@@ -1152,6 +1157,7 @@ class AppController {
         String attribute = data.getColumnByPosition(onattribute);
         
         if(typehier.equals("mask")){
+            System.out.println("autogenerate backend "+step+" "+typehier+" "+vartype+" "+onattribute+" "+sorting+" "+hiername+" "+fanout+" "+limits+" "+length);
             h = new AutoHierarchyImplMaskString(hiername, vartype, "distinct",attribute, data,length);
         }
         else if (typehier.equals("distinct")){
@@ -1812,7 +1818,7 @@ class AppController {
                         anonData.renderAnonymizedTable();
                     }
                     else{
-                        anonData.anonymizeWithImportedRules(allRules);
+                        anonData.anonymizeWithImportedRules(allRules,null);
                     }
                 }
                 else if(data.getClass().toString().contains("SET")){
@@ -1824,7 +1830,7 @@ class AppController {
                         anonData.renderAnonymizedTable(rules, quasiIdentifiers.get(0).getDictionary());
                     }
                     else{
-                        anonData.anonymizeSETWithImportedRules(allRules);
+                        anonData.anonymizeSETWithImportedRules(allRules,null);
                     }
                 }
                 else if(data.getClass().toString().contains("Disk")){
@@ -1833,7 +1839,7 @@ class AppController {
                         anonData.renderAnonymizedDiskTable();
                     }
                     else{
-                        anonData.anonymizeWithImportedRulesForDisk(allRules);
+                        anonData.anonymizeWithImportedRulesForDisk(allRules,null);
                     }
                 }
                 else{
@@ -1844,7 +1850,7 @@ class AppController {
                        anonData.renderAnonymizedTable(rules);
                     }
                     else{
-                        anonData.anonymizeRelSetWithImportedRules(allRules);
+                        anonData.anonymizeRelSetWithImportedRules(allRules,null);
                     }
                     
                 }
@@ -1972,13 +1978,14 @@ class AppController {
     }
     
     @RequestMapping(value="/action/saveanonymizedataset") //method = RequestMethod.POST
-    public @ResponseBody void saveAnonymizeDataset ( HttpSession session , HttpServletResponse response) throws FileNotFoundException, IOException, ParseException {
+    public @ResponseBody void saveAnonymizeDataset ( HttpSession session , HttpServletResponse response) throws FileNotFoundException, IOException, ParseException, InterruptedException {
         Object [][] exportData = null; 
 
         Data data = (Data) session.getAttribute("data");
         String filename = (String)session.getAttribute("filename");
         String inputPath = (String)session.getAttribute("inputpath");
         Map<Integer, Hierarchy> quasiIdentifiers = (Map<Integer, Hierarchy>)session.getAttribute("quasiIdentifiers");
+        Map<String, Map<String, String>> allRules = (Map<String, Map<String, String>>)session.getAttribute("anonrules");
         
         this.createInputPath(inputPath, session);
         
@@ -1990,18 +1997,40 @@ class AppController {
         File file = new File(inputPath + "/anonymized_" +filename);
         
         if (data.getClass().toString().contains("SET")){
-            Map<Double, Double> results = (Map<Double, Double>) session.getAttribute("results"); 
-            exportData = anonData.exportDataset(file.getAbsolutePath(), results, quasiIdentifiers);
+            Map<Double, Double> results = (Map<Double, Double>) session.getAttribute("results");
+            try{
+                exportData = anonData.exportDataset(file.getAbsolutePath(), results, quasiIdentifiers);
+            }catch(Exception e){
+                anonData.setLength(data.getRecordsTotal());
+                anonData.anonymizeSETWithImportedRules(allRules,file.getAbsolutePath());
+            }
         }
         else if(data.getClass().toString().contains("RelSet")){
-            Map<Integer, Map<Object,Object>> results = (Map<Integer, Map<Object,Object>>) session.getAttribute("results"); 
-            exportData = anonData.exportRelSetDataset(file.getAbsolutePath(), results, quasiIdentifiers);
+            Map<Integer, Map<Object,Object>> results = (Map<Integer, Map<Object,Object>>) session.getAttribute("results");
+            try{
+                exportData = anonData.exportRelSetDataset(file.getAbsolutePath(), results, quasiIdentifiers);
+            }catch(Exception e){
+                anonData.setLength(data.getRecordsTotal());
+                anonData.anonymizeRelSetWithImportedRules(allRules,file.getAbsolutePath());
+            }
         }
         else if(data.getClass().toGenericString().contains("Disk")){
-            exportData = anonData.exportDiskDataset(file.getAbsolutePath(),quasiIdentifiers);
+            System.out.println("Mpainei gia disk export");
+            try{
+                exportData = anonData.exportDiskDataset(file.getAbsolutePath(),quasiIdentifiers);
+            }catch(Exception e){
+                anonData.setLength(data.getRecordsTotal());
+                anonData.anonymizeWithImportedRulesForDisk(allRules,file.getAbsolutePath());
+            }
         }
         else{
-            exportData = anonData.exportDataset(file.getAbsolutePath(), true);
+            try{
+                exportData = anonData.exportDataset(file.getAbsolutePath(), true);
+            }catch(Exception e){
+                System.out.println("DAta length "+data.getRecordsTotal());
+                anonData.setLength(data.getRecordsTotal());
+                anonData.anonymizeWithImportedRules(allRules,file.getAbsolutePath());
+            }
         }
         
         /*System.out.println("End ");
@@ -2018,6 +2047,7 @@ class AppController {
 	// Copy the stream to the response's output stream.
 	IOUtils.copy(myStream, response.getOutputStream());
 	response.flushBuffer();
+        myStream.close();
         
         //htre.setHeader(null, null);
         //htre.getOutputStream();
@@ -2724,6 +2754,7 @@ System.out.println("url = " + url);
         Data data = (Data) session.getAttribute("data");
         Map<Integer, Hierarchy> quasiIdentifiers = (Map<Integer, Hierarchy>)session.getAttribute("quasiIdentifiers");
         String selectedNode = (String) session.getAttribute("selectednode");
+        System.out.println("Selected Node "+selectedNode);
          Map<Integer, Set<String>> toSuppress = new HashMap<>();
         //Map<SolutionHeader, SolutionStatistics> solMap = (Map<SolutionHeader, SolutionStatistics>) session.getAttribute("solutionstatistics");
         String []attr = null;
@@ -3857,7 +3888,9 @@ System.out.println("url = " + url);
         
 //        System.out.println("inputPath = " + inputPath);
         
-        anonRules.importRules(anonRulesFile);
+        if(!anonRules.importRules(anonRulesFile)){
+            return "File structure not supported for anonymization rules!";
+        }
         Map<String, Map<String, String>> rules = anonRules.getAnonymizedRules();
               
         
@@ -4198,6 +4231,25 @@ System.out.println("url = " + url);
     }
     
 /////////////////////////////////////Expose additional ReST API//////////////////////////////////////////////////////////////////////
+    @RequestMapping(value="/getSession",  method = RequestMethod.POST)
+    public void getSession(HttpSession session, HttpServletResponse response) throws IOException{
+        try{
+            response.setStatus(HttpServletResponse.SC_OK);
+            JSONObject jsonAnswer = new JSONObject();
+            jsonAnswer.put("Status","Success");
+            jsonAnswer.put("Session_Id",session.getId());
+            response.getOutputStream().print(jsonAnswer.toString());
+        }catch(Exception e){
+            e.printStackTrace();
+            this.errorHandling(e.getLocalizedMessage(), session);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            JSONObject jsonAnswer = new JSONObject();
+            jsonAnswer.put("Status","Fail");
+            jsonAnswer.put("Message","Failed to send session id, please try again!");
+            response.getOutputStream().print(jsonAnswer.toString());
+        }
+    }
+    
     @RequestMapping(value="/loadData",  method = RequestMethod.POST)
     public void loadData(@RequestParam("file") MultipartFile file, @RequestParam("datasetType") String datasetType, @RequestParam("del") String del,
             @RequestParam(value = "columnsType") String dataTypes,  @RequestParam(value = "delSet",required = false) String delset, HttpSession session, HttpServletResponse response) throws IOException {
@@ -4211,11 +4263,11 @@ System.out.println("url = " + url);
             String[] vartypes = new String[data.getSmallDataSet()[0].length];
             Map<String,String> datatypesMap = jsonToMap(dataTypes);
             for(int i=0; i<checkColumns.length; i++){
-                if(datatypesMap.containsKey(data.getColumnByPosition(i))){
+                if(datatypesMap.containsKey(data.getColumnNames()[i])){
                     checkColumns[i] = true;
-                    String type = datatypesMap.get(data.getColumnByPosition(i));
-                    if(type.equals("int") || type.equals("double") || type.equals("decimal") || type.equals("set") || type.equals("string")){
-                        vartypes[i] = datatypesMap.get(data.getColumnByPosition(i)).replace("decimal", "double");
+                    String type = datatypesMap.get(data.getColumnNames()[i]);
+                    if(type.equals("int") || type.equals("double") || type.equals("decimal") || type.equals("set") || type.equals("string") || type.equals("date")){
+                        vartypes[i] = datatypesMap.get(data.getColumnNames()[i]).replace("decimal", "double");
                     }
                     else{
                         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -4232,6 +4284,7 @@ System.out.println("url = " + url);
                 }
                 
             }
+            System.out.println("chackColumns "+Arrays.toString(checkColumns));
             this.loadDataset(vartypes, checkColumns, session);
         }catch(Exception e){
             e.printStackTrace();
@@ -4253,12 +4306,12 @@ System.out.println("url = " + url);
     
     @RequestMapping(value="/generateHierarchy",  method = RequestMethod.POST)
     public void generateHierarchy(@RequestParam("hierType") String hierType, @RequestParam("varType") String varType, @RequestParam("attribute") String colName,
-            @RequestParam("hierName") String name,@RequestParam(value = "startLimit",required = false) int startLimit,
-            @RequestParam(value = "endLimit",required = false) int endLimit, @RequestParam(value = "startYear",required = false) int startYear,
-            @RequestParam(value = "endYear",required = false) int endYear,@RequestParam(value = "fanout",required = false) int fanout,
-            @RequestParam(value = "step",required = false) int step, @RequestParam(value = "years",required = false) int years,
-            @RequestParam(value = "months",required = false) int months, @RequestParam(value = "days",required = false) int days,
-            @RequestParam(value = "sorting",required = false) String sorting,@RequestParam(value = "length",required = false) int length,
+            @RequestParam("hierName") String name,@RequestParam(value = "startLimit",required = false,defaultValue = "0") int startLimit,
+            @RequestParam(value = "endLimit",required = false,defaultValue = "0") int endLimit, @RequestParam(value = "startYear",required = false,defaultValue = "0") int startYear,
+            @RequestParam(value = "endYear",required = false,defaultValue = "0") int endYear,@RequestParam(value = "fanout",required = false,defaultValue = "0") int fanout,
+            @RequestParam(value = "step",required = false,defaultValue = "0") int step, @RequestParam(value = "years",required = false,defaultValue = "0") int years,
+            @RequestParam(value = "months",required = false,defaultValue = "0") int months, @RequestParam(value = "days",required = false,defaultValue = "0") int days,
+            @RequestParam(value = "sorting",required = false,defaultValue = "0") String sorting,@RequestParam(value = "length",required = false,defaultValue = "0") int length,
             HttpSession session, HttpServletResponse response) throws IOException{
         
         //@RequestParam("typehier") String typehier, @RequestParam("vartype") String vartype,@RequestParam("onattribute") int onattribute,
@@ -4315,6 +4368,7 @@ System.out.println("url = " + url);
     public void anonymization (@RequestParam("bind") String bind, @RequestParam("k") int k, @RequestParam(value = "m",required = false,defaultValue = "-1") int m,
             HttpSession session, HttpServletResponse response) throws IOException{
         
+        System.out.println("session anonymization "+session.getId());
         try{
             Data data = (Data) session.getAttribute("data");
             Map<String, Hierarchy> hierarchies = (Map<String, Hierarchy>) session.getAttribute("hierarchies");
@@ -4323,6 +4377,7 @@ System.out.println("url = " + url);
            
             for(Map.Entry<String,String> colHier : colNamesHier.entrySet()){
                quasiIdentifiers.put(data.getColumnByName(colHier.getKey()), hierarchies.get(colHier.getValue()));
+               System.out.println("colName "+data.getColumnByName(colHier.getKey())+" Hier "+hierarchies.get(colHier.getValue()));
             }
             
             String checkHier = null;
@@ -4464,6 +4519,7 @@ System.out.println("url = " + url);
                 jsonAnswer.put("Message","Failed to anonymize the dataset, please try again!");
                 response.getOutputStream().print(jsonAnswer.toString());
             }
+            
 
             if(resultAlgo.equals(message)){
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -4481,9 +4537,11 @@ System.out.println("url = " + url);
                     jsonAnswer.put("Message","Anonymization procedure has no results");
                     response.getOutputStream().print(jsonAnswer.toString());
                 }
+                this.getAnonDataSet(0, 10, session);
+                response.setStatus(HttpServletResponse.SC_OK);
+                this.saveAnonymizeDataset(session, response);
             }
             else{
-    //            System.out.println("result set = " + algorithm.getResultSet() );
 
                 session.setAttribute("results", algorithm.getResultSet());
     //            System.out.println("algorithm : "+algorithmSelected);
@@ -4507,6 +4565,7 @@ System.out.println("url = " + url);
                 }
                 else {
                     this.getAnonDataSet(0, 0, session);
+                    response.setStatus(HttpServletResponse.SC_OK);
                     this.saveAnonymizeDataset(session, response);
                 }
             }
@@ -4524,7 +4583,8 @@ System.out.println("url = " + url);
     @RequestMapping(value="/getSolution",  method = RequestMethod.POST)
     public void getSolution (@RequestParam("sol") String sol, HttpSession session, HttpServletResponse response) throws IOException{
         try{
-            sol = sol.replace("[", "").replace("]","");
+            this.deleteSuppress(session);
+            sol = sol.trim().replace("[", "").replace("]","");
             this.setSelectedNode(session, sol);
             this.getAnonDataSet(0, 0, session);
             response.setStatus(HttpServletResponse.SC_OK);
@@ -4543,18 +4603,19 @@ System.out.println("url = " + url);
     public void getSuppressPercentage (@RequestParam("sol") String sol, HttpSession session, HttpServletResponse response) throws IOException{
         
         try{
-            sol = sol.replace("[", "").replace("]","");
+            this.deleteSuppress(session);
+            sol = sol.trim().replace("[", "").replace("]","");
             this.setSelectedNode(session, sol);
             Data data = (Data) session.getAttribute("data");
             int  k = (int) session.getAttribute("k");
-            sol = sol.replace("[", "").replace("]","");
-            this.setSelectedNode(session, sol);
             Map<Integer, Hierarchy> quasiIdentifiers = (Map<Integer, Hierarchy>) session.getAttribute("quasiIdentifiers");
             String attributes = "";
             for(Map.Entry<Integer,Hierarchy> quasi : quasiIdentifiers.entrySet()){
                 attributes += data.getColumnByPosition(quasi.getKey())+" ";
             }
-            attributes = attributes.substring(0, attributes.length() - 1); 
+            attributes = attributes.substring(0, attributes.length() - 1);
+            Map<SolutionHeader, SolutionStatistics> solMap = (Map<SolutionHeader, SolutionStatistics>) session.getAttribute("solutionstatistics");
+            this.findSolutionStatistics(session);
             SolutionsArrayList stats = this.getSolutionStatistics(attributes, session);
             response.setStatus(HttpServletResponse.SC_OK);
             double suppress = stats.getPercentangeSuppress();
@@ -4562,7 +4623,12 @@ System.out.println("url = " + url);
             jsonAnswer.put("Status","Success");
             jsonAnswer.put("percentageSuppress", suppress);
             jsonAnswer.put("k",k);
-            jsonAnswer.put("Message","To produce a k="+k+" anonymity solution, it must be suppressed by "+suppress+"%");
+            if(suppress!=0.0){
+                jsonAnswer.put("Message","To produce a k="+k+" anonymity solution, it must be suppressed by "+suppress+"%");
+            }
+            else{
+                jsonAnswer.put("Message","The solution: ["+sol+"] statisfies k="+k+" anonymity");
+            }
             response.getOutputStream().print(jsonAnswer.toString());
         }catch(Exception e){
             e.printStackTrace();
@@ -4579,19 +4645,20 @@ System.out.println("url = " + url);
     @RequestMapping(value="/getSuppressedSolution",  method = RequestMethod.POST)
     public void suppressSolution (@RequestParam("sol") String sol, HttpSession session, HttpServletResponse response) throws IOException{
         try{
+            this.deleteSuppress(session);
             String originalSol = sol;
-            sol = sol.replace("[", "").replace("]","");
+            sol = sol.trim().replace("[", "").replace("]","");
             this.setSelectedNode(session, sol);
             Data data = (Data) session.getAttribute("data");
             int  k = (int) session.getAttribute("k");
-            sol = sol.replace("[", "").replace("]","");
-            this.setSelectedNode(session, sol);
             Map<Integer, Hierarchy> quasiIdentifiers = (Map<Integer, Hierarchy>) session.getAttribute("quasiIdentifiers");
             String attributes = "";
             for(Map.Entry<Integer,Hierarchy> quasi : quasiIdentifiers.entrySet()){
                 attributes += data.getColumnByPosition(quasi.getKey())+" ";
             }
             attributes = attributes.substring(0, attributes.length() - 1); 
+            Map<SolutionHeader, SolutionStatistics> solMap = (Map<SolutionHeader, SolutionStatistics>) session.getAttribute("solutionstatistics");
+            this.findSolutionStatistics(session);
             SolutionsArrayList stats = this.getSolutionStatistics(attributes, session);
             response.setStatus(HttpServletResponse.SC_OK);
             double suppress = stats.getPercentangeSuppress();
@@ -4605,7 +4672,7 @@ System.out.println("url = " + url);
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 JSONObject jsonAnswer = new JSONObject();
                 jsonAnswer.put("Status","Fail");
-                jsonAnswer.put("Message","The solution "+originalSol+" satisfies "+k+"-anonymity so it can be suppressed!");
+                jsonAnswer.put("Message","The solution "+originalSol+" satisfies "+k+"-anonymity so it can not be suppressed!");
                 response.getOutputStream().print(jsonAnswer.toString());
             }
         }catch(Exception e){
@@ -4619,38 +4686,139 @@ System.out.println("url = " + url);
     }
     
     @RequestMapping(value="/getStatistics",  method = RequestMethod.POST)
-    public void getStatistics (@RequestParam("sol") String sol, @RequestParam("quasi_ids") String[] columns, HttpSession session, HttpServletResponse response) throws IOException{
+    public void getStatistics (@RequestParam("sol") String sol, @RequestParam("quasi_ids") String[] columns, @RequestParam(value="suppressed",required = false,defaultValue = "false")
+            boolean suppressed, HttpSession session, HttpServletResponse response) throws IOException{
         try{
-            sol = sol.replace("[", "").replace("]","");
-            this.setSelectedNode(session, sol);
+            String[] sortedCols;
             Data data = (Data) session.getAttribute("data");
-            int  k = (int) session.getAttribute("k");
-            sol = sol.replace("[", "").replace("]","");
-            this.setSelectedNode(session, sol);
-            Map<Integer, Hierarchy> quasiIdentifiers = (Map<Integer, Hierarchy>) session.getAttribute("quasiIdentifiers");
-            String attributes = "";
-            for(String col : columns){
-                if(quasiIdentifiers.containsKey(data.getColumnByName(col))){
-                    attributes += col+" ";
+            Set<String> setCols = null;
+            if(columns.length > 1){
+                sortedCols = new String[columns.length];
+                
+                setCols = new HashSet();
+                for(String col : columns){
+                    setCols.add(col.trim());
                 }
+                String[] colNames = data.getColumnNames();
+                int i=0;
+                for(String dcol : colNames){
+                    if(setCols.contains(dcol)){
+                        sortedCols[i] = dcol;
+                        i++;
+                    }
+                }
+            }
+            else{
+                sortedCols = columns;
+            }
+            
+            if(suppressed){
+                this.deleteSuppress(session);
+                String originalSol = sol;
+                sol = sol.trim().replace("[", "").replace("]","");
+                this.setSelectedNode(session, sol);
+                int  k = (int) session.getAttribute("k");
+                Map<Integer, Hierarchy> quasiIdentifiers = (Map<Integer, Hierarchy>) session.getAttribute("quasiIdentifiers");
+                String attributes = "";
+                if(setCols == null){
+                    setCols = new HashSet(Arrays.asList(sortedCols));
+                }
+                if(setCols.size() != quasiIdentifiers.entrySet().size()){
+                    response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    JSONObject jsonAnswer = new JSONObject();
+                    jsonAnswer.put("Status","Fail");
+                    jsonAnswer.put("Message","\"quasi_ids\" attribute does not contain all quisi identifiers!");
+                    response.getOutputStream().print(jsonAnswer.toString());
+                    return;
+                }
+                for(Map.Entry<Integer,Hierarchy> quasi : quasiIdentifiers.entrySet()){
+                    attributes += data.getColumnByPosition(quasi.getKey())+" ";
+                    if(!setCols.contains(data.getColumnByPosition(quasi.getKey()))){
+                        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                        JSONObject jsonAnswer = new JSONObject();
+                        jsonAnswer.put("Status","Fail");
+                        jsonAnswer.put("Message","The quisi identifier: "+data.getColumnByPosition(quasi.getKey())+" is not provided in \"quasi_ids\"");
+                        response.getOutputStream().print(jsonAnswer.toString());
+                        return;
+                    }
+                }
+                attributes = attributes.substring(0, attributes.length() - 1); 
+                Map<SolutionHeader, SolutionStatistics> solMap = (Map<SolutionHeader, SolutionStatistics>) session.getAttribute("solutionstatistics");
+                this.findSolutionStatistics(session);
+                SolutionsArrayList stats = this.getSolutionStatistics(attributes, session);
+                response.setStatus(HttpServletResponse.SC_OK);
+                double suppress = stats.getPercentangeSuppress();
+                if(suppress!=0.0){
+                    SolutionsArrayList stats_suppressed = this.suppressValues(session);
+                    JSONObject jsonAnswer = new JSONObject();
+                    JSONArray jsonarray = new JSONArray();
+                    jsonAnswer.put("Status","Success");
+                    int totalRecs = 0;
+                    for(Solutions msol : stats_suppressed.getSolutions()){
+                        JSONObject jsonSol = new JSONObject();
+                        jsonSol.put("value", msol.getLabel());
+                        jsonSol.put("numberOfValues",msol.getData());
+                        totalRecs += Integer.parseInt(msol.getData());
+                        jsonarray.add(jsonSol);
+                    }
+                    jsonAnswer.put("AnonymizedStats", jsonarray);
+                    jsonAnswer.put("TotalRecords", totalRecs);
+                    jsonAnswer.put("k",k);
+                    response.getOutputStream().print(jsonAnswer.toString());
+                    }
                 else{
                     response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                     JSONObject jsonAnswer = new JSONObject();
                     jsonAnswer.put("Status","Fail");
-                    jsonAnswer.put("Message","The column: "+col+" is not a quisi identifier!");
+                    jsonAnswer.put("Message","The solution "+originalSol+" satisfies "+k+"-anonymity so it can not be suppressed!");
                     response.getOutputStream().print(jsonAnswer.toString());
-                    return;
                 }
             }
-            attributes = attributes.substring(0, attributes.length() - 1); 
-            SolutionsArrayList stats = this.getSolutionStatistics(attributes, session);
-            response.setStatus(HttpServletResponse.SC_OK);
-            double suppress = stats.getPercentangeSuppress();
-            JSONObject jsonAnswer = new JSONObject();
-            jsonAnswer.put("Status","Success");
-            jsonAnswer.put("AnonymizedStats", stats.getSolutions());
-            jsonAnswer.put("k",k);
-            response.getOutputStream().print(jsonAnswer.toString());
+            else{
+                this.deleteSuppress(session);
+                sol = sol.trim().replace("[", "").replace("]","");
+                System.out.println("sol "+sol);
+                this.setSelectedNode(session, sol);
+                int  k = (int) session.getAttribute("k");
+                Map<Integer, Hierarchy> quasiIdentifiers = (Map<Integer, Hierarchy>) session.getAttribute("quasiIdentifiers");
+                String attributes = "";
+                for(String col : sortedCols){
+                    if(quasiIdentifiers.containsKey(data.getColumnByName(col.trim()))){
+                        attributes += col.trim()+" ";
+                    }
+                    else{
+                        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                        JSONObject jsonAnswer = new JSONObject();
+                        jsonAnswer.put("Status","Fail");
+                        jsonAnswer.put("Message","The column: "+col.trim()+" is not a quisi identifier!");
+                        response.getOutputStream().print(jsonAnswer.toString());
+                        return;
+                    }
+                }
+                attributes = attributes.substring(0, attributes.length() - 1); 
+                this.findSolutionStatistics(session);
+                System.out.println("Attributes "+attributes);
+                SolutionsArrayList stats = this.getSolutionStatistics(attributes, session);
+                response.setStatus(HttpServletResponse.SC_OK);
+                double suppress = stats.getPercentangeSuppress();
+                JSONObject jsonAnswer = new JSONObject();
+                JSONArray jsonarray = new JSONArray();
+                jsonAnswer.put("Status","Success");
+                int totalRecs = 0;
+                for(Solutions msol : stats.getSolutions()){
+                    JSONObject jsonSol = new JSONObject();
+                    jsonSol.put("value", msol.getLabel());
+                    jsonSol.put("numberOfValues",msol.getData());
+                    totalRecs += Integer.parseInt(msol.getData());
+                    jsonarray.add(jsonSol);
+                }
+                jsonAnswer.put("AnonymizedStats", jsonarray);
+                jsonAnswer.put("TotalRecords", totalRecs);
+                jsonAnswer.put("k",k);
+                response.getOutputStream().print(jsonAnswer.toString());
+            }
+            
+            
         }catch(Exception e){
             e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -4660,6 +4828,145 @@ System.out.println("url = " + url);
             response.getOutputStream().print(jsonAnswer.toString());
         }
     }
+    
+    @RequestMapping(value="/getAnonRules",  method = RequestMethod.POST)
+    public void getAnonRules (@RequestParam(value="sol",required = false) String sol, @RequestParam(value="suppressed",required = false,defaultValue = "false")
+            boolean suppressed, HttpSession session, HttpServletResponse response) throws IOException{
+        
+        try{
+            Data data = (Data) session.getAttribute("data");
+            if(data instanceof DiskData){
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                JSONObject jsonAnswer = new JSONObject();
+                jsonAnswer.put("Status","Fail");
+                jsonAnswer.put("Message","Anonymization rules are not available for Disk based clustering algorithm!");
+                response.getOutputStream().print(jsonAnswer.toString());
+            }
+            
+            if(suppressed){
+                if(!(data instanceof TXTData)){
+                    response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    JSONObject jsonAnswer = new JSONObject();
+                    jsonAnswer.put("Status","Fail");
+                    jsonAnswer.put("Message","Suppression is available only for simple table data!");
+                    response.getOutputStream().print(jsonAnswer.toString());
+                }
+                else if(sol == null){
+                    response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    JSONObject jsonAnswer = new JSONObject();
+                    jsonAnswer.put("Status","Fail");
+                    jsonAnswer.put("Message","Need to provide specific solution");
+                    response.getOutputStream().print(jsonAnswer.toString());
+                }
+                else{
+                    this.deleteSuppress(session);
+                    String originalSol = sol;
+                    sol = sol.trim().replace("[", "").replace("]","");
+                    this.setSelectedNode(session, sol);
+                    int  k = (int) session.getAttribute("k");
+                    Map<Integer, Hierarchy> quasiIdentifiers = (Map<Integer, Hierarchy>) session.getAttribute("quasiIdentifiers");
+                    String attributes = "";
+                    for(Map.Entry<Integer,Hierarchy> quasi : quasiIdentifiers.entrySet()){
+                        attributes += data.getColumnByPosition(quasi.getKey())+" ";
+                    }
+                    attributes = attributes.substring(0, attributes.length() - 1); 
+                    Map<SolutionHeader, SolutionStatistics> solMap = (Map<SolutionHeader, SolutionStatistics>) session.getAttribute("solutionstatistics");
+                    this.findSolutionStatistics(session);
+                    SolutionsArrayList stats = this.getSolutionStatistics(attributes, session);
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    double suppress = stats.getPercentangeSuppress();
+
+                    if(suppress!=0.0){
+                        this.suppressValues(session);
+                        this.saveAnonynizationRules(session, response);
+                    }
+                    else{
+                        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                        JSONObject jsonAnswer = new JSONObject();
+                        jsonAnswer.put("Status","Fail");
+                        jsonAnswer.put("Message","The solution "+originalSol+" satisfies "+k+"-anonymity so it can not be suppressed!");
+                        response.getOutputStream().print(jsonAnswer.toString());
+                    }
+                }
+            }
+            else{
+                if(sol!=null && !(data instanceof TXTData)){
+                    response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    JSONObject jsonAnswer = new JSONObject();
+                    jsonAnswer.put("Status","Fail");
+                    jsonAnswer.put("Message","The \"sol\" field needs only fot simple table data!");
+                    response.getOutputStream().print(jsonAnswer.toString());
+                }
+                else if(sol!=null){
+                    this.deleteSuppress(session);
+                    sol = sol.trim().replace("[", "").replace("]","");
+                    this.setSelectedNode(session, sol);
+                    this.saveAnonynizationRules(session, response);
+                }
+                else{
+                    this.saveAnonynizationRules(session, response);
+                }
+            }
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            JSONObject jsonAnswer = new JSONObject();
+            jsonAnswer.put("Status","Fail");
+            jsonAnswer.put("Message","Unable to produce anonymization rules, please try again!");
+            response.getOutputStream().print(jsonAnswer.toString());
+        }
+    }
+    
+    
+    @RequestMapping(value="/clearSession",  method = RequestMethod.POST)
+    public void clearSession ( HttpSession session, HttpServletResponse response) throws IOException{
+        try{
+            this.restart(session);
+            response.setStatus(HttpServletResponse.SC_OK);
+            JSONObject jsonAnswer = new JSONObject();
+            jsonAnswer.put("Status","Success");
+            jsonAnswer.put("Message","Session is cleared!");
+            response.getOutputStream().print(jsonAnswer.toString());
+        }catch(Exception e){
+            e.printStackTrace();
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            JSONObject jsonAnswer = new JSONObject();
+            jsonAnswer.put("Status","Fail");
+            jsonAnswer.put("Message","Unable to clear session, please try again!");
+            response.getOutputStream().print(jsonAnswer.toString());
+        }
+    }
+    
+    @RequestMapping(value="/loadAnonRules",  method = RequestMethod.POST)
+    public void loadAnonRules(@RequestParam("rules") MultipartFile file, HttpSession session, HttpServletResponse response) throws IOException {
+        try{
+            this.upload(file, false, session);
+            String check = this.loadAnonynizationRules(session, file.getOriginalFilename());
+            if(check!=null){
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                JSONObject jsonAnswer = new JSONObject();
+                jsonAnswer.put("Status","Fail");
+                jsonAnswer.put("Message",check);
+                response.getOutputStream().print(jsonAnswer.toString());
+            }
+            else{
+                this.getAnonDataSet(0, 0, session);
+//                session.removeAttribute("results");
+                response.setStatus(HttpServletResponse.SC_OK);
+                this.saveAnonymizeDataset(session, response);
+            }
+            
+        }catch(Exception e){
+            e.printStackTrace();
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            JSONObject jsonAnswer = new JSONObject();
+            jsonAnswer.put("Status","Fail");
+            jsonAnswer.put("Message","Unable to load anonymization rules, please try again!");
+            response.getOutputStream().print(jsonAnswer.toString());
+        }
+    }
+    
     
     
 

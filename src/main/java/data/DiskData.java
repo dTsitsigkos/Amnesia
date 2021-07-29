@@ -358,6 +358,10 @@ public class DiskData implements Data,Serializable{
             Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    
+    public String[] getColumnNames() {
+        return columnNames;
+    }
 
     @Override
     public String save(boolean[] checkColumns) throws LimitException, DateParseException {
@@ -591,6 +595,8 @@ public class DiskData implements Data,Serializable{
                 }
                 
             }
+            this.recordsTotal = this.sizeOfRows;
+            this.recordsFiltered = this.sizeOfRows;
             
             conn.commit();
             long end = System.currentTimeMillis();

@@ -14,6 +14,7 @@ import static hierarchy.Hierarchy.online_limit;
 import static hierarchy.Hierarchy.online_version;
 import hierarchy.NodeStats;
 import hierarchy.distinct.HierarchyImplString;
+import static hierarchy.distinct.HierarchyImplString.dict;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -139,7 +140,13 @@ public class AutoHierarchyImplMaskString extends HierarchyImplString {
             public int compare(Double d1, Double d2) {
 //                    return s1.getTo().compareToIgnoreCase(s2.getTo());
                 String s1 = dictData.getIdToString(d1.intValue());
-                String s2 = dictData.getIdToString(d2.intValue());
+                    if(s1 == null){
+                        s1 = dict.getIdToString(d1.intValue());
+                    }
+                    String s2 = dictData.getIdToString(d2.intValue());
+                    if(s2 == null){
+                        s2 = dict.getIdToString(d2.intValue());
+                    }
                 return s1.compareToIgnoreCase(s2);
             }
         });
