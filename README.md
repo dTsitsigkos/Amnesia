@@ -481,7 +481,7 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 
 - Bugs fixed in anonymization rules
 
-**version 1.2.5 (release date: 07/07/2021)**
+**version 1.2.5**
 - Cleaning non-printable characters
  
 - Keep 128 characters from the titles of columns 
