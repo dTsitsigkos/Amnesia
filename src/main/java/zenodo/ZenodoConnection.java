@@ -63,7 +63,7 @@ public class ZenodoConnection {
      * @return 
      */
     public static boolean verifyAccessToken(String accessToken){
-        String query = "https://zenodo.org/api/deposit/depositions?access_token=" + accessToken;
+       String query = "https://zenodo.org/api/deposit/depositions?access_token=" + accessToken;
        System.out.println("verify token = " + query);
 
         Client client = Client.create();

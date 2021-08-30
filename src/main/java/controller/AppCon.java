@@ -22,6 +22,8 @@ import data.RelSetData;
 import data.SETData;
 import data.TXTData;
 import data.XMLData;
+import dataverse.DataverseConnection;
+import dataverse.DataverseFile;
 import dictionary.DictionaryString;
 import exceptions.DateParseException;
 import exceptions.LimitException;
@@ -62,6 +64,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.lang.management.MemoryUsage;
+import java.net.MalformedURLException;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -172,7 +175,7 @@ public class AppCon extends SpringBootServletInitializer {
     }
 
     private static Class<AppCon> applicationClass = AppCon.class;
-    public static String os = "windows";
+    public static String os = "linux";
 }
 
 
@@ -1876,10 +1879,12 @@ class AppController {
     public @ResponseBody void saveDataset ( HttpServletRequest request,HttpSession session , HttpServletResponse response) throws FileNotFoundException, IOException {
         Object [][] exportData = null; 
         
-        System.out.println("app export datasettttttt");
-        ServletContext context = request.getServletContext();
-        String appPath = context.getRealPath("");
-        System.out.println("appPath = " + appPath);
+        if(request !=null){
+            System.out.println("app export datasettttttt");
+            ServletContext context = request.getServletContext();
+            String appPath = context.getRealPath("");
+            System.out.println("appPath = " + appPath);
+        }
                 
         Data data = (Data) session.getAttribute("data");
         String filename = (String)session.getAttribute("filename");
@@ -1922,18 +1927,20 @@ class AppController {
 
         // Get your file stream from wherever.
         data.exportOriginalData();
-	InputStream myStream = new FileInputStream(file);
+        if(response != null){
+            InputStream myStream = new FileInputStream(file);
 
-	// Set the content type and attachment header.
-	response.addHeader("Content-disposition", "attachment;filename=" +file.getName());
-	response.setContentType("txt/plain");
+            // Set the content type and attachment header.
+            response.addHeader("Content-disposition", "attachment;filename=" +file.getName());
+            response.setContentType("txt/plain");
 
-	// Copy the stream to the response's output stream.
-	IOUtils.copy(myStream, response.getOutputStream());
-	response.flushBuffer();
-        
-        if(os.equals("online")){
-            this.deleteFiles(session);
+            // Copy the stream to the response's output stream.
+            IOUtils.copy(myStream, response.getOutputStream());
+            response.flushBuffer();
+
+            if(os.equals("online")){
+                this.deleteFiles(session);
+            }
         }
         
         
@@ -1994,7 +2001,7 @@ class AppController {
         AnonymizedDataset anonData = (AnonymizedDataset)session.getAttribute("anondata");
         anonData.setStart(0);
 //        System.out.println("Export anonymizedDataset...");
-        File file = new File(inputPath + "/anonymized_" +filename);
+        File file = new File(inputPath + File.separator + "anonymized_" +filename);
         
         if (data.getClass().toString().contains("SET")){
             Map<Double, Double> results = (Map<Double, Double>) session.getAttribute("results");
@@ -2038,27 +2045,49 @@ class AppController {
         
         //data.export(file.getAbsolutePath(), null, exportData , null,null, null);*/
         
-        InputStream myStream = new FileInputStream(file);
+        if(response!=null){
+        
+            InputStream myStream = new FileInputStream(file);
 
-	// Set the content type and attachment header.
-	response.addHeader("Content-disposition", "attachment;filename="+file.getName());
-	response.setContentType("txt/plain");
+            // Set the content type and attachment header.
+            response.addHeader("Content-disposition", "attachment;filename="+file.getName());
+            response.setContentType("txt/plain");
 
-	// Copy the stream to the response's output stream.
-	IOUtils.copy(myStream, response.getOutputStream());
-	response.flushBuffer();
-        myStream.close();
+            // Copy the stream to the response's output stream.
+            IOUtils.copy(myStream, response.getOutputStream());
+            response.flushBuffer();
+            myStream.close();
+            
+            if(os.equals("online")){
+                this.deleteFiles(session);
+            }
+        }
         
         //htre.setHeader(null, null);
         //htre.getOutputStream();
         
-        if(os.equals("online")){
-            this.deleteFiles(session);
-        }
+        
         
         
     }
     
+    @RequestMapping(value="/action/getdataversefiles", produces = "application/json", method = RequestMethod.POST) //method = RequestMethod.POST
+    public @ResponseBody JSONObject getDataverseFiles ( HttpSession session,@RequestParam("usertoken") String usertoken, @RequestParam("server_url") String server_url, @RequestParam("dataset_id") String dataset_id ) throws FileNotFoundException, IOException, MalformedURLException, Exception {
+        List<DataverseFile> files = null;
+        if(server_url.endsWith("/")){
+            server_url = server_url.substring(0, server_url.length() - 1); 
+        }
+        files = DataverseConnection.getDataverseFiles(server_url, usertoken, dataset_id);
+        if(files==null){
+            return null;
+        }
+        else{
+            JSONObject jdata = new JSONObject();
+            session.setAttribute("dataversefiles",files);
+            jdata.put("data", files);
+            return jdata;
+        }
+    }
     
     @RequestMapping(value="/action/getzenodofiles", produces = "application/json", method = RequestMethod.POST) //method = RequestMethod.POST
     public @ResponseBody ZenodoFilesToJson getZenodoFiles ( HttpSession session,@RequestParam("usertoken") String usertoken  ) throws FileNotFoundException, IOException {
@@ -2084,27 +2113,96 @@ class AppController {
     }
     
     
+    @RequestMapping(value="/action/loaddataversefile", method = RequestMethod.POST) //method = RequestMethod.POST
+    public @ResponseBody String loaddataversefile ( HttpSession session,@RequestParam("filename") String fileName, @RequestParam("type") String type,
+            @RequestParam("size") String filesize, @RequestParam("usertoken") String usertoken, @RequestParam("server_url") String server_url
+            ) throws FileNotFoundException, IOException {
+        
+        if(server_url.endsWith("/")){
+            server_url = server_url.substring(0, server_url.length() - 1); 
+        }
+        
+        List<DataverseFile> files = (List<DataverseFile>) session.getAttribute("dataversefiles");
+        String inputPath = (String)session.getAttribute("inputpath");
+        File dir1,f1,dir = null;
+        String rootPath;
+
+        if(this.os.equals("linux")){
+            f1 = new File(System.getProperty("java.class.path"));//linux
+            dir1 = f1.getAbsoluteFile().getParentFile();
+            rootPath = dir1.toString();
+        }
+        else{
+            rootPath = System.getProperty("user.home");//windows
+        }
+        
+        if ( inputPath == null){
+            if(os.equals("online")){
+                dir = new File(this.rootPath + File.separator + "amnesia"+ File.separator + session.getId());  
+                if (!dir.exists()){
+                    dir.mkdirs();
+                }
+                inputPath = this.rootPath + File.separator + "amnesia"+ File.separator + session.getId();
+            }
+            else{
+                dir = new File(rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId());  
+                if (!dir.exists()){
+                    dir.mkdirs();
+                }
+                inputPath = rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId();
+            }
+            session.setAttribute("inputpath",inputPath);
+            session.setAttribute("filename",fileName);
+        }
+        
+        for(DataverseFile f : files){
+            if (f.getFileName().equals(fileName) && f.getType().equals(type) && f.getFilesize().equals(filesize)){
+                DataverseConnection.downloadFile(server_url, usertoken, inputPath, f);
+                break;
+            }
+        }
+        return null;
+    }
+    
+    
     @RequestMapping(value="/action/loadzenodofile", method = RequestMethod.POST) //method = RequestMethod.POST
     public @ResponseBody String loadzenodofile ( HttpSession session,@RequestParam("filename") String fileName, @RequestParam("title") String title, @RequestParam("usertoken") String usertoken  ) throws FileNotFoundException, IOException {
 //        System.out.println("Zenodo Files");
         ZenodoFilesToJson zenJson = null;
         ZenodoFile zenFile = null;
-        File dir = null;
         
 //        System.out.println("i am hereeeee");
 //        
 //        System.out.println("usertoken = " + usertoken);
         
         Map<Integer, ZenodoFile> files = (Map<Integer, ZenodoFile>)session.getAttribute("zenodofiles");
-        String inputPath = null;//(String)session.getAttribute("inputpath");
+        String inputPath = (String)session.getAttribute("inputpath");
+        File dir1,f1,dir = null;
+        String rootPath;
+
+        if(this.os.equals("linux")){
+            f1 = new File(System.getProperty("java.class.path"));//linux
+            dir1 = f1.getAbsoluteFile().getParentFile();
+            rootPath = dir1.toString();
+        }
+        else{
+            rootPath = System.getProperty("user.home");//windows
+        }
         if ( inputPath == null){
-//            String rootPath = System.getProperty("catalina.home");
-//            String rootPath = "/var/lib/tomcat8";
-            dir = new File(rootPath + File.separator + "amnesia"+ File.separator + session.getId());  
-            if (!dir.exists()){
+            if(os.equals("online")){
+                dir = new File(this.rootPath + File.separator + "amnesia"+ File.separator + session.getId());  
+                if (!dir.exists()){
                     dir.mkdirs();
+                }
+                inputPath = this.rootPath + File.separator + "amnesia"+ File.separator + session.getId();
             }
-            inputPath = rootPath + File.separator + "amnesia"+ File.separator + session.getId();
+            else{
+                dir = new File(rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId());  
+                if (!dir.exists()){
+                    dir.mkdirs();
+                }
+                inputPath = rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId();
+            }
             session.setAttribute("inputpath",inputPath);
             session.setAttribute("filename",fileName);
             
@@ -2130,9 +2228,9 @@ class AppController {
         ZenodoConnection.downloadFile(zenFile, inputPath + "/" + zenFile.getFileName(),usertoken );
         
         System.out.println("i am hereeeeeeeeeeeeeeeeeeeeeeeeeee2222222222 =" +zenFile.getFileName() );
-        if(os.equals("online")){
-            this.deleteFiles(session);
-        }
+//        if(os.equals("online")){
+//            this.deleteFiles(session);
+//        }
         
         return null;
     }
@@ -2149,13 +2247,21 @@ class AppController {
         //String usertoken = "cSQgGzD08dJ11RMyRzLRhU4hi57LK454T8sovlw6Z2STZrQbzg809wUt6ywt";
         String inputPath = (String)session.getAttribute("inputpath");
         String fileNameInput = (String)session.getAttribute("filename");
-        inputPath = inputPath +"/" + fileNameInput;
+        File dir = new File(inputPath);  
+        if (!dir.exists()){
+                dir.mkdirs();
+        }
+        inputPath = inputPath +File.separator + fileNameInput;
+        
         
         Map<Integer, ZenodoFile> files = ZenodoConnection.getDepositionFiles(usertoken);
         if (files == null){
              return null;
          }
          else{
+            Data data = (Data) session.getAttribute("data");
+            Double[][] inverse = Arrays.stream(data.getDataSet()).map(d -> Arrays.stream(d).boxed().toArray(Double[]::new)).toArray(Double[][]::new);
+            data.exportOriginalData();
             zenJson = new ZenodoFilesToJson(files,true,fileName,title,keywords,inputPath);
             session.setAttribute("zenodofiles",files);
          }
@@ -2172,9 +2278,44 @@ class AppController {
         
     }
     
+    @RequestMapping(value="/action/savefiletodataverse", method = RequestMethod.POST) //method = RequestMethod.POST
+    public @ResponseBody String saveFileToDataverse ( HttpSession session, @RequestParam("usertoken") String usertoken, @RequestParam("descr") String descr,
+            @RequestParam("server_url") String server_url, @RequestParam("dataset_id") String dataset_id) throws FileNotFoundException, 
+            IOException, ParseException, InterruptedException{
+        
+        if(server_url.endsWith("/")){
+            server_url = server_url.substring(0, server_url.length() - 1); 
+        }
+        
+        String url = null;
+        url = (String)session.getAttribute("urltoreturn");
+        
+        String tempName = (String)session.getAttribute("filename");
+        String inputPath = (String)session.getAttribute("inputpath");
+        this.createInputPath(inputPath, session);
+        
+        String file = null;
+        
+        if (url.equals("mydataset.html")){
+            this.saveDataset(null,session, null);
+            file = inputPath + File.separator +tempName;
+        }
+        else{
+           this.saveAnonymizeDataset(session, null);
+           file = inputPath  + File.separator + "anonymized_" +tempName;
+        }
+        
+        DataverseConnection.uploadFile(server_url, usertoken, dataset_id, file, descr);
+        
+        if(os.equals("online")){
+            this.deleteFiles(session);
+        }
+        
+        return url;
+    }
     
     @RequestMapping(value="/action/savefiletozenodo", method = RequestMethod.POST) //method = RequestMethod.POST
-    public @ResponseBody String saveFileToZenodo ( HttpSession session, @RequestParam("usertoken") String usertoken,@RequestParam("author") String author, @RequestParam("affiliation") String affiliation, @RequestParam("filename") String filename ,@RequestParam("title") String title,@RequestParam("description") String description, @RequestParam("contributors") String contributors, @RequestParam("keywords") String keywords  ) throws FileNotFoundException, IOException, ParseException {
+    public @ResponseBody String saveFileToZenodo ( HttpSession session, @RequestParam("usertoken") String usertoken,@RequestParam("author") String author, @RequestParam("affiliation") String affiliation, @RequestParam("filename") String filename ,@RequestParam("title") String title,@RequestParam("description") String description, @RequestParam("contributors") String contributors, @RequestParam("keywords") String keywords  ) throws FileNotFoundException, IOException, ParseException, InterruptedException {
         System.out.println("Save Files to Zenodo");
         
         String url = null;
@@ -2192,21 +2333,20 @@ class AppController {
         
         Object [][] exportData = null; 
 
-        if (url.equals("mydataset.html")){       
-            file = inputPath + "/" +tempName;
+        if (url.equals("mydataset.html")){
+            this.saveDataset(null,session, null);
+            file = inputPath + File.separator +tempName;
             System.out.println("edwwwwwwwwwwwwwwwww");
         }
         else{
             System.out.println("anonymizeeeeeeeeeeeeeeeeeeeeeeeeeeee");
-            AnonymizedDataset anonData = (AnonymizedDataset)session.getAttribute("anondata");
-            System.out.println("Export anonymizedDataset...");
-            exportData = anonData.exportDataset(inputPath + "/anonymize" +tempName, true);
+            this.saveAnonymizeDataset(session, null);
             //filename = "anonymize" +tempName;
-            file = inputPath + "/anonymize" +tempName;
+            file = inputPath  + File.separator + "anonymized_" +tempName;
         }
          
         
-System.out.println("url = " + url);
+        System.out.println("url = " + url);
         
         //crete deposition 
        Long depositionId = ZenodoConnection.createDeposition(usertoken, 

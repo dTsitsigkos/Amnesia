@@ -1292,7 +1292,7 @@ public class TXTData implements Data,Serializable{
             }
             
         }catch(FileNotFoundException | UnsupportedEncodingException ex) {
-            //Logger.getLogger(AnonymizedDatasetPanel.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("mexssage "+ex.getMessage());
         }
         System.out.println("done orgiginal data");
     }
