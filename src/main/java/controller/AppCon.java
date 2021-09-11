@@ -175,7 +175,7 @@ public class AppCon extends SpringBootServletInitializer {
     }
 
     private static Class<AppCon> applicationClass = AppCon.class;
-    public static String os = "linux";
+    public static String os = "windows";
 }
 
 
@@ -2034,9 +2034,13 @@ class AppController {
             try{
                 exportData = anonData.exportDataset(file.getAbsolutePath(), true);
             }catch(Exception e){
-                System.out.println("DAta length "+data.getRecordsTotal());
-                anonData.setLength(data.getRecordsTotal());
-                anonData.anonymizeWithImportedRules(allRules,file.getAbsolutePath());
+                try{
+                    exportData = anonData.exportDataset(file.getAbsolutePath(), false);
+                }catch(Exception e1){
+                    System.out.println("DAta length "+data.getRecordsTotal());
+                    anonData.setLength(data.getRecordsTotal());
+                    anonData.anonymizeWithImportedRules(allRules,file.getAbsolutePath());
+                }               
             }
         }
         
