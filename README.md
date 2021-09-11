@@ -474,7 +474,10 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 
 ## Version History
 
-**version 1.2.7 (release date: 30/08/2021)**
+**version 1.2.7.1 (release date: 10/09/2021)**
+- Bug fixed in suppression
+
+**version 1.2.7**
 - Integration with the dataverse project.
 
 - Bug fixed in zenodo inegration.
