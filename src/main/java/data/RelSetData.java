@@ -651,7 +651,7 @@ public class RelSetData implements Data {
 
 
 
-                    if(column != temp[column].length-1){
+                    if(column != temp[row].length-1){
                         writer.print(",");
                     }
                 }

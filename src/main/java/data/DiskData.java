@@ -806,7 +806,7 @@ public class DiskData implements Data,Serializable{
                             writer.print(value);
                         }
                         
-                        if(column != temp[column].length-1){
+                        if(column != temp[row].length-1){
                             writer.print(",");
                         }
                     }

@@ -175,7 +175,7 @@ public class AppCon extends SpringBootServletInitializer {
     }
 
     private static Class<AppCon> applicationClass = AppCon.class;
-    public static String os = "windows";
+    public static String os = "linux";
 }
 
 

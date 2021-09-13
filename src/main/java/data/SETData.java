@@ -462,7 +462,7 @@ public class SETData implements Data,Serializable {
                             
                         
                         
-                        if(column != temp[column].length-1){
+                        if(column != temp[row].length-1){
                             writer.print(",");
                         }
                     }
