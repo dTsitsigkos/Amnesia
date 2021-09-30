@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipInputStream;
+import org.apache.commons.io.IOUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -217,6 +219,7 @@ public class DataverseConnection {
     private static  void addFilePart(String fieldName, File uploadFile)
             throws IOException {
         String fileName = uploadFile.getName();
+        System.out.println("Name "+fileName+" path "+uploadFile.getAbsolutePath());
         writer.append("--" + boundary).append(LINE_FEED);
         writer.append(
                 "Content-Disposition: form-data; name=\"" + fieldName
@@ -237,7 +240,7 @@ public class DataverseConnection {
         writer.append("Content-Transfer-Encoding: binary").append(LINE_FEED);
         writer.append(LINE_FEED);
         writer.flush();
- 
+        
         FileInputStream inputStream = new FileInputStream(uploadFile);
         byte[] buffer = new byte[4096];
         int bytesRead = -1;
@@ -246,8 +249,9 @@ public class DataverseConnection {
         }
         outputStream.flush();
         inputStream.close();
-         
+
         writer.append(LINE_FEED);
-        writer.flush();    
+        writer.flush(); 
+        
     }
 }

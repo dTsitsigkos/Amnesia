@@ -12,11 +12,14 @@ import static data.Data.online_rows;
 import static data.Data.online_version;
 import dictionary.DictionaryString;
 import exceptions.DateParseException;
+import exceptions.NotFoundValueException;
 import hierarchy.Hierarchy;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -28,9 +31,16 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import jsoninterface.View;
 
 /**
@@ -45,6 +55,7 @@ public class RelSetData implements Data {
     private int sizeOfRows = 0;
     private int sizeOfCol = 0;
     private String delimeter = null;
+    @JsonView(View.GetDataTypes.class)
     private String delimeterSet = null;
     @JsonView(View.SmallDataSet.class)
     private String[][] typeArr;
@@ -70,6 +81,9 @@ public class RelSetData implements Data {
     private int columnSetData;
     private int selectedColumn;
     private String[] formatsDate = null;
+    private Map<Integer,Integer> randomizedMap;
+    @JsonView(View.GetDataTypes.class)
+    boolean pseudoanonymized = false;
     
     
     private static final String[] formats = { 
@@ -146,58 +160,62 @@ public class RelSetData implements Data {
 
     @Override
     public void exportOriginalData() {
-//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        String path = this.inputFile.substring(0, this.inputFile.lastIndexOf(File.separator));
+        System.out.println("Source path "+path);
+        String mapFile = path + File.separator + "map.txt";
         try (PrintWriter writer = new PrintWriter(this.inputFile, "UTF-8")) {
-            boolean FLAG = false;
-                
+            writer.print("Row ID");
             for(int i = 0 ; i < columnNames.length ; i ++){
-                if (FLAG == false){
-                    writer.print(columnNames[i]);
-                    FLAG = true;
-                }
-                else{
-                    writer.print(","+columnNames[i]);
-                }
-
+                writer.print(","+columnNames[i]);
             }
             writer.println();
+            Random rand = new Random();
+            List<Integer> randomNumbers = rand.ints(0, this.sizeOfRows).distinct().limit(this.sizeOfRows).boxed().collect(Collectors.toList());
+            this.randomizedMap = new HashMap();
             
             for(int i=0; i<this.sizeOfRows; i++){
+                int randomIndexToSwap = randomNumbers.get(i);
+                if(this.randomizedMap.containsKey(i)){
+                    System.out.println("Problem with "+i);
+                }
+                this.randomizedMap.put(i,randomIndexToSwap);
+                writer.print((i+1)+",");
+                
                 for(int j=0; j<this.sizeOfCol; j++){
                     if (colNamesType.get(j).equals("double")){
-                        if (Double.isNaN(relationalData[i][j])){
+                        if (Double.isNaN(relationalData[randomIndexToSwap][j])){
                             writer.print("");
                         }
                         else{
-                            Object a = relationalData[i][j];
-                            writer.print( relationalData[i][j]);
+                            Object a = relationalData[randomIndexToSwap][j];
+                            writer.print( relationalData[randomIndexToSwap][j]);
                         }
                     }
                     else if (colNamesType.get(j).equals("int")){
-                        if (relationalData[i][j] == 2147483646.0){
+                        if (relationalData[randomIndexToSwap][j] == 2147483646.0){
                             writer.print("");
                         }
                         else{
-                            writer.print( Integer.toString((int)relationalData[i][j])+"");
+                            writer.print( Integer.toString((int)relationalData[randomIndexToSwap][j])+"");
                         }
                     }
                     else if(colNamesType.get(j).equals("set")){
-                        for(int l=0; l<setData[i].length; l++){
-                            String str = dictionary.getIdToString((int) setData[i][l]);
+                        for(int l=0; l<setData[randomIndexToSwap].length; l++){
+                            String str = dictionary.getIdToString((int) setData[randomIndexToSwap][l]);
                             if(str == null){
-                                str = dictHier.getIdToString((int) setData[i][l]);
+                                str = dictHier.getIdToString((int) setData[randomIndexToSwap][l]);
                             }
                             writer.print(str);
-                            if(l!=setData[i].length-1){    
+                            if(l!=setData[randomIndexToSwap].length-1){    
                                 writer.print(this.delimeterSet);
                             }
                             
                         }
                     }
                     else{
-                        String str = dictionary.getIdToString((int)relationalData[i][j]);
+                        String str = dictionary.getIdToString((int)relationalData[randomIndexToSwap][j]);
                         if( str == null){
-                             str = dictHier.getIdToString((int) setData[i][j]);
+                             str = dictHier.getIdToString((int)relationalData[randomIndexToSwap][j]);
                         }
     //                    DictionaryString dict = dictionary.get(j);
     //                    String str = dict.getIdToString((int)dataSet[i][j]);
@@ -216,10 +234,74 @@ public class RelSetData implements Data {
                 }
                 writer.println();
             }
+            writer.flush();
+            writer.close();
             
         }catch(FileNotFoundException | UnsupportedEncodingException ex) {
             //Logger.getLogger(AnonymizedDatasetPanel.class.getName()).log(Level.SEVERE, null, ex);
         }
+        
+        File m = new File(mapFile);
+        File z = new File(path+File.separator+"anonymized_files.zip");
+        try {
+            System.out.println("map file "+mapFile);
+            m.createNewFile();
+            z.createNewFile();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            System.out.println("mexssage create map"+ex.getMessage());
+            Logger.getLogger(TXTData.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        try(PrintWriter writer = new PrintWriter(mapFile, "UTF-8")){
+            writer.print("Export row ID -> Original row");
+            writer.println();
+            for(int i=0; i<this.sizeOfRows; i++){
+                writer.print((i+1)+" -> "+(this.randomizedMap.get(i)+1));
+                writer.println();
+            }
+            writer.flush();
+            writer.close();
+        }catch(FileNotFoundException | UnsupportedEncodingException ex) {
+            ex.printStackTrace();
+            System.out.println("mexssage map"+ex.getMessage());
+        }
+        
+        try {
+            FileInputStream in1 = new FileInputStream(this.inputFile);
+            FileInputStream in2 = new FileInputStream(mapFile);
+            ZipOutputStream out = new ZipOutputStream(new FileOutputStream(path+File.separator+"anonymized_files.zip"));
+            
+            out.putNextEntry(new ZipEntry(this.inputFile.substring(this.inputFile.lastIndexOf(File.separator)+1))); 
+
+            byte[] b = new byte[2048];
+            int count;
+
+            while ((count = in1.read(b)) > 0) {
+                out.write(b, 0, count);
+            }
+            in1.close();
+            out.closeEntry();
+            out.putNextEntry(new ZipEntry("map.txt"));
+            count=0;
+            b = new byte[2048];
+            
+            while ((count = in2.read(b)) > 0) {
+                out.write(b, 0, count);
+            }
+            in2.close();
+            out.closeEntry();
+            out.close();
+        } catch (FileNotFoundException ex) {
+            ex.printStackTrace();
+            System.out.println("mexssage zip"+ex.getMessage());
+            Logger.getLogger(TXTData.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            System.out.println("mexssage zip io"+ex.getMessage());
+            Logger.getLogger(TXTData.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
         System.out.println("done orgiginal data");
     }
     
@@ -283,7 +365,7 @@ public class RelSetData implements Data {
     }
 
     @Override
-    public String save(boolean[] checkColumns) throws DateParseException {
+    public String save(boolean[] checkColumns) throws DateParseException,NotFoundValueException {
 //        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         FileInputStream fstream = null;
         DataInputStream in = null;
@@ -351,13 +433,12 @@ public class RelSetData implements Data {
                             }
 
                             if ( colNamesType.get(counter1).contains("int") ){
-                                if ( !temp[i].equals("")){
+                                if ( !temp[i].equals("") && !temp[i].equals("\"\"")){
                                     try {
                                         relationalData[counter][counter1] = Integer.parseInt(temp[i]);
                                     } catch (java.lang.NumberFormatException exc) {
                                         //ErrorWindow.showErrorWindow("Column : " + colNames[i] + " is chosen as integer and you have double values");
-                                        System.out.println("Column : " + colNames[i] + " is chosen as integer and you have double values");
-                                        return null;
+                                        throw new NotFoundValueException("Value \""+temp[i]+"\" is not an integer, \""+ colNames[i]+ "\" is an integer column");
                                     }   
                                 }
                                 else{
@@ -365,9 +446,13 @@ public class RelSetData implements Data {
                                 }
                             }
                             else if (colNamesType.get(counter1).contains("double")){
-                                if ( !temp[i].equals("")){
+                                if ( !temp[i].equals("") && !temp[i].equals("\"\"")){
                                     temp[i] = temp[i].replaceAll(",", ".");
-                                    relationalData[counter][counter1] = Double.parseDouble(temp[i]);
+                                    try{
+                                        relationalData[counter][counter1] = Double.parseDouble(temp[i]);
+                                    }catch(Exception ex){
+                                        throw new NotFoundValueException("Value \""+temp[i]+"\" is not a decimal, \""+ colNames[i]+ "\" is a decimal column");
+                                    }
                                 }
                                 else{
                                     relationalData[counter][counter1] = Double.NaN;
@@ -378,7 +463,7 @@ public class RelSetData implements Data {
 //                                DictionaryString tempDict = dictionary.get(counter1);
                                 String var = null;
 //                                System.out.println("date= "+temp[i]+" counter= "+counter+" counter1= "+counter1+" ");
-                                if ( !temp[i].equals("")){
+                                if ( !temp[i].equals("") && !temp[i].equals("\"\"")){
                                     var = temp[i];
 //                                    var = this.timestampToDate(var);
                                     try{
@@ -442,7 +527,7 @@ public class RelSetData implements Data {
                                 for(int j=0; j<tempSet.length; j++){
                                     String var = null;
 
-                                    if ( !tempSet[j].equals("")){
+                                    if ( !tempSet[j].equals("") && !temp[i].equals("\"\"")){
                                         var = tempSet[j];
                                     }
                                     else {
@@ -486,7 +571,7 @@ public class RelSetData implements Data {
 //                                DictionaryString tempDict = dictionary.get(counter1);
                                 String var = null;
 
-                                if ( !temp[i].equals("")){
+                                if ( !temp[i].equals("") && !temp[i].equals("\"\"")){
                                     var = temp[i];
                                 }
                                 else {
@@ -541,6 +626,9 @@ public class RelSetData implements Data {
             
         }catch(DateParseException dpe){
             throw new DateParseException(dpe);
+        }
+        catch(NotFoundValueException ne){
+            throw new NotFoundValueException(ne.getMessage());
         }
         catch(Exception e){
             e.printStackTrace();
@@ -600,7 +688,7 @@ public class RelSetData implements Data {
     }
 
     @Override
-    public String readDataset(String[] columnTypes, boolean[] checkColumns) throws LimitException, DateParseException {
+    public String readDataset(String[] columnTypes, boolean[] checkColumns) throws LimitException, DateParseException,NotFoundValueException {
 //        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         SaveClmnsAndTypeOfVar(columnTypes,checkColumns);
         preprocessing();
@@ -638,10 +726,20 @@ public class RelSetData implements Data {
             }
             writer.println();
             
+            Random rand = new Random();
+            List<Integer> randomNumbers = rand.ints(0, this.sizeOfRows).distinct().limit(this.sizeOfRows).boxed().collect(Collectors.toList());
+            this.randomizedMap = new HashMap();
+            
             
             for (int row = 0; row < temp.length; row++){
                 for(int column = 0; column < temp[0].length; column++){
-                    Object value = temp[row][column];
+                    
+                    int randomIndexToSwap = randomNumbers.get(row);
+                    if(this.randomizedMap.containsKey(randomIndexToSwap)){
+                        System.out.println("Problem with "+randomIndexToSwap);
+                    }
+                    this.randomizedMap.put(row,randomIndexToSwap);
+                    Object value = temp[randomIndexToSwap][column];
 
 
                     if (!value.equals("(null)")){
@@ -651,7 +749,7 @@ public class RelSetData implements Data {
 
 
 
-                    if(column != temp[row].length-1){
+                    if(column != temp[randomIndexToSwap].length-1){
                         writer.print(",");
                     }
                 }
@@ -1165,14 +1263,137 @@ public class RelSetData implements Data {
 
     @Override
     public String getInputFile() {
-        String delimiter = "/";
-        String[] temp = inputFile.split(delimiter,-1);
-        return temp[temp.length-1];
+        return this.inputFile.substring(this.inputFile.lastIndexOf(File.separator)+1);
     }
 
     @Override
     public SimpleDateFormat getDateFormat(int column) {
         return new SimpleDateFormat("dd/MM/yyyy");
+    }
+
+    @Override
+    public void setMask(int column, int[] positions, char character) {
+        int stringCount;
+        if(dictionary.isEmpty() && dictHier.isEmpty()){
+            System.out.println("Both empy load data");
+            stringCount = 1;
+        }
+        else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
+            System.out.println("Both have values");
+            if(dictionary.getMaxUsedId() > dictHier.getMaxUsedId()){
+                stringCount = dictionary.getMaxUsedId()+1;
+            }
+            else{
+                stringCount = dictHier.getMaxUsedId()+1;
+            }
+        }
+        else if(dictionary.isEmpty()){
+            System.out.println("Dict data empty");
+            stringCount = dictHier.getMaxUsedId()+1;
+        }
+        else{
+            System.out.println("Dict hier empty");
+            stringCount = dictionary.getMaxUsedId()+1;
+        }
+        
+        if(this.colNamesType.get(column).equals("set")){
+            System.out.println("Rows "+this.sizeOfRows);
+            for(int i=0; i<this.sizeOfRows; i++){
+                System.out.println("i="+i);
+                for(int j=0; j<this.setData[i].length; j++){
+                    String var = dictionary.getIdToString((int)this.setData[i][j]);
+                    if(var == null){
+                        var = this.dictHier.getIdToString((int)this.setData[i][j]);
+                    }
+
+                    if(var.equals("NaN")){
+                        continue;
+                    }
+                    
+                    for(int pos : positions){
+                        if(pos<var.length()){
+                            var = var.substring(0,pos)+character+var.substring(pos+1);
+                        }
+                    }
+                    
+                    
+                    if (!dictionary.containsString(var) && !this.dictHier.containsString(var)){
+                        if(var.equals("NaN")){
+                           dictionary.putIdToString(2147483646, var);
+                           dictionary.putStringToId(var,2147483646);
+            //                                        dictionary.put(counter1, tempDict);
+                           setData[i][j] = 2147483646.0;
+                       }
+                       else{
+                           dictionary.putIdToString(stringCount, var);
+                           dictionary.putStringToId(var,stringCount);
+            //                                    dictionary.put(counter1, tempDict);
+                           setData[i][j] = stringCount;
+                           stringCount++;
+                       }
+                   }
+                   else{
+                       //if string is present in the dictionary, get its id
+                       if(dictionary.containsString(var)){
+                           int stringId = dictionary.getStringToId(var);
+                           setData[i][j] = stringId;
+                       }
+                       else{
+                           int stringId = this.dictHier.getStringToId(var);
+                           setData[i][j] = stringId;
+                       }
+                   }
+                }
+            }
+        }
+        else{
+        
+            for(int i=0; i<this.sizeOfRows; i++){
+                String var = dictionary.getIdToString((int)relationalData[i][column]);
+                if(var == null){
+                    var = this.dictHier.getIdToString((int)relationalData[i][column]);
+                }
+
+                if(var.equals("NaN")){
+                    continue;
+                }
+
+                for(int pos : positions){
+                    if(pos<var.length()){
+                        var = var.substring(0,pos)+character+var.substring(pos+1);
+                    }
+                }
+
+
+                if (!dictionary.containsString(var) && !this.dictHier.containsString(var)){
+                    if(var.equals("NaN")){
+                       dictionary.putIdToString(2147483646, var);
+                       dictionary.putStringToId(var,2147483646);
+        //                                        dictionary.put(counter1, tempDict);
+                       relationalData[i][column] = 2147483646.0;
+                   }
+                   else{
+                       dictionary.putIdToString(stringCount, var);
+                       dictionary.putStringToId(var,stringCount);
+        //                                    dictionary.put(counter1, tempDict);
+                       relationalData[i][column] = stringCount;
+                       stringCount++;
+                   }
+               }
+               else{
+                   //if string is present in the dictionary, get its id
+                   if(dictionary.containsString(var)){
+                       int stringId = dictionary.getStringToId(var);
+                       relationalData[i][column] = stringId;
+                   }
+                   else{
+                       int stringId = this.dictHier.getStringToId(var);
+                       relationalData[i][column] = stringId;
+                   }
+               }
+            }
+        }
+        this.pseudoanonymized = true;
     }
     
 }

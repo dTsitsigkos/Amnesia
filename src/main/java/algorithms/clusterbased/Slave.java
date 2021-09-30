@@ -19,7 +19,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.util.Pair;
+import data.Pair;
 import org.apache.commons.lang.ArrayUtils;
 
 /**

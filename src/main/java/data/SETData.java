@@ -38,6 +38,8 @@ import javax.swing.JTable;
 import javax.swing.table.TableModel;
 import dictionary.DictionaryString;
 import hierarchy.Hierarchy;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
@@ -45,6 +47,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import jsoninterface.View;
 
 
@@ -59,6 +66,7 @@ public class SETData implements Data,Serializable {
     private String inputFile = null;
     private int sizeOfRows = 0;
     private int sizeOfCol = 0;
+    @JsonView(View.GetDataTypes.class)
     private String delimeter = null;
     @JsonView(View.GetDataTypes.class)
     private Map <Integer,String> colNamesType = null;
@@ -77,6 +85,9 @@ public class SETData implements Data,Serializable {
     private int recordsFiltered;
     @JsonView(View.SmallDataSet.class)
     private String[][] smallDataSet;
+    private Map<Integer,Integer> randomizedMap;
+    @JsonView(View.GetDataTypes.class)
+    boolean pseudoanonymized = false;
     
 
     
@@ -235,16 +246,13 @@ public class SETData implements Data,Serializable {
 //                        DictionaryString tempDict = dictionary.get(0);
                         String var = null;
                         temp[i] = temp[i].trim().replaceAll("[\uFEFF-\uFFFF]", "");
-                        if ( !temp[i].equals("")){
+                        if ( !temp[i].equals("")  && !temp[i].equals("\"\"")){
                             var = temp[i];
                         }
                         else {
                             var = "NaN";
                         }
                         if (!dictionary.containsString(var) && !this.dictHier.containsString(var)){
-                            if(var.equals("79902")){
-                                System.out.println("No in dictionaries");
-                            }
                             if(var.equals("NaN")){
                                dictionary.putIdToString(2147483646, var);
                                dictionary.putStringToId(var,2147483646);
@@ -262,16 +270,10 @@ public class SETData implements Data,Serializable {
                        else{
                            //if string is present in the dictionary, get its id
                            if(dictionary.containsString(var)){
-                               if(var.equals("79902")){
-                                    System.out.println("In dictionary data");
-                                }
                                int stringId = dictionary.getStringToId(var);
                                dataSet[counter][i] = stringId;
                            }
                            else{
-                               if(var.equals("79902")){
-                                    System.out.println("In dictionary hier");
-                                }
                                int stringId = this.dictHier.getStringToId(var);
                                dataSet[counter][i] = stringId;
                            }
@@ -435,6 +437,9 @@ public class SETData implements Data,Serializable {
                 //Object[] rowQIs = new Object[qids.length];
                 
                 //write table data
+                Random rand = new Random();
+                List<Integer> randomNumbers = rand.ints(0, this.sizeOfRows).distinct().limit(this.sizeOfRows).boxed().collect(Collectors.toList());
+                this.randomizedMap = new HashMap();
                 for (int row = 0; row < temp.length; row++){
                     
                     //if suppressed values exist
@@ -450,10 +455,14 @@ public class SETData implements Data,Serializable {
                             continue;
                         }
                     }*/
-                    
+                    int randomIndexToSwap = randomNumbers.get(row);
+                    if(this.randomizedMap.containsKey(randomIndexToSwap)){
+                        System.out.println("Problem with "+randomIndexToSwap);
+                    }
+                    this.randomizedMap.put(row,randomIndexToSwap);
                     //write row to file
                     for(int column = 0; column < temp[0].length; column++){
-                        Object value = temp[row][column];
+                        Object value = temp[randomIndexToSwap][column];
                         
                  
                         if (!value.equals("(null)")){
@@ -709,35 +718,34 @@ public class SETData implements Data,Serializable {
 
     @Override
     public String getInputFile() {
-        String delimiter = "/";
-        String[] temp = inputFile.split(delimiter);
-        return temp[temp.length-1];
+         return this.inputFile.substring(this.inputFile.lastIndexOf(File.separator)+1);
     }
 
     @Override
     public void exportOriginalData() {
-//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        LinkedHashMap linkedHashTemp = null;
+        String path = this.inputFile.substring(0, this.inputFile.lastIndexOf(File.separator));
+        System.out.println("Source path "+path);
+        String mapFile = path + File.separator + "map.txt";
         try (PrintWriter writer = new PrintWriter(this.inputFile, "UTF-8")) {
-            boolean FLAG = false;
+            writer.print("Row ID");
                 
             for(int i = 0 ; i < columnNames.length ; i ++){
-                if (FLAG == false){
-                    writer.print(columnNames[i]);
-                    FLAG = true;
-                }
-                else{
-                    writer.print(","+columnNames[i]);
-                }
-
+                writer.print(","+columnNames[i]);
             }
             writer.println();
+            Random rand = new Random();
+            List<Integer> randomNumbers = rand.ints(0, this.sizeOfRows).distinct().limit(this.sizeOfRows).boxed().collect(Collectors.toList());
+            this.randomizedMap = new HashMap();
             
             for(int i=0; i<this.sizeOfRows; i++){
-                linkedHashTemp = new LinkedHashMap<>();
-                FLAG = false;
                 String var;
-                for (int j = 0 ; j < dataSet[i].length ; j ++){
+                int randomIndexToSwap = randomNumbers.get(i);
+                if(this.randomizedMap.containsKey(i)){
+                    System.out.println("Problem with "+i);
+                }
+                this.randomizedMap.put(i,randomIndexToSwap);
+                writer.print((i+1)+",");
+                for (int j = 0 ; j < dataSet[randomIndexToSwap].length ; j ++){
     //                DictionaryString dict = dictionary.get(0);
                     //System.out.println()
 //                    if (FLAG == false){
@@ -752,12 +760,12 @@ public class SETData implements Data,Serializable {
 //                        linkedHashTemp.put(columnNames[0], linkedHashTemp.get(columnNames[0]) +","+dictionary.getIdToString((int)dataSet[i][j]));
 //                        
 //                    }
-                    var = dictionary.getIdToString((int)dataSet[i][j]);
+                    var = dictionary.getIdToString((int)dataSet[randomIndexToSwap][j]);
                     if(var == null){
-                        var = dictHier.getIdToString((int)dataSet[i][j]);
+                        var = dictHier.getIdToString((int)dataSet[randomIndexToSwap][j]);
                     }
                     writer.print(var);
-                    if(j!= dataSet[i].length-1){
+                    if(j!= dataSet[randomIndexToSwap].length-1){
                         writer.print(",");
                     }
                     
@@ -769,11 +777,146 @@ public class SETData implements Data,Serializable {
         }catch(FileNotFoundException | UnsupportedEncodingException ex) {
             //Logger.getLogger(AnonymizedDatasetPanel.class.getName()).log(Level.SEVERE, null, ex);
         }
+        
+        File m = new File(mapFile);
+        File z = new File(path+File.separator+"anonymized_files.zip");
+        try {
+            System.out.println("map file "+mapFile);
+            m.createNewFile();
+            z.createNewFile();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            System.out.println("mexssage create map"+ex.getMessage());
+            Logger.getLogger(TXTData.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        try(PrintWriter writer = new PrintWriter(mapFile, "UTF-8")){
+            writer.print("Export row ID -> Original row");
+            writer.println();
+            for(int i=0; i<this.sizeOfRows; i++){
+                writer.print((i+1)+" -> "+(this.randomizedMap.get(i)+1));
+                writer.println();
+            }
+            writer.flush();
+            writer.close();
+        }catch(FileNotFoundException | UnsupportedEncodingException ex) {
+            ex.printStackTrace();
+            System.out.println("mexssage map"+ex.getMessage());
+        }
+        
+        try {
+            FileInputStream in1 = new FileInputStream(this.inputFile);
+            FileInputStream in2 = new FileInputStream(mapFile);
+            ZipOutputStream out = new ZipOutputStream(new FileOutputStream(path+File.separator+"anonymized_files.zip"));
+            
+            out.putNextEntry(new ZipEntry(this.inputFile.substring(this.inputFile.lastIndexOf(File.separator)+1))); 
+
+            byte[] b = new byte[2048];
+            int count;
+
+            while ((count = in1.read(b)) > 0) {
+                out.write(b, 0, count);
+            }
+            in1.close();
+            out.closeEntry();
+            out.putNextEntry(new ZipEntry("map.txt"));
+            count=0;
+            b = new byte[2048];
+            
+            while ((count = in2.read(b)) > 0) {
+                out.write(b, 0, count);
+            }
+            in2.close();
+            out.closeEntry();
+            out.close();
+        } catch (FileNotFoundException ex) {
+            ex.printStackTrace();
+            System.out.println("mexssage zip"+ex.getMessage());
+            Logger.getLogger(TXTData.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            System.out.println("mexssage zip io"+ex.getMessage());
+            Logger.getLogger(TXTData.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     @Override
     public SimpleDateFormat getDateFormat(int column) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void setMask(int column, int[] positions, char character) {
+        int stringCount;
+        if(dictionary.isEmpty() && dictHier.isEmpty()){
+            System.out.println("Both empy load data");
+            stringCount = 1;
+        }
+        else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
+            System.out.println("Both have values");
+            if(dictionary.getMaxUsedId() > dictHier.getMaxUsedId()){
+                stringCount = dictionary.getMaxUsedId()+1;
+            }
+            else{
+                stringCount = dictHier.getMaxUsedId()+1;
+            }
+        }
+        else if(dictionary.isEmpty()){
+            System.out.println("Dict data empty");
+            stringCount = dictHier.getMaxUsedId()+1;
+        }
+        else{
+            System.out.println("Dict hier empty");
+            stringCount = dictionary.getMaxUsedId()+1;
+        }
+        
+        for(int i=0; i<this.sizeOfRows; i++){
+            for(int j=0; j<dataSet[i].length; j++){
+                String var = dictionary.getIdToString((int)dataSet[i][j]);
+                if(var == null){
+                    var = this.dictHier.getIdToString((int)dataSet[i][j]);
+                }
+
+                if(var.equals("NaN")){
+                    continue;
+                }
+
+                for(int pos : positions){
+                    if(pos<var.length()){
+                        var = var.substring(0,pos)+character+var.substring(pos+1);
+                    }
+                }
+
+
+                if (!dictionary.containsString(var) && !this.dictHier.containsString(var)){
+                    if(var.equals("NaN")){
+                       dictionary.putIdToString(2147483646, var);
+                       dictionary.putStringToId(var,2147483646);
+        //                                        dictionary.put(counter1, tempDict);
+                       dataSet[i][j] = 2147483646.0;
+                   }
+                   else{
+                       dictionary.putIdToString(stringCount, var);
+                       dictionary.putStringToId(var,stringCount);
+        //                                    dictionary.put(counter1, tempDict);
+                       dataSet[i][j] = stringCount;
+                       stringCount++;
+                   }
+               }
+               else{
+                   //if string is present in the dictionary, get its id
+                   if(dictionary.containsString(var)){
+                       int stringId = dictionary.getStringToId(var);
+                       dataSet[i][j] = stringId;
+                   }
+                   else{
+                       int stringId = this.dictHier.getStringToId(var);
+                       dataSet[i][j] = stringId;
+                   }
+               }
+            }
+        }
+        this.pseudoanonymized = true;
     }
 
     

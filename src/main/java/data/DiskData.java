@@ -60,7 +60,10 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import static java.util.stream.Collectors.joining;
 import jsoninterface.View;
-import javafx.util.Pair;
+import data.Pair;
+import exceptions.NotFoundValueException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.FileUtils;
 
 /**
@@ -105,6 +108,9 @@ public class DiskData implements Data,Serializable{
     public static String Lock = "dblock";
     private String[] formatsDate = null;
     private int counterRow;
+    private Map<Integer,Integer> randomizedMap;
+    @JsonView(View.GetDataTypes.class)
+    boolean pseudoanonymized = false;
    
     
     private static final String[] formats = { 
@@ -134,7 +140,7 @@ public class DiskData implements Data,Serializable{
         String name = "anonymization.db";
         
         
-        this.urlDatabase = "jdbc:sqlite:"+this.inputFile.substring(0,this.inputFile.lastIndexOf("/"))+File.separator+name;
+        this.urlDatabase = "jdbc:sqlite:"+this.inputFile.substring(0,this.inputFile.lastIndexOf(File.separator))+File.separator+name;
         try {
             Class.forName("org.sqlite.JDBC").newInstance();
             conn = DriverManager.getConnection(this.urlDatabase);
@@ -270,28 +276,36 @@ public class DiskData implements Data,Serializable{
 
     @Override
     public void exportOriginalData() {
-        try (PrintWriter writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(this.inputFile, true), StandardCharsets.UTF_8)))) {
-            boolean FLAG = false;
-                
+        String path = this.inputFile.substring(0, this.inputFile.lastIndexOf(File.separator));
+        System.out.println("Source path "+path);
+        String mapFile = path + File.separator + "map.txt";
+//        try (PrintWriter writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(this.inputFile, true), StandardCharsets.UTF_8)))) {
+        try (PrintWriter writer = new PrintWriter(this.inputFile, "UTF-8")) {
+            writer.print("Row ID");
             for(int i = 0 ; i < columnNames.length ; i ++){
-                if (FLAG == false){
-                    writer.print(columnNames[i]);
-                    FLAG = true;
-                }
-                else{
-                    writer.print(","+columnNames[i]);
-                }
-
+                writer.print(","+columnNames[i]);
             }
             writer.println();
             
             Double[][] dataSet;
             int start=0;
             int end = this.getRecordsTotal()/4;
+            
+            int counter=0;
+            this.randomizedMap = new HashMap();
+            
             while(end<=this.getRecordsTotal()){
                 dataSet = this.getSpecificDataset(start, end, true);
+                System.out.println("dataset length "+dataSet.length);
                 for(int i=0; i<dataSet.length; i++){
+                    
                     Double[] record = dataSet[i];
+                    
+                    if(this.randomizedMap.containsKey(counter+1)){
+                        System.out.println("Problem with "+counter+1);
+                    }
+                    this.randomizedMap.put(counter+1,dataSet[i][0].intValue());
+                    writer.print((++counter)+",");
                     for(int j=0; j<this.sizeOfCol; j++){
                         if (colNamesType.get(j).equals("double")){
                             if (Double.isNaN(record[j+1]) || record[j+1] == 2147483646.0){
@@ -346,16 +360,79 @@ public class DiskData implements Data,Serializable{
                 }
                 else{
                     start = end;
-                    end += end;
+                    end += this.getRecordsTotal()/4;;
                     if(end > this.getRecordsTotal()){
                         end = this.getRecordsTotal();
                     }
                 }
             }
+            writer.flush();
+            writer.close();
         }catch (FileNotFoundException ex) {
             Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        File m = new File(mapFile);
+        File z = new File(path+File.separator+"anonymized_files.zip");
+        try {
+            System.out.println("map file "+mapFile);
+            m.createNewFile();
+            z.createNewFile();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            System.out.println("mexssage create map"+ex.getMessage());
+            Logger.getLogger(TXTData.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        try(PrintWriter writer = new PrintWriter(mapFile, "UTF-8")){
+            writer.print("Export row ID -> Original row");
+            writer.println();
+            for(int i=0; i<this.sizeOfRows; i++){
+                writer.print((i+1)+" -> "+(this.randomizedMap.get(i+1)));
+                writer.println();
+            }
+            writer.flush();
+            writer.close();
+        }catch(FileNotFoundException | UnsupportedEncodingException ex) {
+            ex.printStackTrace();
+            System.out.println("mexssage map"+ex.getMessage());
+        }
+        
+        try {
+            FileInputStream in1 = new FileInputStream(this.inputFile);
+            FileInputStream in2 = new FileInputStream(mapFile);
+            ZipOutputStream out = new ZipOutputStream(new FileOutputStream(path+File.separator+"anonymized_files.zip"));
+            
+            out.putNextEntry(new ZipEntry(this.inputFile.substring(this.inputFile.lastIndexOf(File.separator)+1))); 
+
+            byte[] b = new byte[2048];
+            int count;
+
+            while ((count = in1.read(b)) > 0) {
+                out.write(b, 0, count);
+            }
+            in1.close();
+            out.closeEntry();
+            out.putNextEntry(new ZipEntry("map.txt"));
+            count=0;
+            b = new byte[2048];
+            
+            while ((count = in2.read(b)) > 0) {
+                out.write(b, 0, count);
+            }
+            in2.close();
+            out.closeEntry();
+            out.close();
+        } catch (FileNotFoundException ex) {
+            ex.printStackTrace();
+            System.out.println("mexssage zip"+ex.getMessage());
+            Logger.getLogger(TXTData.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            System.out.println("mexssage zip io"+ex.getMessage());
+            Logger.getLogger(TXTData.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
@@ -364,7 +441,7 @@ public class DiskData implements Data,Serializable{
     }
 
     @Override
-    public String save(boolean[] checkColumns) throws LimitException, DateParseException {
+    public String save(boolean[] checkColumns) throws LimitException, DateParseException,NotFoundValueException {
         long start = System.currentTimeMillis();
         FileInputStream fstream = null;
         DataInputStream in = null;
@@ -450,7 +527,7 @@ public class DiskData implements Data,Serializable{
                     if (checkColumns[i] == true){
                         temp[i] = temp[i].trim().replaceAll("[\uFEFF-\uFFFF]", "");
                         if (colNamesType.get(counter1).contains("int") ){
-                            if ( !temp[i].equals("")){
+                            if ( !temp[i].equals("") && !temp[i].equals("\"\"")){
                                 try {
                                     dataSet[0][counter1] = Integer.parseInt(temp[i]);
                                 } catch (java.lang.NumberFormatException exc) {
@@ -460,7 +537,7 @@ public class DiskData implements Data,Serializable{
                                     } catch (Exception exc1) {
                                         exc1.printStackTrace();
 //                                        System.out.println("Column : " + colNames[i] + " is chosen as integer and you have double values");
-                                        return null;
+                                        throw new NotFoundValueException("Value \""+temp[i]+"\" is not an integer, \""+ this.colNamesPosition.get(i)+ "\" is an integer column");
                                     }  
                                 }   
                             }
@@ -469,9 +546,14 @@ public class DiskData implements Data,Serializable{
                             }
                         }
                         else if (colNamesType.get(counter1).contains("double")){
-                            if ( !temp[i].equals("")){
+                            if ( !temp[i].equals("") && !temp[i].equals("\"\"")){
                                 temp[i] = temp[i].replaceAll(",", ".");
-                                dataSet[0][counter1] = Double.parseDouble(temp[i]);
+                                try{
+                                    dataSet[0][counter1] = Double.parseDouble(temp[i]);
+                                }catch(Exception ex){
+                                    ex.printStackTrace();
+                                    throw new NotFoundValueException("Value \""+temp[i]+"\" is not a decimal, \""+ colNames[i]+ "\" is a decimal column");
+                                }
                             }
                             else{
                                 dataSet[0][counter1] = 2147483646.0;
@@ -480,7 +562,7 @@ public class DiskData implements Data,Serializable{
                         else if (colNamesType.get(counter1).contains("date")){
                             String var = null;
                             Date d;
-                            if (var!=null ||  !temp[i].equals("")){
+                            if (var!=null || (!temp[i].equals("") && !temp[i].equals("\"\""))){
                                 var = temp[i];
                                 try{
                                     if(this.formatsDate[counter1].equals("dd/MM/yyyy")){
@@ -523,7 +605,7 @@ public class DiskData implements Data,Serializable{
                         else{
                             String var = null;
 
-                            if ( !temp[i].equals("")){
+                            if ( !temp[i].equals("") && !temp[i].equals("\"\"")){
                                 var = temp[i];
                             }
                             else {
@@ -623,7 +705,12 @@ public class DiskData implements Data,Serializable{
                 Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex2);
             }
             return errorMessage;
-        } finally{
+        }catch(DateParseException de){
+            throw new DateParseException(de);
+        }
+        catch(NotFoundValueException ne){
+            throw new NotFoundValueException(ne.getMessage());
+        }finally{
             if(stmnt!=null){   
                 try {
                     stmnt.close();
@@ -658,7 +745,7 @@ public class DiskData implements Data,Serializable{
     }
 
     @Override
-    public String readDataset(String[] columnTypes, boolean[] checkColumns) throws LimitException, DateParseException {
+    public String readDataset(String[] columnTypes, boolean[] checkColumns) throws LimitException, DateParseException,NotFoundValueException {
         SaveClmnsAndTypeOfVar(columnTypes,checkColumns);
         return save(checkColumns);
     }
@@ -702,15 +789,17 @@ public class DiskData implements Data,Serializable{
                     rowQIs = new Object[qids.length];
                 }
                 //write table data
+                Random rand = new Random();
+                List<Integer> randomNumbers = rand.ints(0, temp.length).distinct().limit(temp.length).boxed().collect(Collectors.toList());
                 for (int row = 0; row < temp.length; row++){
-                    
+                    int randomIndexToSwap = randomNumbers.get(row);
                     //if suppressed values exist
                     if(suppressedValues != null){
                         
                         
                         //get qids of this row
                         for(int i=0; i<qids.length; i++){
-                            rowQIs[i] = temp[row][qids[i]];
+                            rowQIs[i] = temp[randomIndexToSwap][qids[i]];
                         }
                         
                         
@@ -722,7 +811,7 @@ public class DiskData implements Data,Serializable{
                     //write row to file
                     for(int column = 0; column < temp[0].length; column++){
                         
-                        Object value = temp[row][column];
+                        Object value = temp[randomIndexToSwap][column];
                         if (!value.equals("(null)")){
                             writer.print(value);
                         }
@@ -1185,7 +1274,7 @@ public class DiskData implements Data,Serializable{
         Double[][] data = null;
         String sqlQuery;
         if(withIdenticals){
-            sqlQuery = "SELECT * FROM dataset WHERE id >= ? AND id <= ? ";
+            sqlQuery = "SELECT * FROM dataset WHERE id >= ? AND id <= ? ORDER BY RANDOM()";
         }
         else{
             sqlQuery = "SELECT * FROM dataset WHERE id >= ? AND id <= ? and id NOT in (SELECT id_ch FROM checked_records)";
@@ -1975,9 +2064,7 @@ public class DiskData implements Data,Serializable{
 
     @Override
     public String getInputFile() {
-        String delimeter = "/";
-        String[] temp = inputFile.split(delimeter,-1);
-        return temp[temp.length-1];
+       return this.inputFile.substring(this.inputFile.lastIndexOf(File.separator)+1);
     }
     
     public static String replaceLast(String text, String regex, String replacement) {
@@ -2412,6 +2499,125 @@ public class DiskData implements Data,Serializable{
     @Override
     public SimpleDateFormat getDateFormat(int column) {
         return new SimpleDateFormat("dd/MM/yyyy");
+    }
+
+    @Override
+    public void setMask(int column, int[] positions, char character) {
+        PreparedStatement pstm = null;
+        Statement stm = null;
+        ResultSet result = null;
+        String updateSql = "UPDATE dataset SET "+this.columnNames[column]+" = ? WHERE id = ?";
+        String selectSql = "SELECT id,"+this.columnNames[column]+" FROM dataset";
+        Double[][] records = new Double[this.sizeOfRows][2];
+        try{
+            this.conn.setAutoCommit(false);
+            stm = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY); 
+            pstm = this.conn.prepareStatement(updateSql);
+            stm.setFetchSize(50);
+            result = stm.executeQuery(selectSql);
+            int counter=0;
+            while(result.next()){
+                records[counter][0] = result.getDouble(1);
+                records[counter][1] = result.getDouble(2);
+                counter++;
+            }
+            
+            int stringCount;
+            if(dictionary.isEmpty() && dictHier.isEmpty()){
+                System.out.println("Both empy load data");
+                stringCount = 1;
+            }
+            else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
+                System.out.println("Both have values");
+                if(dictionary.getMaxUsedId() > dictHier.getMaxUsedId()){
+                    stringCount = dictionary.getMaxUsedId()+1;
+                }
+                else{
+                    stringCount = dictHier.getMaxUsedId()+1;
+                }
+            }
+            else if(dictionary.isEmpty()){
+                System.out.println("Dict data empty");
+                stringCount = dictHier.getMaxUsedId()+1;
+            }
+            else{
+                System.out.println("Dict hier empty");
+                stringCount = dictionary.getMaxUsedId()+1;
+            }
+
+            for(int i=0; i<this.sizeOfRows; i++){
+                String var = dictionary.getIdToString(records[i][1].intValue());
+                if(var == null){
+                    var = this.dictHier.getIdToString(records[i][1].intValue());
+                }
+
+                if(var.equals("NaN")){
+                    continue;
+                }
+
+                for(int pos : positions){
+                    if(pos<var.length()){
+                        var = var.substring(0,pos)+character+var.substring(pos+1);
+                    }
+                }
+
+
+                if (!dictionary.containsString(var) && !this.dictHier.containsString(var)){
+                    if(var.equals("NaN")){
+                       dictionary.putIdToString(2147483646, var);
+                       dictionary.putStringToId(var,2147483646);
+        //                                        dictionary.put(counter1, tempDict);
+                       records[i][1] = 2147483646.0;
+                   }
+                   else{
+                       dictionary.putIdToString(stringCount, var);
+                       dictionary.putStringToId(var,stringCount);
+        //                                    dictionary.put(counter1, tempDict);
+                       records[i][1] = (double) stringCount;
+                       stringCount++;
+                   }
+               }
+               else{
+                   //if string is present in the dictionary, get its id
+                   if(dictionary.containsString(var)){
+                       int stringId = dictionary.getStringToId(var);
+                       records[i][1] = (double) stringId;
+                   }
+                   else{
+                       int stringId = this.dictHier.getStringToId(var);
+                       records[i][1] = (double) stringId;
+                   }
+               }
+                pstm.setDouble(1, records[i][1]);
+                pstm.setInt(2, records[i][0].intValue());
+                pstm.executeUpdate();
+                
+               
+            }
+            
+//            pstm = conn.prepareStatement(insertSql+valuesStr);
+            conn.commit();
+            this.pseudoanonymized = true;
+        }catch(Exception e){
+            e.printStackTrace();
+            System.err.println("Error: "+e.getMessage()+" setMask");
+        }finally{
+            if(pstm!=null){
+                try {
+                    pstm.close();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            
+            try {
+                this.conn.setAutoCommit(true);
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+                Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
     }
     
 }

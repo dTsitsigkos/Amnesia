@@ -20,6 +20,12 @@ import hierarchy.ranges.RangeDate;
 import hierarchy.ranges.RangeDouble;
 import java.awt.Color;
 import java.awt.Component;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -30,6 +36,8 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -464,18 +472,18 @@ public class AnonymizedDataset {
             anonymizedData = originalAnon[1];
             
             if(originalAnon == null){
-                originalData = diskData.getDataSet();
+                originalData = diskData.getDataset(start, max);
                 anonymizedData = originalData;
             }
         }catch(Exception e){
             System.err.println("Error: render disk table "+e.getMessage());
-            originalData = diskData.getDataSet();
+            originalData = diskData.getDataset(start, max);
             anonymizedData = originalData;
         }
         columnData = new Object[length][colNamesType.size()];
         for(int i = 0; i < length; i ++){
             for( int j = 0 ; j < colNamesType.size() ; j ++ ){
-                columnData[i][j] = anonymizedData[i][j];
+                columnData[i][j] = originalData[i][j];
             }
         }
         
@@ -491,6 +499,7 @@ public class AnonymizedDataset {
                 anonymizeColumn = true;
                 hierarchy = quasiIdentifiers.get(column);
 //                level = transformation[count];
+                System.out.println("Anonymized "+hierarchy+ " column "+columnName);
                 count++;
             }
             
@@ -531,11 +540,11 @@ public class AnonymizedDataset {
                         }
                     }
                     else{
-                        if(anonymizedData[line][column] == 2147483646.0){
+                        if(originalData[line][column] == 2147483646.0){
                             columnData[line][column] = "(null)" ;
                         }
                         else{
-                            columnData[line][column] = (int)  anonymizedData[line][column];
+                            columnData[line][column] = (int)  originalData[line][column];
                         }
                     }
                 }
@@ -567,11 +576,11 @@ public class AnonymizedDataset {
                         }
                     }
                     else{
-                        if(anonymizedData[line][column] == 2147483646.0){
+                        if(originalData[line][column] == 2147483646.0){
                             columnData[line][column] = "(null)" ;
                         }
                         else{
-                            columnData[line][column] = anonymizedData[line][column];
+                            columnData[line][column] = originalData[line][column];
                         }
                     }
                 }
@@ -620,22 +629,22 @@ public class AnonymizedDataset {
                     }
                     else{
                         if(dataset.getColNamesType().get(column).equals("date")){
-                            columnData[line][column] = dataset.getDictionary().getIdToString((int) anonymizedData[line][column]);
+                            columnData[line][column] = dataset.getDictionary().getIdToString((int) originalData[line][column]);
                             if(columnData[line][column]==null){
                                 
-                                Date date = new Date((long)anonymizedData[line][column]);
+                                Date date = new Date((long)originalData[line][column]);
                                 SimpleDateFormat df2 = new SimpleDateFormat("dd/MM/yyyy");
                                 columnData[line][column] = df2.format(date);
                             }
 
-                            if(anonymizedData[line][column] == 2147483646.0){
+                            if(originalData[line][column] == 2147483646.0){
                                 columnData[line][column] = "(null)" ;
                             }
                         }
                         else{
-                           columnData[line][column] = dataset.getDictionary().getIdToString((int) anonymizedData[line][column]);
+                           columnData[line][column] = dataset.getDictionary().getIdToString((int) originalData[line][column]);
                             if(columnData[line][column] == null){
-                               columnData[line][column] = HierarchyImplString.getWholeDictionary().getIdToString((int) anonymizedData[line][column]);
+                               columnData[line][column] = HierarchyImplString.getWholeDictionary().getIdToString((int) originalData[line][column]);
                             }
                             
                             if(columnData[line][column].equals("NaN")){
@@ -970,11 +979,38 @@ public class AnonymizedDataset {
         colNamesPosition = dataset.getColNamesPosition();
         int start=0;
         int end = dataset.getRecordsTotal()/4;
+        try {
+            PrintWriter writer = new PrintWriter( new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, false), StandardCharsets.UTF_8)));
+            writer.close();
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(AnonymizedDataset.class.getName()).log(Level.SEVERE, null, ex);
+        }
         while(end<=dataset.getRecordsTotal()){
-            double[][][] originalAnon = data.getOriginalAnonSet(start, end);
+            double[][][] originalAnon;
+//            originalAnon = data.getOriginalAnonSet(start, end);
             Object[][]columnData = null;
-            double[][] anonymizedData = originalAnon[1];
-            double[][] originalData = originalAnon[0];
+            double[][] anonymizedData; 
+//            anonymizedData = originalAnon[1];
+            double[][] originalData;
+//            originalData = originalAnon[0];
+            
+            
+            try{
+                originalAnon = data.getOriginalAnonSet(start, end);
+                originalData = originalAnon[0];
+                anonymizedData = originalAnon[1];
+
+                if(originalAnon == null){
+                    originalData = data.getDataset(start, end);
+                    anonymizedData = originalData;
+                }
+            }catch(Exception e){
+                System.err.println("Error: render disk table "+e.getMessage());
+                originalData = data.getDataset(start, end);
+                anonymizedData = originalData;
+            }
+            
+            
             columnData = new Object[anonymizedData.length][anonymizedData[0].length];
             int count = 0;
 
@@ -982,7 +1018,7 @@ public class AnonymizedDataset {
 
             for(int i=0; i< anonymizedData.length; i++){
                 for( int j = 0 ; j < colNamesType.size() ; j ++ ){
-                    columnData[i][j] = anonymizedData[i][j];
+                    columnData[i][j] = originalData[i][j];
                 }
             }
 
@@ -1036,11 +1072,11 @@ public class AnonymizedDataset {
                             }
                         }
                         else{
-                            if(anonymizedData[line][column] == 2147483646.0){
+                            if(originalData[line][column] == 2147483646.0){
                                 columnData[line][column] = "(null)" ;
                             }
                             else{
-                                columnData[line][column] = (int)  anonymizedData[line][column];
+                                columnData[line][column] = (int)  originalData[line][column];
                             }
                         }
                     }
@@ -1072,11 +1108,11 @@ public class AnonymizedDataset {
                             }
                         }
                         else{
-                            if(anonymizedData[line][column] == 2147483646.0){
+                            if(originalData[line][column] == 2147483646.0){
                                 columnData[line][column] = "(null)" ;
                             }
                             else{
-                                columnData[line][column] = anonymizedData[line][column];
+                                columnData[line][column] = originalData[line][column];
                             }
                         }
                     }
@@ -1125,22 +1161,22 @@ public class AnonymizedDataset {
                         }
                         else{
                             if(dataset.getColNamesType().get(column).equals("date")){
-                                columnData[line][column] = dataset.getDictionary().getIdToString((int) anonymizedData[line][column]);
+                                columnData[line][column] = dataset.getDictionary().getIdToString((int) originalData[line][column]);
                                 if(columnData[line][column]==null){
 
-                                    Date date = new Date((long)anonymizedData[line][column]);
+                                    Date date = new Date((long)originalData[line][column]);
                                     SimpleDateFormat df2 = new SimpleDateFormat("dd/MM/yyyy");
                                     columnData[line][column] = df2.format(date);
                                 }
 
-                                if(anonymizedData[line][column] == 2147483646.0){
+                                if(originalData[line][column] == 2147483646.0){
                                     columnData[line][column] = "(null)" ;
                                 }
                             }
                             else{
-                               columnData[line][column] = dataset.getDictionary().getIdToString((int) anonymizedData[line][column]);
+                               columnData[line][column] = dataset.getDictionary().getIdToString((int) originalData[line][column]);
                                 if(columnData[line][column] == null){
-                                   columnData[line][column] = HierarchyImplString.getWholeDictionary().getIdToString((int) anonymizedData[line][column]);
+                                   columnData[line][column] = HierarchyImplString.getWholeDictionary().getIdToString((int) originalData[line][column]);
                                 }
 
                                 if(columnData[line][column].equals("NaN")){
@@ -1159,7 +1195,7 @@ public class AnonymizedDataset {
             }
             else{
                 start = end;
-                end += end;
+                end += dataset.getRecordsTotal()/4;;
                 if(end > data.getRecordsTotal()){
                     end = data.getRecordsTotal();
                 }
@@ -1485,6 +1521,7 @@ public class AnonymizedDataset {
     /**
      * export anonymized dataset to file
      * @param file the filename
+     * @param anonymized
      */
     public Object[][] exportDataset(String file, boolean anonymized) throws ParseException{
         double [][]dataSet = this.dataset.getDataSet();
@@ -1566,7 +1603,7 @@ public class AnonymizedDataset {
                             }
                         }
                         else{                       
-                            if ((double) columnData[line][column] == 2147483646.0) {
+                            if (((double) columnData[line][column]) == 2147483646.0) {
                                 columnData[line][column] = "(null)";
                             }
                             else {
@@ -1602,7 +1639,7 @@ public class AnonymizedDataset {
                             }
                             else{
                                 Object value = anonymizeValue(columnData[line][column], hierarchy, level);
-                                if(value instanceof String && ((String)value).equals("(null)")){
+                                if(value instanceof String && (((String)value).equals("(null)") && ((String)value).toLowerCase().equals("nan"))){
                                     columnData[line][column] = "(null)";
                                 }
                                 else{

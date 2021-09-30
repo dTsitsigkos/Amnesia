@@ -27,6 +27,7 @@ import dataverse.DataverseFile;
 import dictionary.DictionaryString;
 import exceptions.DateParseException;
 import exceptions.LimitException;
+import exceptions.NotFoundValueException;
 import graph.DatasetsExistence;
 import graph.Edge;
 import graph.Node;
@@ -175,7 +176,7 @@ public class AppCon extends SpringBootServletInitializer {
     }
 
     private static Class<AppCon> applicationClass = AppCon.class;
-    public static String os = "linux";
+    public static String os = "windows";
 }
 
 
@@ -602,7 +603,7 @@ class AppController {
 
     @JsonView(View.SmallDataSet.class)
     @RequestMapping(value="/action/getsmalldataset", method = RequestMethod.POST)//, method = RequestMethod.POST)
-    public @ResponseBody Data getSmallDataSet ( @RequestParam("del") String del, @RequestParam("datatype") String datatype, @RequestParam("delset") String delset ,HttpSession session) throws FileNotFoundException, IOException, LimitException, DateParseException {
+    public @ResponseBody Data getSmallDataSet ( @RequestParam("del") String del, @RequestParam("datatype") String datatype, @RequestParam("delset") String delset ,HttpSession session) throws FileNotFoundException, IOException, LimitException, DateParseException,NotFoundValueException {
 
         Data data = null;
         FileInputStream fstream = null;
@@ -622,7 +623,7 @@ class AppController {
 	File dir = new File(rootPath);
 
         
-        String fullPath = dir + "/" + filename;
+        String fullPath = dir + File.separator + filename;
         
         dict = HierarchyImplString.getWholeDictionary();
         if(dict == null){
@@ -687,7 +688,7 @@ class AppController {
             if ( result == null){
                 return null;
             }
-            else if (result == "1"){
+            else if (result.equals("1")){
                 return data;
             }
         
@@ -834,7 +835,7 @@ class AppController {
 
         File dir = new File(rootPath);
 
-        String fullPath = dir + "/" + filename; 
+        String fullPath = dir + File.separator + filename; 
         fstream = new FileInputStream(fullPath);
         in = new DataInputStream(fstream);
         br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
@@ -863,7 +864,7 @@ class AppController {
     
     @JsonView(View.DataSet.class)
     @RequestMapping(value="/action/getdataset", method = RequestMethod.POST)//, method = RequestMethod.POST)
-    public @ResponseBody Data getDataSet (@RequestParam("start") int start , @RequestParam("length") int length , HttpSession session) throws FileNotFoundException, IOException {
+    public @ResponseBody Data getDataSet (@RequestParam("start") int start , @RequestParam("length") int length , @RequestParam(value = "onlyStrings",required = false,defaultValue = "false") boolean onlyStrings, HttpSession session) throws FileNotFoundException, IOException {
         
 
         Data data = (Data) session.getAttribute("data");
@@ -895,6 +896,7 @@ class AppController {
     }
     
     
+    
     @JsonView(View.GetColumnNames.class)
     @RequestMapping(value="/action/getcolumnnames", method = RequestMethod.POST) //method = RequestMethod.POST
     public @ResponseBody Data getColumnNames ( HttpSession session ) throws FileNotFoundException, IOException {
@@ -913,7 +915,7 @@ class AppController {
     
     
     @RequestMapping(value="/action/loaddataset", method = RequestMethod.POST)
-    public @ResponseBody String loadDataset (@RequestParam("vartypes") String [] vartypes, @RequestParam("checkColumns") boolean [] checkColumns, HttpSession session) throws IOException, LimitException, DateParseException   {
+    public @ResponseBody String loadDataset (@RequestParam("vartypes") String [] vartypes, @RequestParam("checkColumns") boolean [] checkColumns, HttpSession session) throws IOException, LimitException, DateParseException,NotFoundValueException   {
         String result = null;
         
         
@@ -930,6 +932,16 @@ class AppController {
         return result;
     }
     
+    
+    @RequestMapping(value="/action/savemask", method = RequestMethod.POST)
+    public @ResponseBody void saveMask (@RequestParam("column") int column, @RequestParam("positions") String positions, @RequestParam("char") String character, HttpSession session)  {
+        int[] pos_arr = Arrays.stream(positions.substring(1, positions.length()-1).split(","))
+            .map(String::trim).mapToInt(Integer::parseInt).toArray();
+        
+        Data data = (Data) session.getAttribute("data");
+        
+        data.setMask(column, pos_arr, character.charAt(0));
+    }
     
     @RequestMapping(value="/action/saveselectedhier", method = RequestMethod.POST)
     public @ResponseBody void saveSelectedHier (@RequestParam("hiername") String hiername, HttpSession session)  {
@@ -991,7 +1003,7 @@ class AppController {
             File dir = new File(rootPath);
 
 
-            String fullPath = dir + "/" + filename;
+            String fullPath = dir + File.separator + filename;
 
 
             Hierarchy h = null;
@@ -1107,7 +1119,7 @@ class AppController {
         String inputPath = (String)session.getAttribute("inputpath");
         this.createInputPath(inputPath, session);
         
-        File file = new File(inputPath + "/" +hierName + ".txt");
+        File file = new File(inputPath + File.separator +hierName + ".txt");
 
         
         h.export(file.getAbsolutePath());
@@ -1817,6 +1829,7 @@ class AppController {
                 anonData = new AnonymizedDataset(data,start,length,selectedNode,quasiIdentifiers,toSuppress,selectedAttrNames,toSuppressJson);
 //                anonData.setDataOriginal(originalData);
                 if (!data.getClass().toString().contains("SET") && !data.getClass().toString().contains("RelSet") && !data.getClass().toString().contains("Disk")){
+                    System.out.println("action/getanondataset TXT ===========");
                     if ( allRules == null){
                         anonData.renderAnonymizedTable();
                     }
@@ -1876,7 +1889,7 @@ class AppController {
     
     @RequestMapping(value="/action/savedataset") //method = RequestMethod.POST
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    public @ResponseBody void saveDataset ( HttpServletRequest request,HttpSession session , HttpServletResponse response) throws FileNotFoundException, IOException {
+    public @ResponseBody void saveDataset (HttpServletRequest request,HttpSession session , HttpServletResponse response) throws FileNotFoundException, IOException {
         Object [][] exportData = null; 
         
         if(request !=null){
@@ -1895,7 +1908,7 @@ class AppController {
         System.out.println("Export Dataset... " + filename);
         System.out.println("Export Dataset...");
         
-        File file = new File(inputPath + "/" +filename);
+        File file = new File(inputPath + File.separator +filename);
         file.createNewFile();
         /*System.out.println(file.getAbsolutePath());
         try {
@@ -1928,16 +1941,17 @@ class AppController {
         // Get your file stream from wherever.
         data.exportOriginalData();
         if(response != null){
-            InputStream myStream = new FileInputStream(file);
+//            ZipInputStream inputStream = new ZipInputStream(new FileInputStream(new File(inputPath + File.separator+"anonymized_files.zip")));
+            InputStream myStream = new FileInputStream(new File(inputPath + File.separator+"anonymized_files.zip"));
 
             // Set the content type and attachment header.
-            response.addHeader("Content-disposition", "attachment;filename=" +file.getName());
-            response.setContentType("txt/plain");
+            response.addHeader("Content-disposition", "attachment;filename=anonymized_files.zip");
+            response.setContentType("application/zip");
 
             // Copy the stream to the response's output stream.
             IOUtils.copy(myStream, response.getOutputStream());
             response.flushBuffer();
-
+            myStream.close();
             if(os.equals("online")){
                 this.deleteFiles(session);
             }
@@ -2140,24 +2154,23 @@ class AppController {
             rootPath = System.getProperty("user.home");//windows
         }
         
-        if ( inputPath == null){
-            if(os.equals("online")){
-                dir = new File(this.rootPath + File.separator + "amnesia"+ File.separator + session.getId());  
-                if (!dir.exists()){
-                    dir.mkdirs();
-                }
-                inputPath = this.rootPath + File.separator + "amnesia"+ File.separator + session.getId();
+        
+        if(os.equals("online")){
+            dir = new File(this.rootPath + File.separator + "amnesia"+ File.separator + session.getId());  
+            if (!dir.exists()){
+                dir.mkdirs();
             }
-            else{
-                dir = new File(rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId());  
-                if (!dir.exists()){
-                    dir.mkdirs();
-                }
-                inputPath = rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId();
-            }
-            session.setAttribute("inputpath",inputPath);
-            session.setAttribute("filename",fileName);
+            inputPath = this.rootPath + File.separator + "amnesia"+ File.separator + session.getId();
         }
+        else{
+            dir = new File(rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId());  
+            if (!dir.exists()){
+                dir.mkdirs();
+            }
+            inputPath = rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId();
+        }
+        session.setAttribute("inputpath",inputPath);
+        session.setAttribute("filename",fileName);
         
         for(DataverseFile f : files){
             if (f.getFileName().equals(fileName) && f.getType().equals(type) && f.getFilesize().equals(filesize)){
@@ -2229,7 +2242,7 @@ class AppController {
         System.out.println("i am hereeeee3333");
 
         
-        ZenodoConnection.downloadFile(zenFile, inputPath + "/" + zenFile.getFileName(),usertoken );
+        ZenodoConnection.downloadFile(zenFile, inputPath + File.separator + zenFile.getFileName(),usertoken );
         
         System.out.println("i am hereeeeeeeeeeeeeeeeeeeeeeeeeee2222222222 =" +zenFile.getFileName() );
 //        if(os.equals("online")){
@@ -2302,7 +2315,7 @@ class AppController {
         
         if (url.equals("mydataset.html")){
             this.saveDataset(null,session, null);
-            file = inputPath + File.separator +tempName;
+            file = inputPath + File.separator +"anonymized_files.zip";
         }
         else{
            this.saveAnonymizeDataset(session, null);
@@ -2311,9 +2324,9 @@ class AppController {
         
         DataverseConnection.uploadFile(server_url, usertoken, dataset_id, file, descr);
         
-        if(os.equals("online")){
-            this.deleteFiles(session);
-        }
+//        if(os.equals("online")){
+//            this.deleteFiles(session);
+//        }
         
         return url;
     }
@@ -2339,7 +2352,7 @@ class AppController {
 
         if (url.equals("mydataset.html")){
             this.saveDataset(null,session, null);
-            file = inputPath + File.separator +tempName;
+            file = inputPath + File.separator +"anonymized_files.zip";
             System.out.println("edwwwwwwwwwwwwwwwww");
         }
         else{
@@ -2436,7 +2449,7 @@ class AppController {
 
             File dir = new File(rootPath);
 
-            String fullPath = dir + "/" + filename;
+            String fullPath = dir + File.separator + filename;
 
             dict = new DictionaryString();
             if(hierarchies!=null){
@@ -4027,7 +4040,7 @@ class AppController {
         String inputPath = (String)session.getAttribute("inputpath");
         this.createInputPath(inputPath, session);
         //String anonRulesFile = inputPath +"/anonymized_rules_"+filename;
-        String anonRulesFile = inputPath + "/"+filename;
+        String anonRulesFile = inputPath + File.separator +filename;
         AnonymizationRules anonRules = new AnonymizationRules();
         
 //        System.out.println("inputPath = " + inputPath);

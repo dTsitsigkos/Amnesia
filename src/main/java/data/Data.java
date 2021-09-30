@@ -24,6 +24,7 @@ import java.util.Set;
 import javax.swing.JTable;
 import dictionary.DictionaryString;
 import exceptions.DateParseException;
+import exceptions.NotFoundValueException;
 import hierarchy.Hierarchy;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -37,16 +38,16 @@ import java.util.LinkedHashMap;
  */
 public interface Data {
     public int online_rows = 5000;
-    public String online_version = "online";
+    public String online_version = "daonline";
     public double[][] getDataSet();
     public void setData(double[][] _data);
     public int getDataLenght();
     public int getDataColumns();
     public void print();
     public void exportOriginalData();
-    public String save(boolean[] checkColumns) throws LimitException,DateParseException;
+    public String save(boolean[] checkColumns) throws LimitException,DateParseException, NotFoundValueException;
     public void preprocessing() throws LimitException;
-    public String readDataset(String[] columnTypes, boolean [] checkColumns) throws LimitException,DateParseException;
+    public String readDataset(String[] columnTypes, boolean [] checkColumns) throws LimitException,DateParseException, NotFoundValueException;
     public void export(String file, Object[][] initialTable, Object[][] anonymizedTable, int[] qids, Map<Integer, Hierarchy> hierarchies, Map<Integer, Set<String>> suppressedValues);
     public Map <Integer,String> getColNamesPosition();
 //    public Map <Integer,DictionaryString> getDictionary();
@@ -66,5 +67,6 @@ public interface Data {
     public Map<Integer, String> getColNamesType();
     public String getInputFile();
     public SimpleDateFormat getDateFormat(int column);
+    public void setMask(int column, int[] positions, char character);
 
 }

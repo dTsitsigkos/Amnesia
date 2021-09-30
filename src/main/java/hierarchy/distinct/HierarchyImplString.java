@@ -192,7 +192,7 @@ public class HierarchyImplString implements Hierarchy<Double> {
         while ((line = br.readLine()) != null) {
             String tokens[] = line.split(" ");
             if(line.trim().isEmpty()){
-                System.out.println("Line "+line);
+//                System.out.println("Line "+line);
                 if(curLevel==this.height -1 ){
                     for(String tkn : lastParents){
                         

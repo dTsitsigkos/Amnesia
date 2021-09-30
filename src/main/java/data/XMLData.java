@@ -938,5 +938,10 @@ public class XMLData implements Data {
     public SimpleDateFormat getDateFormat(int column) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
+    @Override
+    public void setMask(int column, int[] positions, char character) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
     
 }

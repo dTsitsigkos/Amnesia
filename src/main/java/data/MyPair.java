@@ -14,7 +14,7 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jsoninterface.View;
-import javafx.util.Pair;
+import data.Pair;
 
 /**
  *

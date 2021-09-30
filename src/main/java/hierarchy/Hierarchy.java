@@ -35,7 +35,7 @@ import java.util.Date;
  */
 public interface Hierarchy <T> {
     public int online_limit = 1000;
-    public String online_version = "online";
+    public String online_version = "dawonline";
     public int[][] getHierarchy();
     public void setHierarchy();
     public void setDictionaryData(DictionaryString dict);

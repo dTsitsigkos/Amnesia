@@ -44,6 +44,8 @@ import dictionary.DictionaryString;
 import exceptions.DateParseException;
 import hierarchy.Hierarchy;
 import hierarchy.ranges.RangeDouble;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
@@ -56,6 +58,13 @@ import java.util.LinkedHashMap;
 import javax.persistence.Column;
 import jsoninterface.View;
 import java.util.Date;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+import org.apache.commons.io.FilenameUtils;
 
 
 
@@ -97,6 +106,9 @@ public class TXTData implements Data,Serializable{
     @JsonView(View.SmallDataSet.class)
     private String errorMessage = null;
     private String[] formatsDate = null;
+    private Map<Integer,Integer> randomizedMap;
+    @JsonView(View.GetDataTypes.class)
+    boolean pseudoanonymized = false;
     
     private static final String[] formats = { 
                 "yyyy-MM-dd'T'HH:mm:ss'Z'",   "yyyy-MM-dd'T'HH:mm:ssZ",
@@ -136,9 +148,7 @@ public class TXTData implements Data,Serializable{
     }
 
     public String getInputFile() {
-        String delimiter = "/";
-        String[] temp = inputFile.split(delimiter,-1);
-        return temp[temp.length-1];
+        return this.inputFile.substring(this.inputFile.lastIndexOf(File.separator)+1);
     }
 
     
@@ -246,7 +256,7 @@ public class TXTData implements Data,Serializable{
      */
     
     @Override
-    public String save(boolean[] checkColumns) throws DateParseException{
+    public String save(boolean[] checkColumns) throws DateParseException, NotFoundValueException{
         
         FileInputStream fstream = null;
         DataInputStream in = null;
@@ -265,9 +275,22 @@ public class TXTData implements Data,Serializable{
             System.out.println("Both empy load data");
             stringCount = 1;
         }
-        else {
-            System.out.println("Hier not empty load data");
+        else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
+            System.out.println("Both have values");
+            if(dictionary.getMaxUsedId() > dictHier.getMaxUsedId()){
+                stringCount = dictionary.getMaxUsedId()+1;
+            }
+            else{
+                stringCount = dictHier.getMaxUsedId()+1;
+            }
+        }
+        else if(dictionary.isEmpty()){
+            System.out.println("Dict data empty");
             stringCount = dictHier.getMaxUsedId()+1;
+        }
+        else{
+            System.out.println("Dict hier empty");
+            stringCount = dictionary.getMaxUsedId()+1;
         }
         boolean FLAG = true;
         int counter1 = 0 ;
@@ -307,13 +330,14 @@ public class TXTData implements Data,Serializable{
                 }
                 else{
                     temp = strLine.split(delimeter,-1);
+//                    System.out.println("line "+strLine);
                     counter1 = 0;
                     for (int i = 0; i < temp.length ; i ++ ){
                         if (checkColumns[i] == true){
                         
                             temp[i] = temp[i].trim().replaceAll("[\uFEFF-\uFFFF]", "");
                             if ( colNamesType.get(counter1).contains("int") ){
-                                if ( !temp[i].equals("")){
+                                if ( !temp[i].equals("") && !temp[i].equals("\"\"")){
                                     try {
                                         dataSet[counter][counter1] = Integer.parseInt(temp[i]);
                                     } catch (java.lang.NumberFormatException exc) {
@@ -324,7 +348,7 @@ public class TXTData implements Data,Serializable{
                                         } catch (Exception exc1) {
                                             exc1.printStackTrace();
     //                                        System.out.println("Column : " + colNames[i] + " is chosen as integer and you have double values");
-                                            return null;
+                                            throw new NotFoundValueException("Value \""+temp[i]+"\" is not an integer, \""+ colNames[i]+ "\" is an integer column");
                                         }
                                     }   
                                 }
@@ -333,10 +357,14 @@ public class TXTData implements Data,Serializable{
                                 }
                             }
                             else if (colNamesType.get(counter1).contains("double")){
-                                if ( !temp[i].equals("")){
+                                if ( !temp[i].equals("")  && !temp[i].equals("\"\"")){
 //                                    System.out.println("double "+Double.parseDouble(temp[i]));
                                     temp[i] = temp[i].replaceAll(",", ".");
-                                    dataSet[counter][counter1] = Double.parseDouble(temp[i]);
+                                    try{
+                                        dataSet[counter][counter1] = Double.parseDouble(temp[i]);
+                                    }catch(Exception ex){
+                                        throw new NotFoundValueException("Value \""+temp[i]+"\" is not a decimal, \""+ colNames[i]+ "\" is a decimal column");
+                                    }
                                 }
                                 else{
                                     dataSet[counter][counter1] = Double.NaN;
@@ -347,7 +375,7 @@ public class TXTData implements Data,Serializable{
 //                                DictionaryString tempDict = dictionary.get(counter1);
                                 String var = null;
 //                                System.out.println("date= "+temp[i]+" counter= "+counter+" counter1= "+counter1+" ");
-                                if ( !temp[i].equals("")){
+                                if ( !temp[i].equals("") && !temp[i].equals("\"\"")){
                                     var = temp[i];
 //                                    var = this.timestampToDate(var);
 //                                    sdf.parse(var);
@@ -412,7 +440,7 @@ public class TXTData implements Data,Serializable{
 //                                DictionaryString tempDict = dictionary.get(counter1);
                                 String var = null;
 
-                                if ( !temp[i].equals("")){
+                                if ( !temp[i].equals("") && !temp[i].equals("\"\"")){
                                     var = temp[i];
                                 }
                                 else {
@@ -482,6 +510,9 @@ public class TXTData implements Data,Serializable{
         }catch(DateParseException de){
             throw new DateParseException(de);
         }
+        catch(NotFoundValueException ne){
+            throw new NotFoundValueException(ne.getMessage());
+        }
         catch(Exception e){//Catch exception if any
             e.printStackTrace();
             System.err.println("Error: " + e.getMessage());
@@ -495,7 +526,7 @@ public class TXTData implements Data,Serializable{
      * Reads dataset from file (preprocessing and load)
      */
     @Override
-    public String readDataset(String[] columnTypes, boolean[] checkColumns) throws LimitException, DateParseException {
+    public String readDataset(String[] columnTypes, boolean[] checkColumns) throws LimitException, DateParseException, NotFoundValueException {
         SaveClmnsAndTypeOfVar(columnTypes,checkColumns);
         preprocessing();
         String result = save(checkColumns);
@@ -677,16 +708,24 @@ public class TXTData implements Data,Serializable{
                 if(suppressedValues != null){
                     rowQIs = new Object[qids.length];
                 }
+                
+                Random rand = new Random();
+                List<Integer> randomNumbers = rand.ints(0, this.sizeOfRows).distinct().limit(this.sizeOfRows).boxed().collect(Collectors.toList());
+                this.randomizedMap = new HashMap();
                 //write table data
                 for (int row = 0; row < temp.length; row++){
-                    
+                    int randomIndexToSwap = randomNumbers.get(row);
+                    if(this.randomizedMap.containsKey(row)){
+                        System.out.println("Problem with "+row);
+                    }
+                    this.randomizedMap.put(row,randomIndexToSwap);
                     //if suppressed values exist
                     if(suppressedValues != null){
                         
                         
                         //get qids of this row
                         for(int i=0; i<qids.length; i++){
-                            rowQIs[i] = temp[row][qids[i]];
+                            rowQIs[i] = temp[randomIndexToSwap][qids[i]];
                         }
                         
                         
@@ -697,7 +736,7 @@ public class TXTData implements Data,Serializable{
                     }
                     //write row to file
                     for(int column = 0; column < temp[0].length; column++){
-                        Object value = temp[row][column];
+                        Object value = temp[randomIndexToSwap][column];
                         if(value instanceof RangeDouble){
                             if ( colNamesType.get(column-1).equals("double")){
                                 writer.print(((RangeDouble)value).lowerBound + ",");
@@ -712,10 +751,14 @@ public class TXTData implements Data,Serializable{
                             if (!value.equals("(null)")){
                                 writer.print(value);
                             }
+                            else{
+                                writer.print("");
+                            }
+                            
                             
                         }
                         
-                        if(column != temp[row].length-1){
+                        if(column != temp[randomIndexToSwap].length-1){
                             writer.print(",");
                         }
                     }
@@ -895,7 +938,7 @@ public class TXTData implements Data,Serializable{
                 //save column types
                 else{
                     temp = strLine.split(delimeter,-1);
-                    //System.out.println("strLine = " + strLine);
+                    System.out.println("strLine = " + strLine);
                     /*for ( int i = 0 ; i < temp.length ; i ++){
                         System.out.println("tempp =" + temp[i]);
                     }*/
@@ -1234,44 +1277,49 @@ public class TXTData implements Data,Serializable{
     @Override
     public void exportOriginalData() {
 //        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        String path = this.inputFile.substring(0, this.inputFile.lastIndexOf(File.separator));
+        System.out.println("Source path "+path);
+        String mapFile = path + File.separator + "map.txt";
         try (PrintWriter writer = new PrintWriter(this.inputFile, "UTF-8")) {
-            boolean FLAG = false;
-                
+            writer.print("Row ID");
             for(int i = 0 ; i < columnNames.length ; i ++){
-                if (FLAG == false){
-                    writer.print(columnNames[i]);
-                    FLAG = true;
-                }
-                else{
-                    writer.print(","+columnNames[i]);
-                }
-
+                writer.print(","+columnNames[i]);
             }
             writer.println();
+            Random rand = new Random();
+            List<Integer> randomNumbers = rand.ints(0, this.sizeOfRows).distinct().limit(this.sizeOfRows).boxed().collect(Collectors.toList());
+            this.randomizedMap = new HashMap();
             
             for(int i=0; i<this.sizeOfRows; i++){
+                int randomIndexToSwap = randomNumbers.get(i);
+                if(this.randomizedMap.containsKey(randomIndexToSwap)){
+                    System.out.println("Problem with "+randomIndexToSwap);
+                }
+                this.randomizedMap.put(i, randomIndexToSwap);
+                writer.print((i+1)+",");
+//                System.out.println("Export "+randomIndexToSwap+" -> Original "+i);
                 for(int j=0; j<this.sizeOfCol; j++){
                     if (colNamesType.get(j).equals("double")){
-                        if (Double.isNaN(dataSet[i][j])){
+                        if (Double.isNaN(dataSet[randomIndexToSwap][j])){
                             writer.print("");
                         }
                         else{
-                            Object a = dataSet[i][j];
-                            writer.print( dataSet[i][j]);
+                            Object a = dataSet[randomIndexToSwap][j];
+                            writer.print( dataSet[randomIndexToSwap][j]);
                         }
                     }
                     else if (colNamesType.get(j).equals("int")){
-                        if (dataSet[i][j] == 2147483646.0){
+                        if (dataSet[randomIndexToSwap][j] == 2147483646.0){
                             writer.print("");
                         }
                         else{
-                            writer.print( Integer.toString((int)dataSet[i][j])+"");
+                            writer.print( Integer.toString((int)dataSet[randomIndexToSwap][j])+"");
                         }
                     }
                     else{
-                        String str = dictionary.getIdToString((int)dataSet[i][j]);
+                        String str = dictionary.getIdToString((int)dataSet[randomIndexToSwap][j]);
                         if(str == null){
-                            str = this.dictHier.getIdToString((int)dataSet[i][j]);
+                            str = this.dictHier.getIdToString((int)dataSet[randomIndexToSwap][j]);
                         }
     //                    DictionaryString dict = dictionary.get(j);
     //                    String str = dict.getIdToString((int)dataSet[i][j]);
@@ -1291,9 +1339,79 @@ public class TXTData implements Data,Serializable{
                 writer.println();
             }
             
+            System.out.println("Size of map "+this.randomizedMap.size());
+            
+            writer.flush();
+            writer.close();
+            
         }catch(FileNotFoundException | UnsupportedEncodingException ex) {
             System.out.println("mexssage "+ex.getMessage());
         }
+        
+        File m = new File(mapFile);
+        File z = new File(path+File.separator+"anonymized_files.zip");
+        try {
+            System.out.println("map file "+mapFile);
+            m.createNewFile();
+            z.createNewFile();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            System.out.println("mexssage create map"+ex.getMessage());
+            Logger.getLogger(TXTData.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        try(PrintWriter writer = new PrintWriter(mapFile, "UTF-8")){
+            writer.print("Export row ID -> Original row");
+            writer.println();
+            for(int i=0; i<this.sizeOfRows; i++){
+                writer.print((i+1)+" -> "+(this.randomizedMap.get(i)+1));
+                writer.println();
+            }
+            writer.flush();
+            writer.close();
+        }catch(FileNotFoundException | UnsupportedEncodingException ex) {
+            ex.printStackTrace();
+            System.out.println("mexssage map"+ex.getMessage());
+        }
+        
+        try {
+            FileInputStream in1 = new FileInputStream(this.inputFile);
+            FileInputStream in2 = new FileInputStream(mapFile);
+            ZipOutputStream out = new ZipOutputStream(new FileOutputStream(path+File.separator+"anonymized_files.zip"));
+            
+            out.putNextEntry(new ZipEntry(this.inputFile.substring(this.inputFile.lastIndexOf(File.separator)+1))); 
+
+            byte[] b = new byte[2048];
+            int count;
+
+            while ((count = in1.read(b)) > 0) {
+                out.write(b, 0, count);
+            }
+            in1.close();
+            out.closeEntry();
+            out.putNextEntry(new ZipEntry("map.txt"));
+            count=0;
+            b = new byte[2048];
+            
+            while ((count = in2.read(b)) > 0) {
+                out.write(b, 0, count);
+            }
+            in2.close();
+            out.closeEntry();
+            out.close();
+        } catch (FileNotFoundException ex) {
+            ex.printStackTrace();
+            System.out.println("mexssage zip"+ex.getMessage());
+            Logger.getLogger(TXTData.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            System.out.println("mexssage zip io"+ex.getMessage());
+            Logger.getLogger(TXTData.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        
+        // out put file 
+        
         System.out.println("done orgiginal data");
     }
 
@@ -1305,6 +1423,78 @@ public class TXTData implements Data,Serializable{
     @Override
     public SimpleDateFormat getDateFormat(int column) {
         return new SimpleDateFormat("dd/MM/yyyy");
+    }
+
+    @Override
+    public void setMask(int column, int[] positions, char character) {
+        int stringCount;
+        if(dictionary.isEmpty() && dictHier.isEmpty()){
+            System.out.println("Both empy load data");
+            stringCount = 1;
+        }
+        else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
+            System.out.println("Both have values");
+            if(dictionary.getMaxUsedId() > dictHier.getMaxUsedId()){
+                stringCount = dictionary.getMaxUsedId()+1;
+            }
+            else{
+                stringCount = dictHier.getMaxUsedId()+1;
+            }
+        }
+        else if(dictionary.isEmpty()){
+            System.out.println("Dict data empty");
+            stringCount = dictHier.getMaxUsedId()+1;
+        }
+        else{
+            System.out.println("Dict hier empty");
+            stringCount = dictionary.getMaxUsedId()+1;
+        }
+        
+        for(int i=0; i<this.sizeOfRows; i++){
+            String var = dictionary.getIdToString((int)dataSet[i][column]);
+            if(var == null){
+                var = this.dictHier.getIdToString((int)dataSet[i][column]);
+            }
+            
+            if(var.equals("NaN")){
+                continue;
+            }
+            
+            for(int pos : positions){
+                if(pos<var.length()){
+                    var = var.substring(0,pos)+character+var.substring(pos+1);
+                }
+            }
+
+
+            if (!dictionary.containsString(var) && !this.dictHier.containsString(var)){
+                if(var.equals("NaN")){
+                   dictionary.putIdToString(2147483646, var);
+                   dictionary.putStringToId(var,2147483646);
+    //                                        dictionary.put(counter1, tempDict);
+                   dataSet[i][column] = 2147483646.0;
+               }
+               else{
+                   dictionary.putIdToString(stringCount, var);
+                   dictionary.putStringToId(var,stringCount);
+    //                                    dictionary.put(counter1, tempDict);
+                   dataSet[i][column] = stringCount;
+                   stringCount++;
+               }
+           }
+           else{
+               //if string is present in the dictionary, get its id
+               if(dictionary.containsString(var)){
+                   int stringId = dictionary.getStringToId(var);
+                   dataSet[i][column] = stringId;
+               }
+               else{
+                   int stringId = this.dictHier.getStringToId(var);
+                   dataSet[i][column] = stringId;
+               }
+           }
+        }
+        this.pseudoanonymized = true;
     }
 
 }

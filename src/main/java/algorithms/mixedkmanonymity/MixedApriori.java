@@ -38,15 +38,14 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-import javafx.util.Pair;
 import static java.util.stream.Collectors.*;
 import static java.util.Map.Entry.*;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static javafx.scene.input.KeyCode.T;
 import org.apache.commons.lang.ArrayUtils;
+import data.Pair;
 
 /**
  *
@@ -1163,7 +1162,8 @@ public class MixedApriori implements Algorithm {
                                 else if(children!=null){
                                     for(Object child : children){
                                         Pair<Integer,Object> nodechild = this.convertToPair(entry.getKey(), child);
-//                                        System.out.println("node "+nodechild+" and height "+height);
+//                                        System.out.println("node "+nodechild+" and height "+height + " with cost "+costsRelational.get(nodechild));
+//                                        System.out.println("node "+node+" with cost "+costsRelational.get(node) + " and height "+height + "");
                                         costsRelational.put(node, costsRelational.get(node) + costsRelational.get(nodechild));
                                         
 //                                        System.out.println("node "+node+" with cost "+costsRelational.get(node) + " and height "+height);
