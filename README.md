@@ -475,7 +475,7 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 ## Version History
 
 
-**version 1.2.5 (release date: 30/09/2021)**
+**version 1.2.8 (release date: 30/09/2021)**
 - Better interface for pseudo-anonymization.
 
 - Support for user-defined masking rules.
