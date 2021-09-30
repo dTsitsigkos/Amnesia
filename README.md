@@ -475,7 +475,19 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 ## Version History
 
 
-**version 1.2.7.2 (release date: 13/09/2021)**
+**version 1.2.5 (release date: 30/09/2021)**
+- Better interface for pseudo-anonymization.
+
+- Support for user-defined masking rules.
+
+- Added error messages on loading dataset
+
+- Removed openjfx java library.
+
+- Bug fixed on loading Dataverse data.
+
+
+**version 1.2.7.2**
 - Bug fixed in files extraction
 
 **version 1.2.7.1**
