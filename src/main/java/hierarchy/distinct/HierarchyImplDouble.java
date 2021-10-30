@@ -1688,6 +1688,21 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
         allParentIds = new HashMap();
     }
 
+    @Override
+    public Double getParent(Double v, Integer k) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Integer getPopulation(Double v) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Integer getPopulation(double rd) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
    
     
    

@@ -1894,6 +1894,21 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     public void clearAprioriStructures() {
         statsDistinct = new HashMap<>();
     }
+
+    @Override
+    public RangeDate getParent(Double v, Integer k) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Integer getPopulation(double v) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Integer getPopulation(RangeDate rd) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
     
     
 }

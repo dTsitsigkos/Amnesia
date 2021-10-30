@@ -38,7 +38,7 @@ import java.util.LinkedHashMap;
  */
 public interface Data {
     public int online_rows = 5000;
-    public String online_version = "daonline";
+    public String online_version = "online";
     public double[][] getDataSet();
     public void setData(double[][] _data);
     public int getDataLenght();

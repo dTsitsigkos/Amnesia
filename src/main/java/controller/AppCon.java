@@ -3,6 +3,7 @@ package controller;
 
 import algorithms.Algorithm;
 import algorithms.clusterbased.ClusterBasedAlgorithm;
+import algorithms.demographics.DemographicAlgorithm;
 import algorithms.flash.Flash;
 import algorithms.flash.LatticeNode;
 import algorithms.kmanonymity.Apriori;
@@ -14,7 +15,9 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.primitives.Ints;
 import static controller.AppCon.os;
+import static controller.AppCon.rootPath;
 import data.CheckDatasetForKAnomymous;
+import data.DICOMData;
 import data.Data;
 import data.DiskData;
 import data.MyPair;
@@ -32,17 +35,20 @@ import graph.DatasetsExistence;
 import graph.Edge;
 import graph.Node;
 import graph.Graph;
+import hierarchy.DemographicInfo;
 import hierarchy.HierToJson;
 import hierarchy.Hierarchy;
 import hierarchy.distinct.AutoHierarchyImplDate;
 import hierarchy.distinct.AutoHierarchyImplDouble;
 import hierarchy.distinct.AutoHierarchyImplMaskString;
 import hierarchy.distinct.AutoHierarchyImplString;
+import hierarchy.distinct.HierarchyImplDemographicZipCode;
 import hierarchy.distinct.HierarchyImplDouble;
 import hierarchy.distinct.HierarchyImplString;
 import hierarchy.ranges.AutoHierarchyImplRangesDate;
 import hierarchy.ranges.AutoHierarchyImplRangesNumbers;
 import hierarchy.ranges.AutoHierarchyImplRangesNumbers2;
+import hierarchy.ranges.HierarchyImplRangeDemographicAge;
 import hierarchy.ranges.HierarchyImplRangesDate;
 import hierarchy.ranges.HierarchyImplRangesNumbers;
 import hierarchy.ranges.RangeDate;
@@ -66,6 +72,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.lang.management.MemoryUsage;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -101,6 +108,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import javax.activation.MimetypesFileTypeMap;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletOutputStream;
@@ -116,6 +124,7 @@ import org.apache.commons.lang.StringUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ApplicationHome;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -165,9 +174,18 @@ import zenodo.ZenodoFilesToJson;
 
 @SpringBootApplication
 public class AppCon extends SpringBootServletInitializer {
+    private static Class<AppCon> applicationClass = AppCon.class;
+    public static String os = "windows";
+    public static String rootPath = System.getProperty("catalina.home");
+    public static String parentDir; 
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws URISyntaxException {
         SpringApplication.run(applicationClass, args);
+        ApplicationHome home = new ApplicationHome(AppCon.class);
+        parentDir = home.getDir().getPath();    // returns the folder where the jar is. This is what I wanted.
+        home.getSource(); // returns the jar absolute path.
+        System.out.println("PAth "+home.getDir().getPath());
+
     }
 
     @Override
@@ -175,8 +193,8 @@ public class AppCon extends SpringBootServletInitializer {
         return application.sources(applicationClass);
     }
 
-    private static Class<AppCon> applicationClass = AppCon.class;
-    public static String os = "windows";
+    
+    
 }
 
 
@@ -186,7 +204,7 @@ public class AppCon extends SpringBootServletInitializer {
 class AppController {
     private static String os = AppCon.os;
     
-    String rootPath = System.getProperty("catalina.home");
+    private static String rootPath = AppCon.rootPath;
 
     
     @RequestMapping(value = "/")
@@ -511,21 +529,48 @@ class AppController {
     //                    File dir1 = f.getAbsoluteFile().getParentFile();
     //                    String rootPath = dir1.toString();
                         //////////////////////////////////////////////////////////////
+                        
                         dir = new File(rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId());  
                         if (!dir.exists()){
                             dir.mkdirs();
                         }
+                        else{
+                            String filename = file.getOriginalFilename().replace("\\", "/");
+                            session.setAttribute("inputpath",dir.toString());
+                            if(file.getOriginalFilename().contains("/")){
+                                System.out.println("Delete all");
+                                this.deleteFiles(session);
+                            }
+                            dir = new File(rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId());  
+                            if (!dir.exists()){
+                                dir.mkdirs();
+                            }
+                        }
 
                         if (data == true){
                             session.setAttribute("inputpath",dir.toString());
-                            session.setAttribute("filename", file.getOriginalFilename());
+                            String filename = file.getOriginalFilename().replace("\\", "/");
+                            if(file.getOriginalFilename().contains("/")){
+                                session.setAttribute("filename", file.getOriginalFilename().split("/")[1]);
+                            }
+                            else{
+                                session.setAttribute("filename", file.getOriginalFilename());
+                            }
                         }
                         else{
                             session.setAttribute("inputpath",dir.toString());
                         }
                     }
                     else{
+                        
                         if (data == true){
+                            String filename = file.getOriginalFilename().replace("\\", "/");
+                            if(file.getOriginalFilename().contains("/")){
+                                session.setAttribute("filename", file.getOriginalFilename().split("/")[1]);
+                            }
+                            else{
+                                session.setAttribute("filename", file.getOriginalFilename());
+                            }
                             session.setAttribute("filename", file.getOriginalFilename());
                         }
                         dir = new File(input);
@@ -548,8 +593,21 @@ class AppController {
 //                byte[] bytes = file.getBytes();
 
                 // Create the file on server
-                File serverFile = new File(dir.getAbsolutePath()
+                File serverFile;
+//                String pattern = Pattern.quote(System.getProperty("java.io.tmpdir"));
+                String filename = file.getOriginalFilename().replace("\\", "/");
+                if(filename.contains("/")){
+                    
+                    serverFile = new File(dir.getAbsolutePath()
+                                + File.separator + file.getOriginalFilename().split("/")[1]);
+                   
+                }
+                else{
+                    
+                    serverFile = new File(dir.getAbsolutePath()
                                 + File.separator + file.getOriginalFilename());
+                }
+                 
 //                BufferedOutputStream stream = new BufferedOutputStream(
 //                                new FileOutputStream(serverFile));
 //                stream.write(bytes);
@@ -599,7 +657,21 @@ class AppController {
         //return errMes;
     }
     
-
+    @RequestMapping(value="/action/getdatatype", method = RequestMethod.POST)
+    public @ResponseBody String getDataType(HttpSession session){
+        Data data = (Data)session.getAttribute("data");
+        
+        if(data == null){
+            return "";
+        }
+        else if(data instanceof DICOMData || data instanceof TXTData || data instanceof DiskData){
+            return "tabular";
+        }
+        else{
+            return "other";
+        }
+        
+    }
 
     @JsonView(View.SmallDataSet.class)
     @RequestMapping(value="/action/getsmalldataset", method = RequestMethod.POST)//, method = RequestMethod.POST)
@@ -641,8 +713,18 @@ class AppController {
 //            }
 //        }
         
-        
-        if (datatype.equals("tabular")){
+        if(datatype.equals("dicomfile")){
+            data = new DICOMData(rootPath,dict);
+            result = data.findColumnTypes();
+            
+            if(result.equals("1")){
+                return data;
+            }
+            
+            String[][] smallDataset = data.getSmallDataSet();
+            data.getTypesOfVariables(smallDataset);
+        }
+        else if (datatype.equals("tabular")){
 
             if ( del == null ){
                 delimeter = ",";
@@ -735,6 +817,9 @@ class AppController {
     public @ResponseBody void deleteFiles (HttpSession session) throws FileNotFoundException, IOException {
         
         String inputPath = (String) session.getAttribute("inputpath");
+        if(inputPath == null){
+            return;
+        }
         String filename = (String)session.getAttribute("filename");
         long daysBack = 1;
         long purgeTime = System.currentTimeMillis() - (daysBack * 24 * 60 * 60 * 1000);
@@ -779,7 +864,7 @@ class AppController {
                     }
                 }
             }
-            else if(!file.getName().equals("errorLog") && diff > 2 * 60 * 60 * 1000){
+            else if(!file.getName().equals("errorLog") && !file.getName().equals("ObjectFiles") && diff > 2 * 60 * 60 * 1000){
                 FileUtils.forceDelete(file);
             }
         }
@@ -832,25 +917,31 @@ class AppController {
         String rootPath = (String)session.getAttribute("inputpath");
         String filename = (String)session.getAttribute("filename");
         int counter = 0;
-
-        File dir = new File(rootPath);
-
-        String fullPath = dir + File.separator + filename; 
-        fstream = new FileInputStream(fullPath);
-        in = new DataInputStream(fstream);
-        br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
-
-        while ((strLine = br.readLine()) != null){
-            if ( counter < 4){
-                exampleDataSet[counter] = strLine;
-                counter++;
-            }
-            else{
-                break;
-            }
+        
+        if(filename.endsWith(".dcm")){
+            return new String[] {"DICOM"};
         }
+        else{
 
-        br.close();
+            File dir = new File(rootPath);
+
+            String fullPath = dir + File.separator + filename; 
+            fstream = new FileInputStream(fullPath);
+            in = new DataInputStream(fstream);
+            br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
+
+            while ((strLine = br.readLine()) != null){
+                if ( counter < 4){
+                    exampleDataSet[counter] = strLine;
+                    counter++;
+                }
+                else{
+                    break;
+                }
+            }
+
+            br.close();
+        }
 
 
             
@@ -968,7 +1059,9 @@ class AppController {
         if(!hierarchies.containsKey(hiername)){
             return "no";
         }
-        
+        if(hierarchies.get(hiername).getHierarchyType().contains("demographic")){
+            hierarchies.get(hiername).clear();
+        }
         hierarchies.remove(hiername);
         if(hierarchies.size()>0){
             session.setAttribute("selectedhier", hierarchies.entrySet().iterator().next().getKey());
@@ -980,7 +1073,45 @@ class AppController {
         return "OK";
     }
     
-    //@JsonView(View.Hier.class)
+    @JsonView(View.Demographic.class)
+    @RequestMapping(value="/action/getdemographicinfo", method = RequestMethod.POST)
+    public  @ResponseBody Map<String,ArrayList<String>> getDemographicInfo(HttpSession session){
+        Map<String,ArrayList<String>> attributeCountries = new HashMap();
+        attributeCountries.put("Age", HierarchyImplRangeDemographicAge.getCountries());
+        attributeCountries.put("ZipCode", HierarchyImplDemographicZipCode.getCountries());
+        return attributeCountries;
+    }
+    
+    
+    @RequestMapping(value="/action/generatedemographichierarchy", method = RequestMethod.POST)
+    public @ResponseBody String generateDemographicHierarchy(@RequestParam("hier") String hier,@RequestParam("country") String country, @RequestParam("nodeType") String nodeType, HttpSession session)throws LimitException, IOException{
+        Map<String, Hierarchy> hierarchies = (Map<String, Hierarchy>) session.getAttribute("hierarchies");
+        if ( hierarchies == null ){
+            hierarchies = new HashMap<>();
+            session.setAttribute("hierarchies", hierarchies);
+        }
+        
+        Hierarchy h;
+        
+        if(hier.equals("age")){
+            h = new HierarchyImplRangeDemographicAge("demographic_age_"+country,nodeType, country);
+        }
+        else{
+            Data data = (Data) session.getAttribute("data");
+            h = new HierarchyImplDemographicZipCode("demographic_zip_"+country,"string", country,data.getDictionary());
+        }
+        h.load();
+        session.setAttribute("selectedhier", h.getName());
+        hierarchies.put(h.getName(), h);
+
+        if(os.equals("online")){
+            this.deleteFiles(session);
+        }
+
+        return "OK";
+    }
+    
+//    @JsonView(View.Hier.class)
     @RequestMapping(value="/action/loadhierarchy", method = RequestMethod.POST) //method = RequestMethod.POST
     public @ResponseBody String loadHierarcy (@RequestParam("filename") String filename, HttpSession session) throws IOException, LimitException  {
 //        try{
@@ -1263,7 +1394,7 @@ class AppController {
         
         return h;
     }*/
-    
+//    @JsonView(View.Graph.class)
     @RequestMapping(value="/action/gethiergraph", /*method = RequestMethod.GET)*/ method = RequestMethod.POST)
     public @ResponseBody Graph getHierGraph (@RequestParam("hiername") String hierName,@RequestParam("node") String node,@RequestParam("level") int level,HttpSession session) throws FileNotFoundException, IOException {
         Graph nGraph = null;
@@ -1323,7 +1454,7 @@ class AppController {
                 hierArray = new HierToJson[hierarchies.size()];
                 int i = 0;
                 for (Map.Entry<String, Hierarchy> entry : hierarchies.entrySet()) {
-                    hierArray[i] = new HierToJson(entry.getKey(),entry.getKey(),entry.getKey(),entry.getValue().getNodesType());
+                    hierArray[i] = new HierToJson(entry.getKey(),entry.getKey(),entry.getKey(),entry.getValue().getNodesType(),entry.getValue().getHierarchyType());
                     i++;
                 }
             }
@@ -1348,6 +1479,7 @@ class AppController {
                     
                     hierArray[k].setSort(entry.getKey());
                     hierArray[k].setType(entry.getValue().getNodesType());
+                    hierArray[k].setHierType(entry.getValue().getHierarchyType());
                     
                     k++;
                 }
@@ -1518,6 +1650,11 @@ class AppController {
             algorithm = new ClusterBasedAlgorithm();
             session.setAttribute("algorithm", "clustering");
         }
+        else if(algorithmSelected.equals("demographic")){
+            args.put("k", k);
+            algorithm = new DemographicAlgorithm();
+            session.setAttribute("algorithm", "demographic");
+        }
         else if(algorithmSelected.equals("kmAnonymity") || algorithmSelected.equals("apriori") ||
                 algorithmSelected.equals("AprioriShort") || algorithmSelected.equals("mixedapriori")){
                 args.put("k", k);
@@ -1643,7 +1780,7 @@ class AppController {
         
             session.setAttribute("results", algorithm.getResultSet());
 //            System.out.println("algorithm : "+algorithmSelected);
-            if(!algorithmSelected.equals("apriori") && !algorithmSelected.equals("mixedapriori") && !algorithmSelected.equals("clustering")){
+            if(!algorithmSelected.equals("apriori") && !algorithmSelected.equals("mixedapriori") && !algorithmSelected.equals("clustering") && !algorithmSelected.equals("demographic")){
                 Graph graph = algorithm.getLattice();
 
                 session.setAttribute("graph", graph);
@@ -1750,7 +1887,6 @@ class AppController {
         graph = (Graph) session.getAttribute("graph");
         Set<LatticeNode> results = (Set<LatticeNode>) session.getAttribute("results");
         
-        System.out.println("REturn solutions");
         
         
         return graph;
@@ -1830,12 +1966,20 @@ class AppController {
 //                anonData.setDataOriginal(originalData);
                 if (!data.getClass().toString().contains("SET") && !data.getClass().toString().contains("RelSet") && !data.getClass().toString().contains("Disk")){
                     System.out.println("action/getanondataset TXT ===========");
+                    String algorithm = (String) session.getAttribute("algorithm");
                     if ( allRules == null){
-                        anonData.renderAnonymizedTable();
+                        if(algorithm.equals("demographic")){
+                            Map<Integer, Map<Integer,Object>> rules = (Map<Integer, Map<Integer,Object>>) session.getAttribute("results");
+                            anonData.renderAnonymizedTableDemographic(rules);
+                        }
+                        else{
+                            anonData.renderAnonymizedTable();
+                        }
                     }
                     else{
                         anonData.anonymizeWithImportedRules(allRules,null);
                     }
+                    
                 }
                 else if(data.getClass().toString().contains("SET")){
                     
@@ -1903,13 +2047,15 @@ class AppController {
         String filename = (String)session.getAttribute("filename");
         String inputPath = (String)session.getAttribute("inputpath");
         
-        this.createInputPath(inputPath, session);
+        
         
         System.out.println("Export Dataset... " + filename);
         System.out.println("Export Dataset...");
-        
-        File file = new File(inputPath + File.separator +filename);
-        file.createNewFile();
+        this.createInputPath(inputPath, session);
+        if(!(data instanceof DICOMData)){
+            File file = new File(inputPath + File.separator +filename);
+            file.createNewFile(); 
+        }
         /*System.out.println(file.getAbsolutePath());
         try {
             // get your file as InputStream
@@ -2045,16 +2191,23 @@ class AppController {
             }
         }
         else{
-            try{
-                exportData = anonData.exportDataset(file.getAbsolutePath(), true);
-            }catch(Exception e){
+            String algorithm = (String) session.getAttribute("algorithm");
+            if(algorithm.equals("demographic")){
+                Map<Integer, Map<Integer,Object>> rules = (Map<Integer, Map<Integer,Object>>) session.getAttribute("results");
+                anonData.exportDataset(file.getAbsolutePath(),rules);
+            }
+            else{
                 try{
-                    exportData = anonData.exportDataset(file.getAbsolutePath(), false);
-                }catch(Exception e1){
-                    System.out.println("DAta length "+data.getRecordsTotal());
-                    anonData.setLength(data.getRecordsTotal());
-                    anonData.anonymizeWithImportedRules(allRules,file.getAbsolutePath());
-                }               
+                    exportData = anonData.exportDataset(file.getAbsolutePath(), true);
+                }catch(Exception e){
+                    try{
+                        exportData = anonData.exportDataset(file.getAbsolutePath(), false);
+                    }catch(Exception e1){
+                        System.out.println("DAta length "+data.getRecordsTotal());
+                        anonData.setLength(data.getRecordsTotal());
+                        anonData.anonymizeWithImportedRules(allRules,file.getAbsolutePath());
+                    }               
+                }
             }
         }
         
@@ -2064,17 +2217,25 @@ class AppController {
         //data.export(file.getAbsolutePath(), null, exportData , null,null, null);*/
         
         if(response!=null){
-        
+            
+            if(data instanceof DICOMData){
+                file = new File(inputPath + File.separator + "anonymized_dicom_files.zip");
+                response.setContentType("application/zip");
+            }
+            else{
+                response.setContentType("txt/plain");
+            }
+            
             InputStream myStream = new FileInputStream(file);
 
             // Set the content type and attachment header.
             response.addHeader("Content-disposition", "attachment;filename="+file.getName());
-            response.setContentType("txt/plain");
 
             // Copy the stream to the response's output stream.
             IOUtils.copy(myStream, response.getOutputStream());
             response.flushBuffer();
             myStream.close();
+            
             
             if(os.equals("online")){
                 this.deleteFiles(session);
@@ -2319,6 +2480,9 @@ class AppController {
         }
         else{
            this.saveAnonymizeDataset(session, null);
+           if(tempName.endsWith(".dcm")){
+               tempName = "dicom_files.zip";
+           }
            file = inputPath  + File.separator + "anonymized_" +tempName;
         }
         
@@ -3942,6 +4106,15 @@ class AppController {
     @RequestMapping(value="/action/getproperalgorithm", method = RequestMethod.POST) //method = RequestMethod.POST
     public @ResponseBody String getProperAlgorithm ( HttpSession session ) throws FileNotFoundException, IOException {
         Data data = (Data) session.getAttribute("data");
+        Map<String, Hierarchy> hierarchies = (Map<String, Hierarchy>) session.getAttribute("hierarchies");
+        
+        
+        for(Hierarchy h : hierarchies.values()){
+            if(h.getHierarchyType().contains("demographic")){
+                return "demographic";
+            }
+        }
+        
         
         if (data.getClass().toString().contains("SET")){
             return "set";
@@ -3979,6 +4152,10 @@ class AppController {
         Map<Integer, Hierarchy> quasiIdentifiers = (Map<Integer, Hierarchy>)session.getAttribute("quasiIdentifiers");
         String selectedNode = null;
         String filename = (String)session.getAttribute("filename");
+        
+        if(filename.endsWith(".dcm")){
+            filename = "anonymized_rules_dicom_files.txt";
+        }
         String inputPath = (String)session.getAttribute("inputpath");
 //        System.out.println("Filename :"+filename+" "+filename.endsWith("xml") +" "+(filename.endsWith("xml") ? filename.replace("xml", "txt") : filename));
         String file = inputPath +File.separator +"anonymized_rules_"+(filename.endsWith("xml") ? filename.replace("xml", "txt") : filename);
@@ -4106,7 +4283,7 @@ class AppController {
             check.setOriginalExists("true");
             check.setAnonExists("noalgo");
         }
-        else if(data!=null && hierarchies!=null && algorithm!=null && (algorithm.equals("kmAnonymity") || algorithm.equals("apriori") ||algorithm.equals("AprioriShort") || algorithm.equals("clustering")) && selectednode==null){
+        else if(data!=null && hierarchies!=null && algorithm!=null && (algorithm.equals("kmAnonymity") || algorithm.equals("apriori") || algorithm.equals("AprioriShort") || algorithm.equals("clustering")) || algorithm.equals("demographic") && selectednode==null){
             check.setOriginalExists("true");
             check.setAnonExists("true");
         }
@@ -4117,78 +4294,7 @@ class AppController {
             check.setOriginalExists("true");
             check.setAnonExists("true");
         }
-//        if (algorithm != null){
-//            System.out.println("checkdatasetsexistence2222");
-//            if (  algorithm.equals("flash")){
-//                 if (data != null ){
-//                    if (graph != null){
-//                        check.setOriginalExists("true");
-//                    }
-//                    else if (allRules != null){
-//                        check.setOriginalExists("true");
-//                    }
-//                    else if (toSuppress != null){
-//                        check.setOriginalExists("true");
-//                    }
-//                    else{
-//                        check.setOriginalExists("noalgo");
-//                    }
-//                }
-//
-//                if(selectednode != null || allRules != null){
-//                    check.setAnonExists("true");
-//                }
-//            }
-//            else{
-//                if (session.getAttribute("results") != null){
-//                    check.setOriginalExists("true");
-//                    check.setAnonExists("true");
-//                }
-//                
-//            }
-//        }
-//        else{
-//            System.out.println("checkdatasetsexistence33333");
-//                    check.setOriginalExists("noalgo");
-//                
-//        }
-        
-        
-        
-        //if(selectednode != null || allRules != null){
-            //if(selectednode != null || results != null){
-                
-            //}
-        //}
-        
-        
-//        System.out.println("checkdatasetsexistence44444");
-//        System.out.println("check Origin = " + check.getOriginalExists() + "\t check anon = " + check.getAnonExists());
-                
-        
-        /*if (data != null ){
-            if (graph != null){
-                check.setOriginalExists("true");
-            }
-            //else if (allRules != null){
-            //    check.setOriginalExists("true");
-           // }
-            //else if (toSuppress != null){
-             ///   check.setOriginalExists("true");
-            //}
-            else if (results != null){
-                check.setOriginalExists("true");
-            }
-            else{
-                check.setOriginalExists("noalgo");
-            }
-        }
-        
-        //if(selectednode != null || allRules != null){
-        if(selectednode != null || results != null){
-            check.setAnonExists("true");
-        }*/
-        
+
         
         return check;
     }

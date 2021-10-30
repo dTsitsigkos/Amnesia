@@ -345,16 +345,6 @@ public class MixedApriori implements Algorithm {
                 System.out.println("ok with tree "+this.anonymize_property+" m = "+j);
                 sortTrie();
                 System.out.println("ok with sort "+this.anonymize_property+" m = "+j);
-                if(this.anonymize_property.equals("set")){
-//                    for(Entry<Set<Double>,Integer> entry : this.trieSet.entrySet()){
-//                        System.out.println(this.anonymize_property+Arrays.toString(entry.getKey().toArray())+" support "+entry.getValue());
-//                    }
-                }
-                else{
-//                    for(Entry<Set<Pair<Integer,Object>>,Integer> entry : this.trieRelational.entrySet()){
-//                        System.out.println(this.anonymize_property+Arrays.toString(entry.getKey().toArray())+" support "+entry.getValue());
-//                    }
-                }
                 fixAll();  
                 System.out.println("ok with fix "+this.anonymize_property+" m = "+j);
             }

@@ -18,6 +18,7 @@
  */
 package hierarchy.ranges;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
@@ -27,7 +28,7 @@ import org.apache.commons.lang.StringUtils;
  *
  * @author serafeim
  */
-public class RangeDouble {
+public class RangeDouble implements Serializable {
     public Double lowerBound; 
     public Double upperBound;
     public String nodesType;
@@ -175,7 +176,18 @@ public class RangeDouble {
         }
         else{
 //            System.out.println(" v = " + v + "\tmin = " + this.lowerBound + "\tmax = " + this.upperBound);
-            return v >= this.lowerBound && v <= this.upperBound;
+            if((Double.isNaN(v) || v==2147483646.0) && ((this.lowerBound==0 && this.upperBound==0) || (Double.isNaN(this.lowerBound) && Double.isNaN(this.upperBound)))){
+                return true;
+            }
+            else if(Double.isNaN(v)){
+                return false;
+            }
+            else if(v==2147483646.0){
+                return false;
+            }
+            else{
+                return v >= this.lowerBound && v <= this.upperBound;
+            }
         }
     }
     

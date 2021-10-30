@@ -34,6 +34,7 @@ import static hierarchy.Hierarchy.online_limit;
 import static hierarchy.Hierarchy.online_version;
 import hierarchy.NodeStats;
 import hierarchy.ranges.RangeDate;
+import hierarchy.ranges.RangeDouble;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -2222,6 +2223,21 @@ public class HierarchyImplString implements Hierarchy<Double> {
     public void clearAprioriStructures() {
         allParentIds = new HashMap();
         parentsInteger = null;
+    }
+
+    @Override
+    public Double getParent(Double v, Integer k) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Integer getPopulation(double v) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Integer getPopulation(Double rd) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     
 }   

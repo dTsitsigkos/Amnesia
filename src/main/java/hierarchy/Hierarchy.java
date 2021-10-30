@@ -26,6 +26,7 @@ import java.util.Set;
 import data.Data;
 import dictionary.DictionaryString;
 import graph.Graph;
+import hierarchy.ranges.RangeDouble;
 import java.util.Date;
 
 /**
@@ -35,7 +36,7 @@ import java.util.Date;
  */
 public interface Hierarchy <T> {
     public int online_limit = 1000;
-    public String online_version = "dawonline";
+    public String online_version = "online";
     public int[][] getHierarchy();
     public void setHierarchy();
     public void setDictionaryData(DictionaryString dict);
@@ -104,4 +105,9 @@ public interface Hierarchy <T> {
     public int translateDateViaLevel(int level);
     public int findCommonHeight(Double n1, Double n2);
     public Double findCommon(Double n1, Double n2);
+    
+    // Demographic
+    public T getParent(Double v, Integer k);
+    public Integer getPopulation(double v);
+    public Integer getPopulation(T rd);
 }

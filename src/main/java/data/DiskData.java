@@ -815,6 +815,9 @@ public class DiskData implements Data,Serializable{
                         if (!value.equals("(null)")){
                             writer.print(value);
                         }
+                        else{
+                             writer.print("");
+                        }
                         
                         if(column != temp[0].length-1){
                             writer.print(",");
@@ -1669,7 +1672,7 @@ public class DiskData implements Data,Serializable{
                                          ('4321-765', 3), 
                                          ('1111-222', 5)
                                  );*/
-    public List<Pair<Double[],List<Integer>>> getSmallRecordsClusters(int k,Set<Integer> quasiIds){
+    public List<Pair<Double[],List<Integer>>> getSmallRecordsClusters(int k,Set<Integer> quasiIds, boolean insertChecked){
         String sqlSelect = "SELECT * FROM dataset AS d INNER JOIN";
         String innerJoin = "SELECT ";
         String onSql = "ON ";
@@ -1759,7 +1762,9 @@ public class DiskData implements Data,Serializable{
             }
         }
         System.out.println("IDs choicked "+allRecordsIds);
-        this.insertChekedTable(allRecordsIds);
+        if(insertChecked){
+            this.insertChekedTable(allRecordsIds);
+        }
         return returnedClusters;
     }
     
@@ -2601,6 +2606,39 @@ public class DiskData implements Data,Serializable{
         }catch(Exception e){
             e.printStackTrace();
             System.err.println("Error: "+e.getMessage()+" setMask");
+        }finally{
+            if(pstm!=null){
+                try {
+                    pstm.close();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            
+            try {
+                this.conn.setAutoCommit(true);
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+                Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+    
+    public void setAnonymizedValue(int column, double value, Set<Integer> ids){
+        PreparedStatement pstm = null;
+        try{
+            
+            this.conn.setAutoCommit(false);
+            System.out.println("Update new Value "+value);
+            String updateSql = "UPDATE anonymized_dataset SET "+this.columnNames[column]+" = ? WHERE id_an IN "+ids.toString().replace("[", "(").replace("]", ")");
+            System.out.println("value "+updateSql); 
+            pstm = this.conn.prepareStatement(updateSql);
+            pstm.setDouble(1, value);
+            pstm.executeUpdate();
+            conn.commit();
+        }catch(Exception e){
+            e.printStackTrace();
+            System.err.println("Error: "+e.getMessage()+" setAnonymizedValue");
         }finally{
             if(pstm!=null){
                 try {

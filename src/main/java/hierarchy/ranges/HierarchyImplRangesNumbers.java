@@ -1961,4 +1961,19 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
     public void clearAprioriStructures() {
         statsDistinct = new HashMap<>();
     }
+
+    @Override
+    public RangeDouble getParent(Double v, Integer k) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Integer getPopulation(double v) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Integer getPopulation(RangeDouble rd) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

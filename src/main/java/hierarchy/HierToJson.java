@@ -14,13 +14,15 @@ public class HierToJson {
     private String text = null;
     private String sort = null;
     private String type = null;
+    private String hierType = null;
     
     
-    public HierToJson(String _id , String _text, String _sort, String _type){
+    public HierToJson(String _id , String _text, String _sort, String _type, String _hierType){
         this.id = _id;
         this.text = _text;
         this.sort = _sort;
         this.type = _type;
+        this.hierType = _hierType;
     }
     
     public HierToJson(String _id , String _text, String _type){
@@ -52,6 +54,10 @@ public class HierToJson {
         return type;
     }
     
+    public String getHierType(){
+        return hierType;
+    }
+    
     
 
     public void setId(String id) {
@@ -68,6 +74,10 @@ public class HierToJson {
 
     public void setType(String type) {
         this.type = type;
+    }
+    
+    public void setHierType(String hierType) {
+        this.hierType = hierType;
     }
     
     

@@ -738,12 +738,12 @@ public class TXTData implements Data,Serializable{
                     for(int column = 0; column < temp[0].length; column++){
                         Object value = temp[randomIndexToSwap][column];
                         if(value instanceof RangeDouble){
-                            if ( colNamesType.get(column-1).equals("double")){
-                                writer.print(((RangeDouble)value).lowerBound + ",");
+                            if ( colNamesType.get(column).equals("double")){
+                                writer.print(((RangeDouble)value).lowerBound + "-");
                                 writer.print(((RangeDouble)value).upperBound);
                             }
                             else{
-                                writer.print((((RangeDouble)value).lowerBound).intValue() + ",");
+                                writer.print((((RangeDouble)value).lowerBound).intValue() + "-");
                                 writer.print((((RangeDouble)value).upperBound).intValue());
                             }
                         }

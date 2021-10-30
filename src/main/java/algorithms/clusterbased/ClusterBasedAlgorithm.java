@@ -133,7 +133,7 @@ public class ClusterBasedAlgorithm implements Algorithm {
     }
     
     private void anonymizeSmallRecords(){
-        List<Pair<Double[],List<Integer>>> smallClusters = this.diskData.getSmallRecordsClusters(k, this.hierarchies.keySet());
+        List<Pair<Double[],List<Integer>>> smallClusters = this.diskData.getSmallRecordsClusters(k, this.hierarchies.keySet(), true);
         if(!smallClusters.isEmpty()){
             this.diskClusters.createCluster();
             this.numOfSlaves = new ForkJoinPool().getParallelism();

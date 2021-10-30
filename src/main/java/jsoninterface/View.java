@@ -17,4 +17,5 @@ public class View {
     public interface SmallDataSet extends GetColumnNames {}
     public interface GetDataTypes extends GetColumnNames{}
     public interface Solutions{}
+    public interface Demographic{}
 }
