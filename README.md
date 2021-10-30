@@ -14,8 +14,9 @@ The backend of Amnesia is implemented in Java using the Spring framework. Its co
     1.   Clone the project
     2.   Go to controller/AppCon.java and set the variable "os" with desired operation system ("windows" or "linux")
     3.   Build the project
-    4.   Take the .jar from the "scr/target" directory
-    5.   Run via terminal java -Xms1024m -Xmx4096m -Dorg.eclipse.jetty.server.Request.maxFormKeys=1000000 -Dorg.eclipse.jetty.server.Request.maxFormContentSize=1000000 -jar "path_to_jar_file" --server.port=8181
+    4.   Take the .jar from the "scr/target" directoryDownload pixelmed.jar from http://www.dclunie.com/pixelmed/software/20210920_current/index.html and install manaully to amnesia's Dependencies.
+    5.   Downoload https://amnesia.openaire.eu/countryDistributionZip.ser tin the same folder where Amnesia's jar file will be executed. 
+    6.   Run via terminal java -Xms1024m -Xmx4096m -Dorg.eclipse.jetty.server.Request.maxFormKeys=1000000 -Dorg.eclipse.jetty.server.Request.maxFormContentSize=1000000 -jar "path_to_jar_file" --server.port=8181
 ⋅⋅⋅Then you can use the Amnesia’s API as in the previous step.
 
 All the examples below are harmonized with the last two methods on localhost using datasets and hierarchies provided in https://amnesia.openaire.eu/Datasets.zip
@@ -474,8 +475,13 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 
 ## Version History
 
+**version 1.2.8 (release date: 30/10/2021)**
+- Privacy guarantees with demographic statistics.
 
-**version 1.2.8 (release date: 30/09/2021)**
+- Support for anonymization of DICOM files.
+
+
+**version 1.2.8**
 - Better interface for pseudo-anonymization.
 
 - Support for user-defined masking rules.
