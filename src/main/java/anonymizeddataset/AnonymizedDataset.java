@@ -148,8 +148,8 @@ public class AnonymizedDataset {
                     if(anonymizeColumn){
                         int originalValue = ((Double)columnData[line][column]).intValue();
                         
-                        if(rules.containsKey(line) && rules.get(line).containsKey(column)){
-                            columnData[line][column] = rules.get(line).get(column);
+                        if(rules.containsKey(start+line) && rules.get(line).containsKey(column)){
+                            columnData[line][column] = rules.get(start+line).get(column);
                         }
                         
                         
@@ -184,8 +184,8 @@ public class AnonymizedDataset {
                     if(anonymizeColumn){
                         double originalValue = ((Double)columnData[line][column]);
                         
-                        if(rules.containsKey(line) && rules.get(line).containsKey(column)){
-                            columnData[line][column] = rules.get(line).get(column);
+                        if(rules.containsKey(start+line) && rules.get(start+line).containsKey(column)){
+                            columnData[line][column] = rules.get(start+line).get(column);
                         }
                         
                         
@@ -229,8 +229,8 @@ public class AnonymizedDataset {
                                 originalValue = HierarchyImplString.getWholeDictionary().getIdToString().get(num.intValue());
                             }
                             
-                            if(rules.containsKey(line) && rules.get(line).containsKey(column)){
-                                columnData[line][column] = rules.get(line).get(column);
+                            if(rules.containsKey(start+line) && rules.get(start+line).containsKey(column)){
+                                columnData[line][column] = rules.get(start+line).get(column);
                             }
                             
                             if(columnData[line][column] == null){
@@ -238,8 +238,8 @@ public class AnonymizedDataset {
                             }
                         }
                         else{
-                            if(rules.containsKey(line) && rules.get(line).containsKey(column)){
-                                columnData[line][column] = rules.get(line).get(column);
+                            if(rules.containsKey(start+line) && rules.get(start+line).containsKey(column)){
+                                columnData[line][column] = rules.get(start+line).get(column);
                             }
 //                            Object value = anonymizeValue(columnData[line][column], hierarchy, level);
                             if(columnData[line][column] == null){
@@ -614,7 +614,7 @@ public class AnonymizedDataset {
             for(String str : rowset){
                 sb.append(str);
                 if(count != rowset.size()-1)
-                    sb.append(",");
+                    sb.append(((SETData)dataset).getDelimiter());
                 count++;
             }
             
@@ -626,7 +626,7 @@ public class AnonymizedDataset {
                     newRow = row[k].toString();
                 }
                 else{
-                    newRow = newRow + "," + row[k].toString();
+                    newRow = newRow + ((SETData)dataset).getDelimiter() + row[k].toString();
                 }
             }
             linkedHashTemp.put(colNamesPosition.get(0), newRow);
@@ -1056,7 +1056,7 @@ public class AnonymizedDataset {
                             
                         }
                         else{
-                            columnData[line][column] = ((Double)rulesRelational.get(columnData[line][column]));
+                            columnData[line][column] = ((Double)rulesRelational.get(columnData[line][column])).doubleValue()+"";
                         }
                     }
                     else{
@@ -1065,7 +1065,7 @@ public class AnonymizedDataset {
                         }
                         else {
                             Double num = (Double)columnData[line][column];
-                            columnData[line][column] = num;
+                            columnData[line][column] = num.toString();
                         }
                     }
                 }
@@ -1174,12 +1174,20 @@ public class AnonymizedDataset {
         colNamesPosition = dataset.getColNamesPosition();
         int start=0;
         int end = dataset.getRecordsTotal()/4;
-        try {
-            PrintWriter writer = new PrintWriter( new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, false), StandardCharsets.UTF_8)));
-            writer.close();
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(AnonymizedDataset.class.getName()).log(Level.SEVERE, null, ex);
+        Map<String,Double> informationLoss = new HashMap(){{put("NCP",0.0);}};
+        
+        if(file != null){
+            try {
+                PrintWriter writer = new PrintWriter( new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, false), StandardCharsets.UTF_8)));
+                writer.close();
+            } catch (FileNotFoundException ex) {
+                Logger.getLogger(AnonymizedDataset.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
+        else{
+            data.setInformationLoss(0.0);
+        }
+        
         while(end<=dataset.getRecordsTotal()){
             double[][][] originalAnon;
 //            originalAnon = data.getOriginalAnonSet(start, end);
@@ -1382,8 +1390,15 @@ public class AnonymizedDataset {
                     } 
                 }
             }
-
-            data.export(file, null, columnData, qids, quasiIdentifiers, suppressedValues,printColumns);
+            
+            if(file == null){
+                /// TODO: compute information loss metrics
+                data.computeInformationLossMetrics(columnData,qids, quasiIdentifiers, suppressedValues);
+                
+            }
+            else{
+                data.export(file, null, columnData, qids, quasiIdentifiers, suppressedValues,printColumns);
+            }
             printColumns = false;
             if(end==data.getRecordsTotal()){
                 break;
@@ -1634,7 +1649,12 @@ public class AnonymizedDataset {
             }
         }
         
-        data.export(file, null, columnData, qids, quasiIdentifiers, suppressedValues);
+        if(file == null){
+            this.dataset.computeInformationLossMetrics(columnData,qids, this.quasiIdentifiers, suppressedValues);
+        }
+        else{
+            data.export(file, null, columnData, qids, quasiIdentifiers, suppressedValues);
+        }
         
         
         return null;
@@ -1687,7 +1707,7 @@ public class AnonymizedDataset {
             for(String str : rowset){
                 sb.append(str);
                 if(count != rowset.size()-1)
-                    sb.append(",");
+                    sb.append(((SETData)dataset).getDelimiter());
                 count++;
             }
 
@@ -1700,7 +1720,7 @@ public class AnonymizedDataset {
                     newRow = row[k].toString();
                 }
                 else{
-                    newRow = newRow + "," + row[k].toString();
+                    newRow = newRow + ((SETData)dataset).getDelimiter() + row[k].toString();
                 }
             }
             linkedHashTemp.put(colNamesPosition.get(0), newRow);
@@ -1708,9 +1728,97 @@ public class AnonymizedDataset {
             row = null;
         }
         
-        this.dataset.export(file, null, columnData, null, null, suppressedValues);
+        if(file == null){
+            this.dataset.computeInformationLossMetrics(columnData,qids, this.quasiIdentifiers, suppressedValues); 
+        }
+        else{
+            this.dataset.export(file, null, columnData, null, null, suppressedValues);
+        }
         return null;
     }
+    
+//    public Map<String,Integer> computeInformationLoss(Map<Integer, Map<Integer,Object>> rules){
+//        Map<String,Integer> informationLossMetrics = new HashMap();
+//        double [][]dataSet = this.dataset.getDataSet();
+//        Map <Integer,String> colNamesType = dataset.getColNamesType();
+//        Map <Integer,String> colNamesPosition = dataset.getColNamesPosition();
+//        int count = 0;
+//        Object[][]columnData = null;
+//        
+//        
+//        columnData = new Object[dataSet.length][dataSet[0].length];
+//        for(int i=0; i< columnData.length; i++){
+//            for( int j = 0 ; j < this.dataset.getDataColumns() ; j ++ ){
+//                columnData[i][j] = dataSet[start+i][j];
+//            }
+//        }
+//        
+//        for(int column=0; column<dataSet[0].length; column++){
+//            boolean anonymizeColumn = false;
+//            Hierarchy hierarchy = null; 
+//            
+//            if((count < qids.length) && (qids[count] == column)){
+//                anonymizeColumn = true;
+//                hierarchy = quasiIdentifiers.get(column);
+//                
+//                count++;
+//            }
+//            
+//            if(colNamesType.get(column).contains("int")){
+//                for(int line=0; line<columnData.length; line++){
+//                    if(anonymizeColumn){
+//                        if(rules.containsKey(line) && rules.get(line).containsKey(column)){
+//                            columnData[line][column] = rules.get(line).get(column);
+//                        }
+//                        
+//                        if ( !columnData[line].equals("(null)")){
+//                            /// compute metric
+//                        }
+//                    }
+//                }
+//                
+//            }
+//            else if(colNamesType.get(column).contains("double")){
+//                for(int line=0; line<columnData.length; line++){
+//                    if(anonymizeColumn){
+//                        if(rules.containsKey(line) && rules.get(line).containsKey(column)){
+//                            columnData[line][column] = rules.get(line).get(column);
+//                        }
+//                        
+//                        if ( !columnData[line].equals("(null)")){
+//                            // compute metric
+//                        }
+//                    }
+//                }
+//            }
+//            else{
+//               for(int line=0; line<columnData.length; line++){
+//                   if(anonymizeColumn){
+//                       if(colNamesType.get(column).contains("date")){
+//                            if(rules.containsKey(line) && rules.get(line).containsKey(column)){
+//                                columnData[line][column] = rules.get(line).get(column);
+//                            }
+//                            
+//                            if ( !columnData[line].equals("(null)")){
+//                                // compute metric
+//                            }
+//                       }
+//                       else{
+//                            if(rules.containsKey(line) && rules.get(line).containsKey(column)){
+//                                columnData[line][column] = rules.get(line).get(column);
+//                            }
+//                            
+//                            if ( !columnData[line].equals("(null)") && !columnData[line].equals("NaN")){
+//                                // compute metric
+//                            }
+//                       }
+//                   }
+//               } 
+//            }
+//        }
+//        
+//        return informationLossMetrics;
+//    }
     
     
     public Object[][] exportDataset(String file,Map<Integer, Map<Integer,Object>> rules){
@@ -1743,7 +1851,6 @@ public class AnonymizedDataset {
             if(colNamesType.get(column).contains("int")){
                 for(int line=0; line<columnData.length; line++){
                     if(anonymizeColumn){
-                        int originalValue = ((Double)columnData[line][column]).intValue();
                         
                         if(rules.containsKey(line) && rules.get(line).containsKey(column)){
                             columnData[line][column] = rules.get(line).get(column);
@@ -1776,7 +1883,6 @@ public class AnonymizedDataset {
                 for(int line=0; line<columnData.length; line++){
                     
                     if(anonymizeColumn){
-                        double originalValue = ((Double)columnData[line][column]);
                         
                         if(rules.containsKey(line) && rules.get(line).containsKey(column)){
                             columnData[line][column] = rules.get(line).get(column);
@@ -1864,10 +1970,104 @@ public class AnonymizedDataset {
                 }
             }  
         }
-        this.dataset.export(file, null, columnData,qids, this.quasiIdentifiers, suppressedValues);
+        if(file == null){
+            this.dataset.computeInformationLossMetrics(columnData,qids, this.quasiIdentifiers, suppressedValues);
+        }
+        else{
+            this.dataset.export(file, null, columnData,qids, this.quasiIdentifiers, suppressedValues);
+        }
         
         return columnData;
     }
+    
+    
+    
+//    public Map<String,Integer> computeInformationLoss() throws ParseException{
+//        double [][]dataSet = this.dataset.getDataSet();
+//        Object[][]columnData = null;
+//        Map <Integer,String> colNamesType = dataset.getColNamesType();
+//        DictionaryString dictionary = dataset.getDictionary();
+//        columnData = new Object[dataSet.length][dataSet[0].length];
+//        
+//        Integer ncp = 0;
+//        Map<String,Integer> informationLossMetrics = new HashMap();
+//        
+//        Map <Integer,String> colNamesPosition = null;
+//        Object columnName = null;
+//        colNamesType = dataset.getColNamesType();
+//        colNamesPosition = dataset.getColNamesPosition();
+//
+//        //compute data of first column with line numbers
+//        for(int i=0; i< dataSet.length; i++){
+//            for( int j = 0 ; j < colNamesType.size() ; j ++ ){
+//                columnData[i][j] = dataSet[start+i][j];
+//            }
+//        }
+//
+//        int count = 0;
+//
+//        //compute data of columns
+//        hierarchyLevel = new int[dataSet[0].length];
+//        for (int i = 0 ; i < hierarchyLevel.length ; i++){
+//            hierarchyLevel[i] = 0;
+//        }
+//        
+//        Object[] rowQIs = null;
+//        if(suppressedValues != null){
+//            rowQIs = new Object[qids.length];
+//        }
+//        
+//        for(int column=0; column<dataSet[0].length; column++){
+//            columnName = colNamesPosition.get(column);
+//            boolean anonymizeColumn = false;
+//            Hierarchy hierarchy = null;
+//            int level = 0;
+//
+//            if((count < qids.length) && (qids[count] == column)){
+//                anonymizeColumn = true;
+//                hierarchy = quasiIdentifiers.get(column);
+//                level = transformation[count];
+//                count++;
+//                hierarchyLevel [column] = level;
+//                hierarchy.setLevel(level);
+//            }
+//            
+//            if(colNamesType.get(column).contains("int")){
+//                for(int line=0; line<columnData.length; line++){
+//                    
+//                    
+//                    if(anonymizeColumn && level > 0){
+//                        columnData[line][column] = anonymizeValue(columnData[line][column], hierarchy, level);
+//                    }
+//                }
+//                
+//            }
+//            else if(colNamesType.get(column).contains("double")){
+//                for(int line=0; line<columnData.length; line++){
+//                    if(anonymizeColumn && level > 0){
+//                        columnData[line][column] = anonymizeValue(columnData[line][column], hierarchy, level);
+//                    }
+//                }
+//            }
+//            else{
+//                for(int line=0; line<columnData.length; line++){
+//                    if(anonymizeColumn && level > 0){
+//                        if(colNamesType.get(column).contains("date")){
+//                            columnData[line][column] = anonymizeValue(dataset.getDictionary().getIdToString(((Double)columnData[line][column]).intValue()), hierarchy, level);
+//                            /// dd/MM/yyyy Default data format for Amnesia
+//                        }
+//                        else{
+//                            Object value = anonymizeValue(columnData[line][column], hierarchy, level);
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        
+////        this.dataset.export(file, null, columnData,qids, this.quasiIdentifiers, suppressedValues);
+//        
+//        return informationLossMetrics;
+//    }
     
     /**
      * export anonymized dataset to file
@@ -1968,6 +2168,9 @@ public class AnonymizedDataset {
                     for(int line=0; line<columnData.length; line++){
                         if(anonymizeColumn && level > 0){
                             columnData[line][column] = anonymizeValue(columnData[line][column], hierarchy, level);
+                            if ( columnData[line][column].equals(Double.NaN)){
+                                columnData[line][column] = "(null)";
+                            }
                             if ( hierarchy.getHierarchyType().equals("range")) {
                                 columnData[line][column] = columnData[line][column].toString();
                             }
@@ -2015,8 +2218,13 @@ public class AnonymizedDataset {
                     }
                 }
             }
-
-            this.dataset.export(file, null, columnData,qids, this.quasiIdentifiers, suppressedValues);
+            
+            if(file == null){
+               this.dataset.computeInformationLossMetrics(columnData,qids, this.quasiIdentifiers, suppressedValues);
+            }
+            else{
+                this.dataset.export(file, null, columnData,qids, this.quasiIdentifiers, suppressedValues);
+            }
         }
         
         return columnData;
@@ -2130,16 +2338,6 @@ public class AnonymizedDataset {
         if(h.getHierarchyType().equals("range")){
             if(h.getNodesType().equals("date")) {
                 RangeDate rd = (RangeDate)anonymizedValue;
-//                System.out.println("AnoValue="+anonymizedValue);
-                /*if (level == 3){
-                    anonymizedValue = rd.dateToString(0);
-                }
-                else if (level == 2){
-                    anonymizedValue = rd.dateToString(1);
-                }
-                else if (level == 1){
-                    anonymizedValue = rd.dateToString(2);
-                }*/
                 
                
                 int translateLevel =  h.translateDateViaLevel(h.getHeight()-level);

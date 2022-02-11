@@ -109,7 +109,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import javax.activation.MimetypesFileTypeMap;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -175,7 +174,7 @@ import zenodo.ZenodoFilesToJson;
 @SpringBootApplication
 public class AppCon extends SpringBootServletInitializer {
     private static Class<AppCon> applicationClass = AppCon.class;
-    public static String os = "windows";
+    public static String os = "linux";
     public static String rootPath = System.getProperty("catalina.home");
     public static String parentDir; 
 
@@ -1877,12 +1876,66 @@ class AppController {
         
     }
     
+    @RequestMapping(value="/action/dataquality", method = RequestMethod.POST)
+    public @ResponseBody Map<String,Double> lossMetrics ( HttpSession session) throws FileNotFoundException, IOException, ParseException, Exception {
+        Data data = (Data) session.getAttribute("data");
+        AnonymizedDataset anonData = (AnonymizedDataset) session.getAttribute("anondata");
+        Map<Integer, Hierarchy> quasiIdentifiers = (Map<Integer, Hierarchy>)session.getAttribute("quasiIdentifiers");
+        Map<String, Map<String, String>> allRules = (Map<String, Map<String, String>>)session.getAttribute("anonrules");
+        if(anonData == null){
+            anonData = this.getAnonDataSet(0,10,session);
+        }
+        else{
+            anonData.setStart(0);
+        }
+        
+        
+        if(data instanceof TXTData || data instanceof DICOMData){
+            String algorithm = (String) session.getAttribute("algorithm");
+            /// algorithm for demographic
+            if(algorithm!=null && algorithm.equals("demographic")){
+                Map<Integer, Map<Integer,Object>> rules = (Map<Integer, Map<Integer,Object>>) session.getAttribute("results");
+                anonData.exportDataset(null,rules);
+            }
+            else{
+                anonData.exportDataset(null, true);
+                
+            }
+        }
+        else if(data instanceof DiskData){
+            
+            anonData.exportDiskDataset(null,quasiIdentifiers);
+            
+        }
+        else if(data instanceof RelSetData){
+            Map<Integer, Map<Object,Object>> results = (Map<Integer, Map<Object,Object>>) session.getAttribute("results");
+                anonData.exportRelSetDataset(null, results, quasiIdentifiers);
+        }
+        else{
+            Map<Double, Double> results = (Map<Double, Double>) session.getAttribute("results");
+            anonData.exportDataset(null, results, quasiIdentifiers);
+        }
+        
+        Map<String,Double> inLoss = data.getInformationLoss();
+        for(Map.Entry<String,Double> loss : inLoss.entrySet()){
+            System.out.println("Metric "+loss.getKey()+" value "+loss.getValue());
+        }
+        return data.getInformationLoss();
+    }
+    
+    @RequestMapping(value="/action/checksuppress", method = RequestMethod.POST)
+    public @ResponseBody boolean checkSuppress ( HttpSession session) throws FileNotFoundException, IOException {
+        
+        return (session.getAttribute("suppressSolution")!=null && (boolean)session.getAttribute("suppressSolution")) || session.getAttribute("tosuppress")==null;
+    }
     
     @RequestMapping(value="/action/getsolutiongraph", method = RequestMethod.GET) //method = RequestMethod.POST
     public @ResponseBody Graph getSolGraph ( HttpSession session) throws FileNotFoundException, IOException {
         Graph graph = null;
-       
         
+        if(session.getAttribute("suppressSource")!=null && ((boolean) session.getAttribute("suppressSource"))){
+            return null;
+        }
         
         graph = (Graph) session.getAttribute("graph");
         Set<LatticeNode> results = (Set<LatticeNode>) session.getAttribute("results");
@@ -1968,7 +2021,7 @@ class AppController {
                     System.out.println("action/getanondataset TXT ===========");
                     String algorithm = (String) session.getAttribute("algorithm");
                     if ( allRules == null){
-                        if(algorithm.equals("demographic")){
+                        if(algorithm!=null && algorithm.equals("demographic")){
                             Map<Integer, Map<Integer,Object>> rules = (Map<Integer, Map<Integer,Object>>) session.getAttribute("results");
                             anonData.renderAnonymizedTableDemographic(rules);
                         }
@@ -2192,7 +2245,7 @@ class AppController {
         }
         else{
             String algorithm = (String) session.getAttribute("algorithm");
-            if(algorithm.equals("demographic")){
+            if(algorithm!=null && algorithm.equals("demographic")){
                 Map<Integer, Map<Integer,Object>> rules = (Map<Integer, Map<Integer,Object>>) session.getAttribute("results");
                 anonData.exportDataset(file.getAbsolutePath(),rules);
             }
@@ -3197,6 +3250,8 @@ class AppController {
         session.setAttribute("pagenumsolution",0);
         session.setAttribute("selectedattributenames",selectedAttrNames);
         session.setAttribute("selectedattributes",selectedAttr);
+        session.setAttribute("suppressSource",false);
+        session.setAttribute("suppressSolution",true);
         toSuppress = (Map<Integer, Set<String>>)session.getAttribute("tosuppress");
         
         
@@ -3593,6 +3648,7 @@ class AppController {
         
         FindSolutions solution = new FindSolutions(dataset, quasiIdentifiers, node,qids,toSuppress);
         solMap = solution.getSolutionStatistics();
+        System.out.println("create solMap "+solMap);
         session.setAttribute("tosuppress",toSuppress);
         
         session.setAttribute("solmapsuppress",solMap);
@@ -3708,6 +3764,8 @@ class AppController {
         // session.setAttribute("quasiIdentifiers",quasiIdentifiers);
         session.setAttribute("quasiIdentifiers", quasiIdentifiers);
         session.setAttribute("selectedattributes",selectedAttr);
+        session.setAttribute("suppressSource",true);
+        session.setAttribute("suppressSolution",false);
         int intK = Integer.parseInt(k);
         session.setAttribute("k",intK);
         

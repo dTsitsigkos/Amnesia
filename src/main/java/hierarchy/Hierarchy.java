@@ -36,7 +36,7 @@ import java.util.Date;
  */
 public interface Hierarchy <T> {
     public int online_limit = 1000;
-    public String online_version = "online";
+    public String online_version = "onlinefgh";
     public int[][] getHierarchy();
     public void setHierarchy();
     public void setDictionaryData(DictionaryString dict);
@@ -94,7 +94,7 @@ public interface Hierarchy <T> {
     public List<Integer> getNodeIdsInLevel(int level);
     public List<T> getNodesInLevel(int level);
     public void setNodesType(String nodesType);
-    public int findAllChildren(T node, int sum);
+    public int findAllChildren(T node, int sum, boolean onlyLeaves);
     public Map<Integer,Set<T>> getLeafNodesAndParents();
     public String getInputFile();
     

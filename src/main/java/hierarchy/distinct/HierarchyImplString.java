@@ -1530,7 +1530,7 @@ public class HierarchyImplString implements Hierarchy<Double> {
     
 
     @Override
-    public int findAllChildren(Double node,int sum) {
+    public int findAllChildren(Double node,int sum, boolean onlyLeaves) {
         int result = 0;
        
         List<Double> child = this.getChildren(node);
@@ -1540,7 +1540,12 @@ public class HierarchyImplString implements Hierarchy<Double> {
         }
 
         for (int i =0 ; i < child.size() ; i ++){
-            result = findAllChildren(child.get(i),sum) + result;
+            if(onlyLeaves || node.equals(this.root)){
+                result = findAllChildren(child.get(i),sum,onlyLeaves) + result;
+            }
+            else{
+                result = findAllChildren(child.get(i),sum,onlyLeaves) + result + 1;
+            }
         }
 
         return result;    

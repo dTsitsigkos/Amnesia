@@ -18,6 +18,7 @@
  */
 package data;
 
+import anonymizeddataset.AnonymizedDataset;
 import exceptions.LimitException;
 import com.fasterxml.jackson.annotation.JsonView;
 import controller.AppCon;
@@ -38,6 +39,9 @@ import javax.swing.JTable;
 import javax.swing.table.TableModel;
 import dictionary.DictionaryString;
 import hierarchy.Hierarchy;
+import hierarchy.distinct.HierarchyImplString;
+import hierarchy.ranges.RangeDate;
+import hierarchy.ranges.RangeDouble;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -45,6 +49,7 @@ import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -87,7 +92,9 @@ public class SETData implements Data,Serializable {
     private String[][] smallDataSet;
     private Map<Integer,Integer> randomizedMap;
     @JsonView(View.GetDataTypes.class)
-    boolean pseudoanonymized = false;
+    private boolean pseudoanonymized = false;
+    private Map<String,Double> informationLoss;
+    
     
 
     
@@ -99,6 +106,7 @@ public class SETData implements Data,Serializable {
 //        dictionary = new HashMap <Integer,DictionaryString>();
         dictionary = new DictionaryString();
         dictHier = dict;
+        this.informationLoss = new HashMap();
         
         
         this.inputFile = inputFile;
@@ -402,6 +410,82 @@ public class SETData implements Data,Serializable {
 //        setDictionary(column, dict);
 //    }
     
+    public String getDelimiter(){
+        return this.delimeter;
+    }
+    
+    @Override
+    public void computeInformationLossMetrics(Object[][] anonymizedTable, int[] qids, Map<Integer, Hierarchy> hierarchies, Map<Integer, Set<String>> suppressedValues) {
+        double ncp = 0;
+        double total = 0;
+        try {
+            Object[] rowQIs = null;
+            if(suppressedValues != null){
+                rowQIs = new Object[qids.length];
+            }
+            
+            for (int row = 0; row < anonymizedTable.length; row++){
+//                if(suppressedValues != null){
+//
+//
+//                    //get qids of this row
+//                    for(int i=0; i<qids.length; i++){
+//                        rowQIs[i] = anonymizedTable[row][qids[i]];
+//                    }
+//
+//
+//                    //check if row is suppressed
+//                    if(isSuppressed(rowQIs, qids, suppressedValues)){
+//                        continue;
+//                    }
+//                }
+                
+                for(int column = 0; column < anonymizedTable[row].length; column++){
+                    if(!anonymizedTable[row][column].equals("(null)")){
+                        Hierarchy h = hierarchies.get(0);
+                        
+                        
+
+                        if(anonymizedTable[row][column] instanceof String){
+                            String anonymizedValueRow = (String) anonymizedTable[row][column];
+                            String[] anonValues = anonymizedValueRow.split("\\"+delimeter,-1);
+//                            System.out.println("Array "+Arrays.toString(anonValues));
+                            for(String anonVal : anonValues){
+                                Integer anonymizedId = this.getDictionary().getStringToId().get(anonVal);
+//                                System.out.println("Value anon "+anonVal);
+
+                                if(anonymizedId == null){
+                                    anonymizedId = HierarchyImplString.getWholeDictionary().getStringToId().get(anonVal);
+                                }
+                                int leafAnonymized = h.findAllChildren(anonymizedId.doubleValue(), 0,true);
+                                if(leafAnonymized == 1){
+                                    continue;
+                                }
+                                int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+//                                System.out.println("Leaves "+leafAnonymized+" all leaves "+allLeaves+" ncp "+(leafAnonymized/((double)allLeaves))/anonValues.length);
+                                ncp += (leafAnonymized/((double)allLeaves))/anonValues.length; 
+                                total += h.getLevel(anonymizedId.doubleValue())/((double)h.getHeight()-1)/anonValues.length;
+                            }
+                        }
+                       
+                        
+                    }
+                }
+                
+            }
+            
+            ncp = ncp/this.recordsTotal;
+            total = total/this.recordsTotal;
+            this.informationLoss.put("NCP", ncp);
+            this.informationLoss.put("Total", total);
+            
+            
+        }catch (Exception e) {
+            System.err.println("Error in computeInformationLossMetrics function for SETData: "+e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
     @Override
     public void export(String file, Object[][] initialTable, Object[][] anonymizedTable, 
             int[] qids, Map<Integer, Hierarchy> hierarchies, Map<Integer, Set<String>> suppressedValues) {
@@ -471,9 +555,9 @@ public class SETData implements Data,Serializable {
                             
                         
                         
-                        if(column != temp[row].length-1){
-                            writer.print(",");
-                        }
+//                        if(column != temp[row].length-1){
+//                            writer.print(",");
+//                        }
                     }
                     writer.println();
                 }
@@ -917,6 +1001,12 @@ public class SETData implements Data,Serializable {
             }
         }
         this.pseudoanonymized = true;
+    }
+    
+    
+    @Override
+    public Map<String, Double> getInformationLoss() {
+        return this.informationLoss;
     }
 
     

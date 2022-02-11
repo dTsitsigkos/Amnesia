@@ -5,6 +5,7 @@
  */
 package data;
 
+import anonymizeddataset.AnonymizedDataset;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.pixelmed.dicom.Attribute;
@@ -29,6 +30,10 @@ import com.pixelmed.display.SourceImage;
 import controller.AppCon;
 import static data.Data.online_rows;
 import static data.Data.online_version;
+import hierarchy.distinct.HierarchyImplString;
+import hierarchy.ranges.HierarchyImplRangesDate;
+import hierarchy.ranges.RangeDate;
+import hierarchy.ranges.RangeDouble;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
@@ -80,12 +85,15 @@ public class DICOMData implements Data {
     private AttributeList [] dcmInfo = null;
     private String []fileNames = null;
     
+    private Map<String,Double> informationLoss;
+    
     public DICOMData(String ip, DictionaryString dict){
         this.inputpath = ip;
         this.dictHier = dict;
         chVar = new CheckVariables();
         dictionary = new DictionaryString();
         colNamesType = new TreeMap<Integer,String>();
+        this.informationLoss = new HashMap();
         
         File folder = new File(this.inputpath);
 //        this.sizeOfRows = folder.listFiles().length;
@@ -414,6 +422,159 @@ public class DICOMData implements Data {
         preprocessing();
         String result = save(checkColumns);
         return result;
+    }
+    
+    private boolean isSuppressed(Object[] data, int[] qids, Map<Integer, Set<String>> suppressedValues){
+        
+        if (suppressedValues == null)
+            return false;
+        
+        Object[] checkArr = new Object[1];
+        
+        //check for each and every qid if is suppressed
+        for(int i=0; i<qids.length; i++){
+            Set<String> suppressed = suppressedValues.get(qids[i]);
+            if(suppressed != null){
+                checkArr[0] = data[i];
+                if(suppressed.contains(java.util.Arrays.toString(checkArr)))
+                    return true;
+            }
+        }
+        
+        //check for all qids combined
+        Set<String> suppressed = suppressedValues.get(-1);
+        if(suppressed != null){
+            if(suppressed.contains(java.util.Arrays.toString(data))){
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    @Override
+    public void computeInformationLossMetrics(Object[][] anonymizedTable, int[] qids, Map<Integer, Hierarchy> hierarchies, Map<Integer, Set<String>> suppressedValues) {
+        double ncp = 0;
+        double total = 0;
+        try {
+            Object[] rowQIs = null;
+            if(suppressedValues != null){
+                rowQIs = new Object[qids.length];
+            }
+            
+            for (int row = 0; row < anonymizedTable.length; row++){
+                if(suppressedValues != null){
+
+
+                    //get qids of this row
+                    for(int i=0; i<qids.length; i++){
+                        rowQIs[i] = anonymizedTable[row][qids[i]];
+                    }
+
+
+                    //check if row is suppressed
+                    if(isSuppressed(rowQIs, qids, suppressedValues)){
+                        continue;
+                    }
+                }
+                
+                for(int column = 0; column < anonymizedTable[0].length; column++){
+                    if(hierarchies.containsKey(column) && !anonymizedTable[row][column].equals("(null)")){
+                        Hierarchy h = hierarchies.get(column);
+                        
+                        if(this.colNamesType.get(column).equals("int")){
+                            if(h.getHierarchyType().contains("range")){
+                                if(anonymizedTable[row][column] instanceof String && ((String)anonymizedTable[row][column]).contains("-")){
+                                    RangeDouble rd =  new RangeDouble((double)Integer.parseInt(((String)anonymizedTable[row][column]).split("-")[0]),(double)Integer.parseInt(((String)anonymizedTable[row][column]).split("-")[1]));
+                                    Double globalRange = ((RangeDouble) h.getRoot()).upperBound-((RangeDouble) h.getRoot()).lowerBound;
+                                    ncp += ((rd.upperBound-rd.lowerBound)/globalRange)/hierarchies.size();
+                                    total += (h.getHeight()-h.getLevel(rd))/((double)h.getHeight())/hierarchies.size();
+                                }
+                            }
+                            else{
+                                int leafAnonymized = h.findAllChildren(((Integer)anonymizedTable[row][column]).doubleValue(), 0,true);
+                                if(leafAnonymized == 1){
+                                    continue;
+                                }
+                                int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                
+                                ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size();
+                                total += h.getLevel(((Integer)anonymizedTable[row][column]).doubleValue())/((double)h.getHeight()-1)/hierarchies.size();
+                            }
+                        }
+                        else if(this.colNamesType.get(column).equals("double")){
+                            if(h.getHierarchyType().contains("range")){
+                                if(anonymizedTable[row][column] instanceof String && ((String)anonymizedTable[row][column]).contains("-")){
+                                    RangeDouble rd =  new RangeDouble(Double.parseDouble(((String)anonymizedTable[row][column]).split("-")[0]),Double.parseDouble(((String)anonymizedTable[row][column]).split("-")[1]));
+                                    Double globalRange = ((RangeDouble) h.getRoot()).upperBound-((RangeDouble) h.getRoot()).lowerBound;
+                                    ncp += ((rd.upperBound-rd.lowerBound)/globalRange)/hierarchies.size();
+                                    total += (h.getHeight()-h.getLevel(rd))/((double)h.getHeight())/hierarchies.size();
+                                }
+                            }
+                            else{
+                                int leafAnonymized = h.findAllChildren(anonymizedTable[row][column], 0,true);
+                                if(leafAnonymized == 1){
+                                    continue;
+                                }
+                                int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                
+                                ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size(); 
+                                total += h.getLevel(((Double)anonymizedTable[row][column]).doubleValue())/((double)h.getHeight()-1)/hierarchies.size();
+                            }
+                            
+                        }
+                        else if(this.colNamesType.get(column).equals("date")){
+                            long startDate,endDate;
+                            if(anonymizedTable[row][column] instanceof RangeDate){
+                                startDate = ((RangeDate) anonymizedTable[row][column]).upperBound.getTime();
+                                endDate = ((RangeDate) anonymizedTable[row][column]).lowerBound.getTime();
+                            }
+                            else if(anonymizedTable[row][column] instanceof String && ((String)anonymizedTable[row][column]).contains("-")){
+                                startDate = ((HierarchyImplRangesDate) h).getDateFromString(((String)anonymizedTable[row][column]).split("-")[0],true).getTime();
+                                endDate = ((HierarchyImplRangesDate) h).getDateFromString(((String)anonymizedTable[row][column]).split("-")[1],false).getTime();
+                            }
+                            else{
+                                continue;
+                            }
+                            
+                            Long globalRangeTime = ((RangeDate)h.getRoot()).upperBound.getTime()-((RangeDate)h.getRoot()).lowerBound.getTime();
+                            ncp += (((double)(endDate-startDate))/globalRangeTime)/hierarchies.size();
+                            total += (h.getHeight()-h.getLevel(new RangeDate(new Date(startDate),new Date(endDate))))/((double)h.getHeight())/hierarchies.size();
+                            
+                        }
+                        else{
+                            if(anonymizedTable[row][column] instanceof String){
+                                String anonymizedValue = (String) anonymizedTable[row][column];
+                                Integer anonymizedId = this.getDictionary().getStringToId().get(anonymizedValue);
+                                if(anonymizedId == null){
+                                    anonymizedId = HierarchyImplString.getWholeDictionary().getStringToId().get(anonymizedValue);
+                                }
+                                int leafAnonymized = h.findAllChildren(anonymizedId.doubleValue(), 0,true);
+                                if(leafAnonymized == 1){
+                                    continue;
+                                }
+                                int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+
+                                ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size(); 
+                                total += h.getLevel(anonymizedId.doubleValue())/((double)h.getHeight()-1)/hierarchies.size();
+                            }
+                        }
+                        
+                    }
+                }
+                
+            }
+            
+            ncp = ncp/this.recordsTotal;
+            total = total/this.recordsTotal;
+            this.informationLoss.put("NCP", ncp);
+            this.informationLoss.put("Total", total);
+            
+            
+        }catch (Exception e) {
+            System.err.println("Error in computeInformationLossMetrics function for DICOMData: "+e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -871,6 +1032,11 @@ public class DICOMData implements Data {
            }
         }
         this.pseudoanonymized = true;
+    }
+
+    @Override
+    public Map<String, Double> getInformationLoss() {
+        return this.informationLoss;
     }
     
 }

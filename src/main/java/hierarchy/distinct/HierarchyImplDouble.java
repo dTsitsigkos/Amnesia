@@ -260,7 +260,10 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
     
 
     public Integer getLevel(Double node){
+        
         if (this.stats.get(node) != null){
+//            System.out.println("value "+node);
+//            System.out.println("Hier  level "+this.stats.get(node).getLevel());
             return this.stats.get(node).getLevel();
         }
         else{
@@ -1122,7 +1125,7 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
 
     @Override
     public Integer getLevel(double nodeId) {
-//        System.out.println("value level "+nodeId);
+        
         try{
             return (this.height - this.getLevel((Double)nodeId) - 1) ;
         }catch(NullPointerException ne){
@@ -1157,7 +1160,7 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
 
 
     @Override
-    public int findAllChildren(Double node,int sum) {
+    public int findAllChildren(Double node,int sum, boolean onlyLeaves) {
        int result = 0;
        
        List<Double> child = this.getChildren(node);
@@ -1167,8 +1170,12 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
        }
        
        for (int i =0 ; i < child.size() ; i ++){
-           //System.out.println(child.get(i));
-           result = findAllChildren(child.get(i),sum) + result;
+           if(onlyLeaves || node.equals(this.root)){
+                result = findAllChildren(child.get(i),sum,onlyLeaves) + result;
+            }
+            else{
+                result = findAllChildren(child.get(i),sum,onlyLeaves) + result + 1;
+            }
        }
        
        return result;

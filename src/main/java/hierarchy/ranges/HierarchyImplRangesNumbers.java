@@ -1320,7 +1320,7 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
     }
 
     @Override
-    public int findAllChildren(RangeDouble node,int sum) {
+    public int findAllChildren(RangeDouble node,int sum, boolean onlyLeaves) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

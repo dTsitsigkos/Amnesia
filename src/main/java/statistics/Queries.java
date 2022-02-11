@@ -220,7 +220,7 @@ public class Queries {
                             else if (h.getLevel(value) > (h.getHeight()-1-hierarchyLevel[i]) ){//i erwtisi pio xamila apo tin hierarchia
                                 //out.println("22222222222222222");
                                 diff[i] =  h.getLevel(value) - (h.getHeight()-1-hierarchyLevel[i]) ;
-                                int sumOfChildrenValue = h.findAllChildren(value, 0);
+                                int sumOfChildrenValue = h.findAllChildren(value, 0,true);
 
                                 for (int j = 0 ; j < diff[i] ; j ++ ){
                                     value = h.getParent(value);
@@ -472,18 +472,18 @@ public class Queries {
                                             if (h.getLevel(distinctArr[column]) > (h.getHeight()-1-hierarchyLevel[column])) {
                                                 //System.out.println(" i aam hereeeeeeeeeeeeeeee");
                                                 if (counter == 0){
-                                                    int sumOfChildrenValue = h.findAllChildren(distinctArr[column], 0);
+                                                    int sumOfChildrenValue = h.findAllChildren(distinctArr[column], 0,true);
                                                     //System.out.println("sumOfChildren11111111111111111 = " + sumOfChildrenValue);
-                                                    double prob = h.findAllChildren(newDistinctArr[column], 0);
+                                                    double prob = h.findAllChildren(newDistinctArr[column], 0,true);
                                                     //System.out.println("prob = " + prob);        
                                                     prob = sumOfChildrenValue/prob;
                                                     //System.out.println("prob22222222222 = " + prob);
                                                     estimatedRate = prob;
                                                 }
                                                 else{
-                                                    int sumOfChildrenValue = h.findAllChildren(distinctArr[column], 0);
+                                                    int sumOfChildrenValue = h.findAllChildren(distinctArr[column], 0,true);
                                                    // System.out.println("sumOfChildren11111111111111111 = " + sumOfChildrenValue);
-                                                    double prob = h.findAllChildren(newDistinctArr[column], 0);
+                                                    double prob = h.findAllChildren(newDistinctArr[column], 0,true);
                                                     //System.out.println("prob = " + prob);        
                                                     //System.out.println("sumOfChildren = " + sumOfChildrenValue + "\tprob = " + prob);
                                                     prob = sumOfChildrenValue/prob;
@@ -579,8 +579,8 @@ public class Queries {
                                                     if (h.getLevel(Double.valueOf(distinctArr[column])) > (h.getHeight()-1-hierarchyLevel[column])) {
                                                         //System.out.println("distinct = " + distinctArr[column]+"\tnewdistinct = " + newDistinctArr[column] );
                                                         if (counter == 0){
-                                                            int sumOfChildrenValue = h.findAllChildren(Double.parseDouble(distinctArr[column]), 0);
-                                                            double prob = h.findAllChildren(Double.parseDouble(newDistinctArr[column]), 0);
+                                                            int sumOfChildrenValue = h.findAllChildren(Double.parseDouble(distinctArr[column]), 0,true);
+                                                            double prob = h.findAllChildren(Double.parseDouble(newDistinctArr[column]), 0,true);
                                                             //System.out.println("sumOfChildren = " + sumOfChildrenValue + "\tprob = " + prob);
 
                                                             prob = sumOfChildrenValue/prob;
@@ -588,8 +588,8 @@ public class Queries {
                                                             estimatedRate = prob;
                                                         }
                                                         else{
-                                                            int sumOfChildrenValue = h.findAllChildren(Double.parseDouble(distinctArr[column]), 0);
-                                                            double prob = h.findAllChildren(Double.parseDouble(newDistinctArr[column]), 0);
+                                                            int sumOfChildrenValue = h.findAllChildren(Double.parseDouble(distinctArr[column]), 0,true);
+                                                            double prob = h.findAllChildren(Double.parseDouble(newDistinctArr[column]), 0,true);
                                                              //System.out.println("sumOfChildren = " + sumOfChildrenValue + "\tprob = " + prob);
                                                             prob = sumOfChildrenValue/prob;
                                                             estimatedRate = estimatedRate*prob;

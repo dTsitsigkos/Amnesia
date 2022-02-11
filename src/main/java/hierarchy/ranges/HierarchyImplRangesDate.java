@@ -990,7 +990,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     }
 
     @Override
-    public int findAllChildren(RangeDate node, int sum) {
+    public int findAllChildren(RangeDate node, int sum, boolean onlyLeaves) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

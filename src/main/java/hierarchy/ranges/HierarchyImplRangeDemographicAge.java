@@ -173,7 +173,7 @@ public class HierarchyImplRangeDemographicAge implements Hierarchy<RangeDouble> 
 
     @Override
     public Integer getHeight() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return this.height;
     }
 
     @Override
@@ -637,7 +637,7 @@ public class HierarchyImplRangeDemographicAge implements Hierarchy<RangeDouble> 
     }
 
     @Override
-    public int findAllChildren(RangeDouble node, int sum) {
+    public int findAllChildren(RangeDouble node, int sum,boolean onlyLeaves) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

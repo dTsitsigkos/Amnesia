@@ -38,7 +38,7 @@ import java.util.LinkedHashMap;
  */
 public interface Data {
     public int online_rows = 5000;
-    public String online_version = "online";
+    public String online_version = "onlinehi";
     public double[][] getDataSet();
     public void setData(double[][] _data);
     public int getDataLenght();
@@ -68,5 +68,7 @@ public interface Data {
     public String getInputFile();
     public SimpleDateFormat getDateFormat(int column);
     public void setMask(int column, int[] positions, char character);
+    public void computeInformationLossMetrics(Object[][] anonymizedTable, int[] qids, Map<Integer, Hierarchy> hierarchies, Map<Integer, Set<String>> suppressedValues);
+    public Map<String,Double> getInformationLoss();
 
 }

@@ -62,6 +62,9 @@ import static java.util.stream.Collectors.joining;
 import jsoninterface.View;
 import data.Pair;
 import exceptions.NotFoundValueException;
+import hierarchy.distinct.HierarchyImplString;
+import hierarchy.ranges.HierarchyImplRangesDate;
+import hierarchy.ranges.RangeDate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.FileUtils;
@@ -110,7 +113,9 @@ public class DiskData implements Data,Serializable{
     private int counterRow;
     private Map<Integer,Integer> randomizedMap;
     @JsonView(View.GetDataTypes.class)
-    boolean pseudoanonymized = false;
+    private boolean pseudoanonymized = false;
+    private Map<String,Double> informationLoss;
+    
    
     
     private static final String[] formats = { 
@@ -135,6 +140,7 @@ public class DiskData implements Data,Serializable{
         this.dictHier = dict;
         this.anonymizedRecords = new HashSet();
         this.anonymizedRecordsClusters = new ArrayList();
+        this.informationLoss = new HashMap();
         
         System.out.println("Input path "+inputFile);
         String name = "anonymization.db";
@@ -748,6 +754,137 @@ public class DiskData implements Data,Serializable{
     public String readDataset(String[] columnTypes, boolean[] checkColumns) throws LimitException, DateParseException,NotFoundValueException {
         SaveClmnsAndTypeOfVar(columnTypes,checkColumns);
         return save(checkColumns);
+    }
+    
+    public void setInformationLoss(double inLoss){
+        this.informationLoss.put("NCP", inLoss);
+        this.informationLoss.put("Total", inLoss);
+    }
+    
+    
+    @Override
+    public void computeInformationLossMetrics(Object[][] anonymizedTable, int[] qids, Map<Integer, Hierarchy> hierarchies, Map<Integer, Set<String>> suppressedValues) {
+        double ncp = 0;
+        double total = 0;
+        try {
+            Object[] rowQIs = null;
+            if(suppressedValues != null){
+                rowQIs = new Object[qids.length];
+            }
+            
+            for (int row = 0; row < anonymizedTable.length; row++){
+                if(suppressedValues != null){
+
+
+                    //get qids of this row
+                    for(int i=0; i<qids.length; i++){
+                        rowQIs[i] = anonymizedTable[row][qids[i]];
+                    }
+
+
+                    //check if row is suppressed
+                    if(isSuppressed(rowQIs, qids, suppressedValues)){
+                        continue;
+                    }
+                }
+                
+                for(int column = 0; column < anonymizedTable[0].length; column++){
+                    if(hierarchies.containsKey(column) && !anonymizedTable[row][column].equals("(null)")){
+                        Hierarchy h = hierarchies.get(column);
+                        
+                        if(this.colNamesType.get(column).equals("int")){
+                            if(h.getHierarchyType().contains("range")){
+                                if(anonymizedTable[row][column] instanceof String && ((String)anonymizedTable[row][column]).contains("-")){
+                                    RangeDouble rd =  new RangeDouble((double)Integer.parseInt(((String)anonymizedTable[row][column]).split("-")[0]),(double)Integer.parseInt(((String)anonymizedTable[row][column]).split("-")[1]));
+                                    Double globalRange = ((RangeDouble) h.getRoot()).upperBound-((RangeDouble) h.getRoot()).lowerBound;
+                                    ncp += ((rd.upperBound-rd.lowerBound)/globalRange)/hierarchies.size();
+                                    total += (h.getHeight()-h.getLevel(rd))/((double)h.getHeight())/hierarchies.size();
+                                }
+                            }
+                            else{
+                                int leafAnonymized = h.findAllChildren(((Integer)anonymizedTable[row][column]).doubleValue(), 0,true);
+                                if(leafAnonymized == 1){
+                                    continue;
+                                }
+                                int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                
+                                ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size();
+                                total += h.getLevel(((Integer)anonymizedTable[row][column]).doubleValue())/((double)h.getHeight()-1)/hierarchies.size();
+                            }
+                        }
+                        else if(this.colNamesType.get(column).equals("double")){
+                            if(h.getHierarchyType().contains("range")){
+                                if(anonymizedTable[row][column] instanceof String && ((String)anonymizedTable[row][column]).contains("-")){
+                                    RangeDouble rd =  new RangeDouble(Double.parseDouble(((String)anonymizedTable[row][column]).split("-")[0]),Double.parseDouble(((String)anonymizedTable[row][column]).split("-")[1]));
+                                    Double globalRange = ((RangeDouble) h.getRoot()).upperBound-((RangeDouble) h.getRoot()).lowerBound;
+                                    ncp += ((rd.upperBound-rd.lowerBound)/globalRange)/hierarchies.size();
+                                    total += (h.getHeight()-h.getLevel(rd))/((double)h.getHeight())/hierarchies.size();
+                                }
+                            }
+                            else{
+                                int leafAnonymized = h.findAllChildren(anonymizedTable[row][column], 0,true);
+                                if(leafAnonymized == 1){
+                                    continue;
+                                }
+                                int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                
+                                ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size(); 
+                                total += h.getLevel(((Double)anonymizedTable[row][column]).doubleValue())/((double)h.getHeight()-1)/hierarchies.size();
+                            }
+                            
+                        }
+                        else if(this.colNamesType.get(column).equals("date")){
+                            long startDate,endDate;
+                            if(anonymizedTable[row][column] instanceof RangeDate){
+                                startDate = ((RangeDate) anonymizedTable[row][column]).upperBound.getTime();
+                                endDate = ((RangeDate) anonymizedTable[row][column]).lowerBound.getTime();
+                            }
+                            else if(anonymizedTable[row][column] instanceof String && ((String)anonymizedTable[row][column]).contains("-")){
+                               startDate = ((HierarchyImplRangesDate) h).getDateFromString(((String)anonymizedTable[row][column]).split("-")[0],true).getTime();
+                               endDate = ((HierarchyImplRangesDate) h).getDateFromString(((String)anonymizedTable[row][column]).split("-")[1],false).getTime();
+                            }
+                            else{
+                                continue;
+                            }
+                            
+                            Long globalRangeTime = ((RangeDate)h.getRoot()).upperBound.getTime()-((RangeDate)h.getRoot()).lowerBound.getTime();
+                            ncp += (((double)(endDate-startDate))/globalRangeTime)/hierarchies.size();
+                            total += (h.getHeight()-h.getLevel(new RangeDate(new Date(startDate),new Date(endDate))))/((double)h.getHeight())/hierarchies.size();
+                            
+                        }
+                        else{
+                            if(anonymizedTable[row][column] instanceof String){
+                                String anonymizedValue = (String) anonymizedTable[row][column];
+                                Integer anonymizedId = this.getDictionary().getStringToId().get(anonymizedValue);
+                                if(anonymizedId == null){
+                                    anonymizedId = HierarchyImplString.getWholeDictionary().getStringToId().get(anonymizedValue);
+                                }
+                                int leafAnonymized = h.findAllChildren(anonymizedId.doubleValue(), 0,true);
+                                if(leafAnonymized == 1){
+                                    continue;
+                                }
+                                int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+
+                                ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size(); 
+                                total += h.getLevel(anonymizedId.doubleValue())/((double)h.getHeight()-1)/hierarchies.size();
+                            }
+                        }
+                        
+                    }
+                }
+                
+            }
+            
+            ncp = ncp/this.recordsTotal;
+            total = total/this.recordsTotal;
+            this.informationLoss.put("NCP", this.informationLoss.get("NCP")+ncp);
+            this.informationLoss.put("Total", this.informationLoss.get("Total")+total);
+            
+            
+        }catch (Exception e) {
+            System.err.println("Error in computeInformationLossMetrics function for DiskData: "+e.getMessage());
+            e.printStackTrace();
+        }
     }
     
     public void export(String file, Object[][] initialTable, Object[][] anonymizedTable, int[] qids, Map<Integer, Hierarchy> hierarchies, Map<Integer, Set<String>> suppressedValues,boolean printColumnNames) {
@@ -2656,6 +2793,12 @@ public class DiskData implements Data,Serializable{
                 Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+    }
+    
+    
+    @Override
+    public Map<String, Double> getInformationLoss() {
+        return this.informationLoss;
     }
     
 }
