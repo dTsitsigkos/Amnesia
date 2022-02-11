@@ -474,8 +474,10 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 
 
 ## Version History
+**version 1.3.0 (release date: 11/02/2022)**
+- Integration of additional information loss metrics
 
-**version 1.2.9 (release date: 30/10/2021)**
+**version 1.2.9**
 - Privacy guarantees with demographic statistics.
 
 - Support for anonymization of DICOM files.
