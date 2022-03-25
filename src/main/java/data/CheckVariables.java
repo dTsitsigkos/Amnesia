@@ -37,7 +37,7 @@ public class CheckVariables {
                 "yyyy:MM:dd HH:mm:ss",         "dd/MM/yyyy",
                 "yyyy:MM:dd HH:mm:ss.SS",     "yyyy/MM/dd",
                 "dd MMM yyyy",                "dd-MMM-yyy",
-                "dd-MM-yyyy",                   "yyyy-MM-dd"};   
+                "dd-MM-yyyy",                   "yyyy-MM-dd", "dd/M/yyyy", "d/M/yyyy"};   
     public String lastFormat;
                                                 
                                                 

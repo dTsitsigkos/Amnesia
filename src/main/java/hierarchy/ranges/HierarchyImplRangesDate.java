@@ -63,6 +63,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     int months = -1;
     int days = -1;
     int levelFlash =-1;
+    Map<Integer,Integer> levelpFlash = null;
     int counterNodes = 0;
     DictionaryString dictData = null;
     DictionaryString dictResults = null;
@@ -365,25 +366,10 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     public String getNodesType() {
         return this.nodesType;
     }
-
+    
     @Override
-    public RangeDate getParent(RangeDate node) {
-         //System.out.println("GET PARENT Range = " +node.toString());
-        if(this.levelFlash == -1){
-            RangeDate r = new RangeDate(null,null);
-            //r.nodesType = "int";
-            //System.out.println("rrrrrrrrrrrrrrrrrrrrrrrrrrrrr = "+ r.toString());
-            for (Map.Entry<RangeDate, RangeDate> entry : parents.entrySet()) {
-                //System.out.println(entry.getKey()+" : "+entry.getValue());
-                RangeDate r1 = entry.getKey();
-               // System.out.println("r1 = " + r1);
-                //System.out.println("r = " + r);
-                //System.out.println("dfsdfsdfsd :" + parents.get(r1));
-                //System.out.println("dfsdfsdfsd :" + parents.get(node));
-                if (r1.equals(r)){
-                    //System.out.println("i am hereeeeeeeeeeeeeeeeeeeeeedsfgsfewfe");
-                }
-            }
+    public RangeDate getParent(RangeDate node, int ti) {
+        if(this.levelpFlash.get(ti) == null){
 
             return this.parents.get(node);
         }
@@ -391,6 +377,24 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
             RangeDate rd = this.parents.get(node);
             int currentLevel = this.height - this.getLevel(node)  ;
 //            System.out.println("flash level Date "+levelFlash+" anon level "+currentLevel+" anon Value "+rd);
+            if(this.levelpFlash.get(ti) == currentLevel){
+               return rd;
+            }
+            else{
+                return node;
+            }
+        }
+    }
+
+    @Override
+    public RangeDate getParent(RangeDate node) {
+        if(this.levelFlash == -1){
+
+            return this.parents.get(node);
+        }
+        else{
+            RangeDate rd = this.parents.get(node);
+            int currentLevel = this.height - this.getLevel(node)  ;
             if(levelFlash == currentLevel){
                return rd;
             }
@@ -1575,6 +1579,19 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     public void setLevel(int l) {
         this.levelFlash = l;
     }
+    
+    @Override
+    public void setpLevel(int ti, int l) {
+       if(ti < 0){
+            this.levelpFlash = null;
+            return;
+        }
+        
+        if(this.levelpFlash == null){
+            this.levelpFlash = new HashMap();
+        }
+        this.levelpFlash.put(ti, l);
+    }
 
     @Override
     public Map<Integer, Set<RangeDate>> getLeafNodesAndParents() {
@@ -1909,6 +1926,9 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     public Integer getPopulation(RangeDate rd) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
+
+    
     
     
 }

@@ -305,7 +305,8 @@ public class ClusterBasedAlgorithm implements Algorithm {
          
         this.rangeThreads = new HashMap();
         System.out.println("Threads : "+this.numOfSlaves);
-        numRecordsMain = (this.diskData.getRecordsTotal() + numOfSlaves -1)/numOfSlaves;
+//        numRecordsMain = (this.diskData.getRecordsTotal() + numOfSlaves -1)/numOfSlaves;
+        numRecordsMain = this.diskData.getRecordsTotal();
         int numRecords = (numRecordsMain + numOfSlaves -1)/numOfSlaves;
         System.out.println("Main "+numRecordsMain+" slaves "+numRecords);
         RangeDouble range = new RangeDouble(0.0,(double)numRecords-1);
@@ -322,7 +323,7 @@ public class ClusterBasedAlgorithm implements Algorithm {
     
     private void recomputeSizeRanges(long heapRemainsSize){
         this.numRecordsMain = ((Long)(heapRemainsSize / (this.diskData.getDataColumns() * Double.BYTES))).intValue();
-        this.numRecordsMain = ((Double)(this.numRecordsMain - (this.numRecordsMain* 0.05))).intValue();
+        this.numRecordsMain = ((Double)(this.numRecordsMain - (this.numRecordsMain* 0.5))).intValue();
         int numRecords = (numRecordsMain + numOfSlaves -1)/numOfSlaves;
         System.out.println("New Main "+numRecordsMain+" slaves "+numRecords);
         RangeDouble range = new RangeDouble(0.0,(double)numRecords-1);
@@ -751,8 +752,9 @@ public class ClusterBasedAlgorithm implements Algorithm {
                             Logger.getLogger(ClusterBasedAlgorithm.class.getName()).log(Level.SEVERE, null, ex);
                         }
                     }
+                    this.diskData.executeAnonymizedClusterBatch(clusterRecords);
                 }
-                this.diskData.executeAnonymizedClusterBatch(clusterRecords);
+                
             }
             this.diskData.deleteDB();
             this.diskData.closeConnection();

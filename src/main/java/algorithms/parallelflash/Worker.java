@@ -26,6 +26,7 @@ import algorithms.flash.LatticeNode;
 import data.Data;
 import dictionary.DictionaryString;
 import hierarchy.Hierarchy;
+import hierarchy.distinct.HierarchyImplString;
 import hierarchy.ranges.RangeDate;
 import hierarchy.ranges.RangeDouble;
 import java.text.ParseException;
@@ -49,11 +50,12 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
     Map<GeneralizedRow, Integer> frequencies = new HashMap<>();
     int start = -1;
     int end = -1;
+    int worder_id = -1;
     public Worker nextJoin = null;
     
     public Worker(Data data,Map<Integer, Hierarchy> hierarchies,LatticeNode node,LatticeNode parentNode,
             Buffer parentNodeBuffer,GeneralizedRow[] keysetArray,int[] qidColumns,int start,
-            int end,Worker nextJoin){
+            int end,Worker nextJoin, int wi){
         this.data = data;
         this.hierarchies = hierarchies;
         this.node = node;
@@ -64,6 +66,7 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
         this.start = start;
         this.end = end;
         this.nextJoin = nextJoin;
+        this.worder_id = wi;
     }
     
     @Override
@@ -107,20 +110,30 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
             //    rowValue = dict.getIdToString((int)row[qidColumns[k]]);
             //}
             //else {
+            if(data.getColNamesType().get(qidColumns[k]).equals("string") ){
+//                DictionaryString dict = data.getDictionary(qidColumns[k]);
+                //rowValue = dict.getIdToString((int)row[qidColumns[k]]);
                 rowValue = row[qidColumns[k]];
+            }
+            else if( data.getColNamesType().get(qidColumns[k]).equals("date")){
+                rowValue = dict.getIdToString((int)row[qidColumns[k]]);
+                if(rowValue == null){
+                    rowValue = HierarchyImplString.getWholeDictionary().getIdToString((int)row[qidColumns[k]]);
+                }
+            }
+            else {
+                rowValue = row[qidColumns[k]];
+            }
             //}
             
             //generalize value
             for(int i=0; i<node.getTransformation()[k]; i++){
-
-                //System.out.println("h.getHierarchyType() = " + h.getHierarchyType());
-                //System.out.println("h.getNodesType() = " + h.getNodesType());
-                //System.out.println("nodegetTransformation = " + node.getTransformation()[k]);
+                h.setpLevel(this.worder_id,i);
                 
                 if(h.getHierarchyType().equals("range")){
                     if(h.getNodesType().equals("double") ||  h.getNodesType().equals("int")){
                         if ( i ==0 ){
-                            if ( (double) rowValue == 2147483646.0 ||  rowValue.equals(Double.NaN)){
+                            if (rowValue!=null && ((double) rowValue == 2147483646.0 ||  rowValue.equals(Double.NaN))){
                                 Map<Integer, ArrayList<RangeDouble>> x = h.getAllParents();
                                 ArrayList<RangeDouble> newList = x.get(x.size()-1);
                                 if(newList.size() != 1){
@@ -131,14 +144,14 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
                                 }
                             }
                             else{
-                                rowValue = h.getParent((Double)rowValue);
+                                rowValue = h.getParent((Double)rowValue,this.worder_id);
                             }    
                         }
                         else{
-                            rowValue = h.getParent(rowValue);
+                            rowValue = h.getParent(rowValue, this.worder_id);
                         }
                     }
-                    else if (h.getNodesType().equals("date") ){
+                    else if (rowValue!=null && h.getNodesType().equals("date")){
                         Date d = null;
                         RangeDate rd = null;
                         
@@ -154,32 +167,22 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
                         else{
                             rd = (RangeDate) rowValue;
                         }
-                        //System.out.println("rowValue = " + rowValue +"\tdate = " + d.toString());
-                        ////////////////////////////////////////////////
                         if (d != null){
-                            //System.out.println("eimai edwwwwwwwwwwwwww");
+
                             if ( i ==0 ){
-                                //System.out.println("mpika");
-                                /*if ( d.equals(Double.NaN)){
-                                    //System.out.println("mpika2222");
-                                    Map<Integer, ArrayList<RangeDate>> x = h.getAllParents();
-                                    ArrayList<RangeDate> newList = x.get(x.size()-1);
-                                    if(newList.size() != 1){
-                                        rowValue = newList.get(0);
-                                    }
-                                    else{
-                                        rowValue = x.get(0).get(0);//h.getParent((Double)anonymizedValue);
-                                    }
-                                }*/
+                              
                                 if ( d == null ){
-                                    Map<Integer, ArrayList<RangeDate>> x = h.getAllParents();
-                                    ArrayList<RangeDate> newList = x.get(x.size()-1);
-                                    if(newList.size() != 1){
-                                        rowValue = newList.get(0);
-                                    }
-                                    else{
-                                        rowValue = x.get(0).get(0);//h.getParent((Double)anonymizedValue);
-                                    }
+//                                    Map<Integer, ArrayList<RangeDate>> x = h.getAllParents();
+//                                    ArrayList<RangeDate> newList = x.get(x.size()-1);
+//                                    if(newList.size() != 1){
+//                                        rowValue = newList.get(0);
+//                                    }
+//                                    else{
+//                                        rowValue = x.get(0).get(0);//h.getParent((Double)anonymizedValue);
+//                                    }
+                                    
+                                    rowValue = h.getParent(new RangeDate(null,null),this.worder_id);
+                                    System.out.println("Row value null "+rowValue);
                                 }
                                 else{
                                     //System.out.println("mpika3333");
@@ -189,45 +192,33 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
                             }
                             else{
                                 //System.out.println("mpika222222222222");
-                                rowValue = h.getParent(rowValue);
+                                rowValue = h.getParent(rowValue,this.worder_id);
                             }
                         }
                         else{
-                           // System.out.println("eimai edwwwwwwwwwwwwww2222222222222222");
                             if ( i ==0 ){
-                                //System.out.println("mpika");
-                                /*if ( rd.equals(Double.NaN)){
-                                    //System.out.println("mpika2222");
-                                    Map<Integer, ArrayList<RangeDate>> x = h.getAllParents();
-                                    ArrayList<RangeDate> newList = x.get(x.size()-1);
-                                    if(newList.size() != 1){
-                                        rowValue = newList.get(0);
-                                    }
-                                    else{
-                                        rowValue = x.get(0).get(0);//h.getParent((Double)anonymizedValue);
-                                    }
-                                }*/
+                                
                                 if ( rd == null){
-                                    //System.out.println("mpika2222");
+//                                    Map<Integer, ArrayList<RangeDate>> x = h.getAllParents();
+//                                    ArrayList<RangeDate> newList = x.get(x.size()-1);
+//                                    if(newList.size() != 1){
+//                                        rowValue = newList.get(0);
+//                                    }
+//                                    else{
+//                                        rowValue = x.get(0).get(0);//h.getParent((Double)anonymizedValue);
+//                                    }
+
                                     Map<Integer, ArrayList<RangeDate>> x = h.getAllParents();
-                                    ArrayList<RangeDate> newList = x.get(x.size()-1);
-                                    if(newList.size() != 1){
-                                        rowValue = newList.get(0);
-                                    }
-                                    else{
-                                        rowValue = x.get(0).get(0);//h.getParent((Double)anonymizedValue);
-                                    }
+                                    rowValue = h.getParent(new RangeDate(null,null),this.worder_id);
                                 }
                                 
                                 else{
-                                    //System.out.println("mpika3333");
-                                   // System.out.println("edwwwwwwwwwwwwwwwww = " + rd.toString());
-                                    rowValue = h.getParent(rd);
+                                    rowValue = h.getParent(rd,this.worder_id);
                                 }    
                             }
                             else{
                                 //System.out.println("mpika222222222222");
-                                rowValue = h.getParent(rowValue);
+                                rowValue = h.getParent(rowValue,this.worder_id);
                             }
                         }
                         //////////////////////////////////////////////////
@@ -236,7 +227,7 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
                     }
                 }
                 else{
-                    rowValue = h.getParent(rowValue);
+                    rowValue = h.getParent(rowValue,this.worder_id);
                 }
             }
             /*for(int i=0; i<node.getTransformation()[k]; i++){
@@ -268,7 +259,12 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
                 }
             }*/
             
-            gRow.generalizedColumns[j] = rowValue.toString();
+            if(rowValue != null){
+                gRow.generalizedColumns[j] = rowValue.toString();
+            }
+            else{
+                gRow.generalizedColumns[j] = null;
+            }
             j++;
         }
         
@@ -329,16 +325,24 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
                         if(h.getNodesType().equals("double") ||  h.getNodesType().equals("int")){
                             if(parentNodeTransf[i] == 0 && nodeTransf[i] > 0){
                                 Double doubleValue = Double.parseDouble(value.toString());
+                                int parentLevel = 0;
+                                h.setpLevel(this.worder_id,parentLevel);
                                 parent = h.getParent(doubleValue);
-
-                                for(int j=0; j<k-1; j++)
-                                    parent = h.getParent(parent);
+                                parentLevel++;
+                                for(int j=0; j<k-1; j++){
+                                    parent = h.getParent(parent,this.worder_id);
+                                    parentLevel++;
+                                }
                             }
                             else{
                                 RangeDouble rangeValue = RangeDouble.parseRange(value.toString());
                                 parent = rangeValue;
-                                for(int j=0; j<k; j++)
-                                    parent = h.getParent(parent);
+                                int parentLevel = parentNodeTransf[i];
+                                for(int j=0; j<k; j++){
+                                    h.setpLevel(this.worder_id,parentLevel);
+                                    parent = h.getParent(parent,this.worder_id);
+                                    parentLevel++;
+                                }
                             }
                         }
                         else if (h.getNodesType().equals("date") ){
@@ -347,30 +351,31 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
                                 Date doubleValue =  sf.parse(value.toString());
                                 parent = h.getParent(doubleValue);
 
-                                for(int j=0; j<k-1; j++)
-                                    parent = h.getParent(parent);
+                                for(int j=0; j<k-1; j++){
+                                    h.setpLevel(this.worder_id,j+1);
+                                    parent = h.getParent(parent,this.worder_id);
+                                }
                             }
                             else{
                                 RangeDate rangeValue = RangeDate.parseRange(value.toString());
                                 parent = rangeValue;
-                                for(int j=0; j<k; j++)
-                                    parent = h.getParent(parent);
+                                int parentLevel = parentNodeTransf[i];
+                                for(int j=0; j<k; j++){
+                                    h.setpLevel(this.worder_id,parentLevel);
+                                    parent = h.getParent(parent,this.worder_id);
+                                    parentLevel++;
+                                }
                             }
                         }
                     }
                     else{
-                        if(data.getColNamesType().get(qidColumns[i]).equals("string") || data.getColNamesType().get(qidColumns[i]).equals("date") ){
-                            Double doubleValue = Double.parseDouble(value.toString());
-                            parent = doubleValue;
-                            for(int j=0; j<k; j++){
-                                parent =  h.getParent((Double)parent);
-                            }
-                        }
-                        else{
-                            Double doubleValue = Double.parseDouble(value.toString());
-                            parent = doubleValue;
-                            for(int j=0; j<k; j++)
-                                parent = h.getParent(parent);  
+                        Double doubleValue = Double.parseDouble(value.toString());
+                        parent = doubleValue;
+                        int parentLevel = parentNodeTransf[i];
+                        for(int j=0; j<k; j++){
+                            h.setpLevel(this.worder_id,parentLevel);
+                            parent = h.getParent(parent,this.worder_id);  
+                            parentLevel++;
                         }  
                     }
                     gRow.generalizedColumns[i] = parent.toString();

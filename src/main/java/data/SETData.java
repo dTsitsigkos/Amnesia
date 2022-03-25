@@ -71,6 +71,8 @@ public class SETData implements Data,Serializable {
     private String inputFile = null;
     private int sizeOfRows = 0;
     private int sizeOfCol = 0;
+    @JsonView(View.GetColumnNames.class)
+    private String dataType = "setdata";
     @JsonView(View.GetDataTypes.class)
     private String delimeter = null;
     @JsonView(View.GetDataTypes.class)
@@ -930,7 +932,7 @@ public class SETData implements Data,Serializable {
     }
 
     @Override
-    public void setMask(int column, int[] positions, char character) {
+    public void setMask(int column, int[] positions, char character, String option) {
         int stringCount;
         if(dictionary.isEmpty() && dictHier.isEmpty()){
             System.out.println("Both empy load data");
@@ -960,9 +962,15 @@ public class SETData implements Data,Serializable {
                 if(var == null){
                     var = this.dictHier.getIdToString((int)dataSet[i][j]);
                 }
+                
+                
 
                 if(var.equals("NaN")){
                     continue;
+                }
+                
+                if(option.equals("suffix")){
+                    var = new StringBuilder(var).reverse().toString();
                 }
 
                 for(int pos : positions){
@@ -970,7 +978,11 @@ public class SETData implements Data,Serializable {
                         var = var.substring(0,pos)+character+var.substring(pos+1);
                     }
                 }
-
+                
+                if(option.equals("suffix")){
+                    var = new StringBuilder(var).reverse().toString();
+                }
+                
 
                 if (!dictionary.containsString(var) && !this.dictHier.containsString(var)){
                     if(var.equals("NaN")){
@@ -1001,12 +1013,110 @@ public class SETData implements Data,Serializable {
             }
         }
         this.pseudoanonymized = true;
+        
+//        This is for sample
+
+//        String var = this.biggerSample.get(column);
+//        if(option.equals("suffix")){
+//            var = new StringBuilder(var).reverse().toString();
+//        }
+//
+//        for(int pos : positions){
+//            if(pos<var.length()){
+//                var = var.substring(0,pos)+character+var.substring(pos+1);
+//            }
+//        }
+//
+//        if(option.equals("suffix")){
+//            var = new StringBuilder(var).reverse().toString();
+//        }
+//        this.biggerSample.put(column, var);
     }
     
     
     @Override
     public Map<String, Double> getInformationLoss() {
         return this.informationLoss;
+    }
+
+    @Override
+    public void setRegex(int column, char character, String regex) {
+        int stringCount;
+        if(dictionary.isEmpty() && dictHier.isEmpty()){
+            System.out.println("Both empy load data");
+            stringCount = 1;
+        }
+        else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
+            System.out.println("Both have values");
+            if(dictionary.getMaxUsedId() > dictHier.getMaxUsedId()){
+                stringCount = dictionary.getMaxUsedId()+1;
+            }
+            else{
+                stringCount = dictHier.getMaxUsedId()+1;
+            }
+        }
+        else if(dictionary.isEmpty()){
+            System.out.println("Dict data empty");
+            stringCount = dictHier.getMaxUsedId()+1;
+        }
+        else{
+            System.out.println("Dict hier empty");
+            stringCount = dictionary.getMaxUsedId()+1;
+        }
+        
+        for(int i=0; i<this.sizeOfRows; i++){
+            for(int j=0; j<dataSet[i].length; j++){
+                String var = dictionary.getIdToString((int)dataSet[i][j]);
+                if(var == null){
+                    var = this.dictHier.getIdToString((int)dataSet[i][j]);
+                }
+                
+                
+
+                if(var.equals("NaN")){
+                    continue;
+                }
+                
+                var = var.replaceAll(regex, character+"");
+                
+
+                if (!dictionary.containsString(var) && !this.dictHier.containsString(var)){
+                    if(var.equals("NaN")){
+                       dictionary.putIdToString(2147483646, var);
+                       dictionary.putStringToId(var,2147483646);
+        //                                        dictionary.put(counter1, tempDict);
+                       dataSet[i][j] = 2147483646.0;
+                   }
+                   else{
+                       dictionary.putIdToString(stringCount, var);
+                       dictionary.putStringToId(var,stringCount);
+        //                                    dictionary.put(counter1, tempDict);
+                       dataSet[i][j] = stringCount;
+                       stringCount++;
+                   }
+               }
+               else{
+                   //if string is present in the dictionary, get its id
+                   if(dictionary.containsString(var)){
+                       int stringId = dictionary.getStringToId(var);
+                       dataSet[i][j] = stringId;
+                   }
+                   else{
+                       int stringId = this.dictHier.getStringToId(var);
+                       dataSet[i][j] = stringId;
+                   }
+               }
+            }
+        }
+        this.pseudoanonymized = true;
+        
+//        This is for sample
+
+//        String var = this.biggerSample.get(column);
+//        var = var.replaceAll(regex, character+"");
+//        this.biggerSample.put(column, var);
+        
+        
     }
 
     

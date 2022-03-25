@@ -79,6 +79,8 @@ public class HierarchyImplString implements Hierarchy<Double> {
     DictionaryString dictData = null;
     
     int levelFlash = -1;
+    // key: thread id, value: level
+    Map<Integer,Integer> levelpFlash = null;
     
     //@JsonView(View.Hier.class)
     Map<Double, List<Double>> children = null;
@@ -458,6 +460,26 @@ public class HierarchyImplString implements Hierarchy<Double> {
             return true;
         }
     }
+    
+    @Override
+    public Double getParent(Double node, int ti) {
+        if(levelpFlash.get(ti) == null){
+            return this.parents.get(node);
+        }
+        else{
+            Double anonValue = this.parents.get(node);
+            if(this.getLevel((double)node) == null){
+                return null;
+            }
+            if(levelpFlash.get(ti) == this.getLevel((double)node)){
+                return anonValue;
+            }
+            else{
+                return node;
+            }
+        }
+    }
+    
     
     
     @Override
@@ -1936,6 +1958,21 @@ public class HierarchyImplString implements Hierarchy<Double> {
     public void setLevel(int l) {
         this.levelFlash = l;
     }
+    
+    @Override
+    public void setpLevel(int ti,int l) {
+        if(ti < 0){
+            this.levelpFlash = null;
+            return;
+        }
+        
+        if(this.levelpFlash == null){
+            this.levelpFlash = new HashMap();
+        }
+        this.levelpFlash.put(ti, l);
+    }
+    
+    
 
     @Override
     public Map<Integer, Set<Double>> getLeafNodesAndParents() {
@@ -2244,5 +2281,9 @@ public class HierarchyImplString implements Hierarchy<Double> {
     public Integer getPopulation(Double rd) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
+    
+
+    
     
 }   

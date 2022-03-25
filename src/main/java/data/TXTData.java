@@ -112,6 +112,8 @@ public class TXTData implements Data,Serializable{
     private Map<Integer,Integer> randomizedMap;
     @JsonView(View.GetDataTypes.class)
     boolean pseudoanonymized = false;
+    @JsonView(View.GetDataTypes.class)
+    Map<Integer,String> biggerSample = null;
     
     Map<String,Double> informationLoss;
     
@@ -138,6 +140,7 @@ public class TXTData implements Data,Serializable{
         dictHier = dict;
         dictionary = new DictionaryString();
         informationLoss = new HashMap();
+        this.biggerSample = new HashMap();
         
         this.inputFile = inputFile;
         if ( del == null ){
@@ -490,6 +493,16 @@ public class TXTData implements Data,Serializable{
                                     else{
                                         int stringId = this.dictHier.getStringToId(var);
                                         dataSet[counter][counter1] = stringId;
+                                    }
+                                    
+                                }
+                                
+                                if(!var.equals("NaN")){
+                                    if(this.biggerSample.get(counter1) == null){
+                                        this.biggerSample.put(counter1, var);
+                                    }
+                                    else if(this.biggerSample.get(counter1).length() < var.length()){
+                                        this.biggerSample.put(counter1, var);
                                     }
                                 }
 //                                System.out.println("String value "+var+" id "+dataSet[counter][counter1]+" row "+counter+"col "+counter1);
@@ -1487,7 +1500,7 @@ public class TXTData implements Data,Serializable{
     }
 
     @Override
-    public void setMask(int column, int[] positions, char character) {
+    public void setMask(int column, int[] positions, char character,String option) {
         int stringCount;
         if(dictionary.isEmpty() && dictHier.isEmpty()){
             System.out.println("Both empy load data");
@@ -1511,6 +1524,7 @@ public class TXTData implements Data,Serializable{
             stringCount = dictionary.getMaxUsedId()+1;
         }
         
+        
         for(int i=0; i<this.sizeOfRows; i++){
             String var = dictionary.getIdToString((int)dataSet[i][column]);
             if(var == null){
@@ -1521,10 +1535,18 @@ public class TXTData implements Data,Serializable{
                 continue;
             }
             
+            if(option.equals("suffix")){
+                var = new StringBuilder(var).reverse().toString();
+            }
+            
             for(int pos : positions){
                 if(pos<var.length()){
                     var = var.substring(0,pos)+character+var.substring(pos+1);
                 }
+            }
+            
+            if(option.equals("suffix")){
+                var = new StringBuilder(var).reverse().toString();
             }
 
 
@@ -1556,11 +1578,106 @@ public class TXTData implements Data,Serializable{
            }
         }
         this.pseudoanonymized = true;
+        
+        String var = this.biggerSample.get(column);
+        if(option.equals("suffix")){
+            var = new StringBuilder(var).reverse().toString();
+        }
+
+        for(int pos : positions){
+            if(pos<var.length()){
+                var = var.substring(0,pos)+character+var.substring(pos+1);
+            }
+        }
+
+        if(option.equals("suffix")){
+            var = new StringBuilder(var).reverse().toString();
+        }
+        
+        this.biggerSample.put(column, var);
     }
     
     @Override
     public Map<String, Double> getInformationLoss() {
         return this.informationLoss;
+    }
+
+    @Override
+    public void setRegex(int column, char character, String regex) {
+        int stringCount;
+        if(dictionary.isEmpty() && dictHier.isEmpty()){
+            System.out.println("Both empy load data");
+            stringCount = 1;
+        }
+        else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
+            System.out.println("Both have values");
+            if(dictionary.getMaxUsedId() > dictHier.getMaxUsedId()){
+                stringCount = dictionary.getMaxUsedId()+1;
+            }
+            else{
+                stringCount = dictHier.getMaxUsedId()+1;
+            }
+        }
+        else if(dictionary.isEmpty()){
+            System.out.println("Dict data empty");
+            stringCount = dictHier.getMaxUsedId()+1;
+        }
+        else{
+            System.out.println("Dict hier empty");
+            stringCount = dictionary.getMaxUsedId()+1;
+        }
+        
+        
+        for(int i=0; i<this.sizeOfRows; i++){
+            String var = dictionary.getIdToString((int)dataSet[i][column]);
+            if(var == null){
+                var = this.dictHier.getIdToString((int)dataSet[i][column]);
+            }
+            
+            if(var.equals("NaN")){
+                continue;
+            }
+            
+           
+            var = var.replaceAll(regex, character+"");
+            
+            
+
+
+            if (!dictionary.containsString(var) && !this.dictHier.containsString(var)){
+                if(var.equals("NaN")){
+                   dictionary.putIdToString(2147483646, var);
+                   dictionary.putStringToId(var,2147483646);
+    //                                        dictionary.put(counter1, tempDict);
+                   dataSet[i][column] = 2147483646.0;
+               }
+               else{
+                   dictionary.putIdToString(stringCount, var);
+                   dictionary.putStringToId(var,stringCount);
+    //                                    dictionary.put(counter1, tempDict);
+                   dataSet[i][column] = stringCount;
+                   stringCount++;
+               }
+           }
+           else{
+               //if string is present in the dictionary, get its id
+               if(dictionary.containsString(var)){
+                   int stringId = dictionary.getStringToId(var);
+                   dataSet[i][column] = stringId;
+               }
+               else{
+                   int stringId = this.dictHier.getStringToId(var);
+                   dataSet[i][column] = stringId;
+               }
+           }
+        }
+        this.pseudoanonymized = true;
+        
+        System.out.println("Regex "+regex);
+        String var = this.biggerSample.get(column);
+        var = var.replaceAll(regex, character+"");
+        this.biggerSample.put(column, var);
+        
     }
 
     

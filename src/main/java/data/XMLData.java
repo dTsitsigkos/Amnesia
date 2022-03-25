@@ -940,7 +940,7 @@ public class XMLData implements Data {
     }
 
     @Override
-    public void setMask(int column, int[] positions, char character) {
+    public void setMask(int column, int[] positions, char character, String option) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -951,6 +951,11 @@ public class XMLData implements Data {
 
     @Override
     public Map<String, Double> getInformationLoss() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void setRegex(int column, char character, String regex) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     

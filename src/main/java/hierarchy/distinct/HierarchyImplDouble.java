@@ -73,6 +73,7 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
     int counterNodes = 0;
     
     int levelFlash = -1;
+    Map<Integer,Integer> levelpFlash = null;
     
     //@JsonView(View.Hier.class)
     public Double root = null;
@@ -268,6 +269,31 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
         }
         else{
             return null;
+        }
+    }
+    
+    @Override
+    public Double getParent(Double node, int ti) {
+        if(levelpFlash.get(ti) == null){
+            return this.parents.get(node);
+        }
+        else{
+            Double anonValue = this.parents.get(node);
+//            System.out.println("Node "+node+" anonValue "+anonValue);
+//            System.out.println("Flash level "+levelFlash+" level anon node "+this.getLevel((double)anonValue)+" anonNode "+anonValue+" level node "+this.getLevel((double)node));
+            if(anonValue == null){
+                return null;
+            }
+            Integer level = this.getLevel((double)node);
+            if(level == null){
+                return null;
+            }
+            if(levelpFlash.get(ti) == level){
+                return anonValue;
+            }
+            else{
+                return node;
+            }
         }
     }
     
@@ -1562,6 +1588,19 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
     public void setLevel(int l) {
         this.levelFlash = l;
     }
+    
+    @Override
+    public void setpLevel(int ti, int l) {
+        if(ti < 0){
+            this.levelpFlash = null;
+            return;
+        }
+        
+        if(this.levelpFlash == null){
+            this.levelpFlash = new HashMap();
+        }
+        this.levelpFlash.put(ti, l);
+    }
 
     @Override
     public Map<Integer, Set<Double>> getLeafNodesAndParents() {
@@ -1709,6 +1748,10 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
     public Integer getPopulation(double rd) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
+    
+
+    
 
    
     

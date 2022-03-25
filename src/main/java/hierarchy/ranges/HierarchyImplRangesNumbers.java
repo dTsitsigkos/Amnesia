@@ -68,6 +68,7 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
     BufferedReader br = null;
     RangeDouble root = null;
     int levelFlash = -1;
+    Map<Integer,Integer> levelpFlash = null;
     int counterNodes = 0;
     
     Map<RangeDouble, List<RangeDouble>> children = new HashMap<>();
@@ -214,32 +215,32 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
     public DictionaryString getDictionaryData(){
         return this.dictData;
     }
-
+    
     @Override
-    public RangeDouble getParent(RangeDouble node) {
-        //System.out.println("GET PARENT Range = " +node.toString());
-        if(levelFlash==-1){
-            RangeDouble r = new RangeDouble(Double.NaN,Double.NaN);
-            //r.nodesType = "int";
-            //System.out.println("rrrrrrrrrrrrrrrrrrrrrrrrrrrrr = "+ r.toString());
-            for (Map.Entry<RangeDouble, RangeDouble> entry : parents.entrySet()) {
-                //System.out.println(entry.getKey()+" : "+entry.getValue());
-                RangeDouble r1 = entry.getKey();
-               // System.out.println("r1 = " + r1);
-                //System.out.println("r = " + r);
-                //System.out.println("dfsdfsdfsd :" + parents.get(r1));
-                //System.out.println("dfsdfsdfsd :" + parents.get(node));
-                if (r1.equals(r)){
-                    //System.out.println("i am hereeeeeeeeeeeeeeeeeeeeeedsfgsfewfe");
-                }
-            }
-
+    public RangeDouble getParent(RangeDouble node, int ti) {
+        if(levelpFlash.get(ti)==null){
             return this.parents.get(node);
         }
         else{
             RangeDouble rb = this.parents.get(node);
             int currentLevel = this.height - this.getLevel(node) ;
-//            System.out.println("flash level "+levelFlash+" anon level "+currentLevel+" anon Value "+rb);
+            if(levelpFlash.get(ti) == currentLevel){
+               return rb;
+            }
+            else{
+                return node;
+            }
+        }
+    }
+
+    @Override
+    public RangeDouble getParent(RangeDouble node) {
+        if(levelFlash==-1){
+            return this.parents.get(node);
+        }
+        else{
+            RangeDouble rb = this.parents.get(node);
+            int currentLevel = this.height - this.getLevel(node) ;
             if(levelFlash == currentLevel){
                return rb;
             }
@@ -1865,6 +1866,19 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
     public void setLevel(int l) {
         this.levelFlash = l;
     }
+    
+    @Override
+    public void setpLevel(int ti, int l) {
+        if(ti < 0){
+            this.levelpFlash = null;
+            return;
+        }
+        
+        if(this.levelpFlash == null){
+            this.levelpFlash = new HashMap();
+        }
+        this.levelpFlash.put(ti, l);
+    }
 
     @Override
     public Map<Integer, Set<RangeDouble>> getLeafNodesAndParents() {
@@ -1976,4 +1990,8 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
     public Integer getPopulation(RangeDouble rd) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
+    
+
+    
 }

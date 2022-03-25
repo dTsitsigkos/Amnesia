@@ -115,6 +115,8 @@ public class DiskData implements Data,Serializable{
     @JsonView(View.GetDataTypes.class)
     private boolean pseudoanonymized = false;
     private Map<String,Double> informationLoss;
+    @JsonView(View.GetDataTypes.class)
+    Map<Integer,String> biggerSample = null;
     
    
     
@@ -141,6 +143,7 @@ public class DiskData implements Data,Serializable{
         this.anonymizedRecords = new HashSet();
         this.anonymizedRecordsClusters = new ArrayList();
         this.informationLoss = new HashMap();
+        this.biggerSample = new HashMap();
         
         System.out.println("Input path "+inputFile);
         String name = "anonymization.db";
@@ -641,6 +644,15 @@ public class DiskData implements Data,Serializable{
                                 else{
                                     int stringId = this.dictHier.getStringToId(var);
                                     dataSet[0][counter1] = (double) stringId;
+                                }
+                            }
+                            
+                            if(!var.equals("NaN")){
+                                if(this.biggerSample.get(counter1) == null){
+                                    this.biggerSample.put(counter1, var);
+                                }
+                                else if(this.biggerSample.get(counter1).length() < var.length()){
+                                    this.biggerSample.put(counter1, var);
                                 }
                             }
                         }
@@ -2644,7 +2656,7 @@ public class DiskData implements Data,Serializable{
     }
 
     @Override
-    public void setMask(int column, int[] positions, char character) {
+    public void setMask(int column, int[] positions, char character, String option) {
         PreparedStatement pstm = null;
         Statement stm = null;
         ResultSet result = null;
@@ -2696,11 +2708,19 @@ public class DiskData implements Data,Serializable{
                 if(var.equals("NaN")){
                     continue;
                 }
+                
+                if(option.equals("suffix")){
+                    var = new StringBuilder(var).reverse().toString();
+                }
 
                 for(int pos : positions){
                     if(pos<var.length()){
                         var = var.substring(0,pos)+character+var.substring(pos+1);
                     }
+                }
+                
+                if(option.equals("suffix")){
+                    var = new StringBuilder(var).reverse().toString();
                 }
 
 
@@ -2740,6 +2760,22 @@ public class DiskData implements Data,Serializable{
 //            pstm = conn.prepareStatement(insertSql+valuesStr);
             conn.commit();
             this.pseudoanonymized = true;
+            String var = this.biggerSample.get(column);
+            if(option.equals("suffix")){
+                var = new StringBuilder(var).reverse().toString();
+            }
+
+            for(int pos : positions){
+                if(pos<var.length()){
+                    var = var.substring(0,pos)+character+var.substring(pos+1);
+                }
+            }
+
+            if(option.equals("suffix")){
+                var = new StringBuilder(var).reverse().toString();
+            }
+            
+            this.biggerSample.put(column, var);
         }catch(Exception e){
             e.printStackTrace();
             System.err.println("Error: "+e.getMessage()+" setMask");
@@ -2799,6 +2835,124 @@ public class DiskData implements Data,Serializable{
     @Override
     public Map<String, Double> getInformationLoss() {
         return this.informationLoss;
+    }
+
+    @Override
+    public void setRegex(int column, char character, String regex) {
+        PreparedStatement pstm = null;
+        Statement stm = null;
+        ResultSet result = null;
+        String updateSql = "UPDATE dataset SET "+this.columnNames[column]+" = ? WHERE id = ?";
+        String selectSql = "SELECT id,"+this.columnNames[column]+" FROM dataset";
+        Double[][] records = new Double[this.sizeOfRows][2];
+        try{
+            this.conn.setAutoCommit(false);
+            stm = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY); 
+            pstm = this.conn.prepareStatement(updateSql);
+            stm.setFetchSize(50);
+            result = stm.executeQuery(selectSql);
+            int counter=0;
+            while(result.next()){
+                records[counter][0] = result.getDouble(1);
+                records[counter][1] = result.getDouble(2);
+                counter++;
+            }
+            
+            int stringCount;
+            if(dictionary.isEmpty() && dictHier.isEmpty()){
+                System.out.println("Both empy load data");
+                stringCount = 1;
+            }
+            else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
+                System.out.println("Both have values");
+                if(dictionary.getMaxUsedId() > dictHier.getMaxUsedId()){
+                    stringCount = dictionary.getMaxUsedId()+1;
+                }
+                else{
+                    stringCount = dictHier.getMaxUsedId()+1;
+                }
+            }
+            else if(dictionary.isEmpty()){
+                System.out.println("Dict data empty");
+                stringCount = dictHier.getMaxUsedId()+1;
+            }
+            else{
+                System.out.println("Dict hier empty");
+                stringCount = dictionary.getMaxUsedId()+1;
+            }
+
+            for(int i=0; i<this.sizeOfRows; i++){
+                String var = dictionary.getIdToString(records[i][1].intValue());
+                if(var == null){
+                    var = this.dictHier.getIdToString(records[i][1].intValue());
+                }
+
+                if(var.equals("NaN")){
+                    continue;
+                }
+                
+                var = var.replaceAll(regex, character+"");
+
+
+                if (!dictionary.containsString(var) && !this.dictHier.containsString(var)){
+                    if(var.equals("NaN")){
+                       dictionary.putIdToString(2147483646, var);
+                       dictionary.putStringToId(var,2147483646);
+        //                                        dictionary.put(counter1, tempDict);
+                       records[i][1] = 2147483646.0;
+                   }
+                   else{
+                       dictionary.putIdToString(stringCount, var);
+                       dictionary.putStringToId(var,stringCount);
+        //                                    dictionary.put(counter1, tempDict);
+                       records[i][1] = (double) stringCount;
+                       stringCount++;
+                   }
+               }
+               else{
+                   //if string is present in the dictionary, get its id
+                   if(dictionary.containsString(var)){
+                       int stringId = dictionary.getStringToId(var);
+                       records[i][1] = (double) stringId;
+                   }
+                   else{
+                       int stringId = this.dictHier.getStringToId(var);
+                       records[i][1] = (double) stringId;
+                   }
+               }
+                pstm.setDouble(1, records[i][1]);
+                pstm.setInt(2, records[i][0].intValue());
+                pstm.executeUpdate();
+                
+               
+            }
+            
+//            pstm = conn.prepareStatement(insertSql+valuesStr);
+            conn.commit();
+            this.pseudoanonymized = true;
+            
+            String var = this.biggerSample.get(column);
+            var = var.replaceAll(regex, character+"");
+            this.biggerSample.put(column, var);
+        }catch(Exception e){
+            e.printStackTrace();
+            System.err.println("Error: "+e.getMessage()+" setRegex");
+        }finally{
+            if(pstm!=null){
+                try {
+                    pstm.close();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            
+            try {
+                this.conn.setAutoCommit(true);
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+                Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
     }
     
 }

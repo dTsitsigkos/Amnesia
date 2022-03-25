@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
 import data.Data;
 import hierarchy.Hierarchy;
+import java.util.Map.Entry;
 
 /**
  * A frequency set
@@ -58,13 +59,17 @@ public class Buffer {
             int start = i;
             int end = (splitSize < datasetLength - i) ? i + splitSize : datasetLength;
                         
-            worker = new Worker(data,hierarchies,node,null,null,null,qidColumns,start,end,worker);
+            worker = new Worker(data,hierarchies,node,null,null,null,qidColumns,start,end,worker,i);
             pool.execute(worker);
         }
         
         //wait all threads to finish
         for (Worker w = worker; w != null; w = w.nextJoin){       
             mergeMaps(this.frequencies, w.join());
+        }
+        
+        for(Entry<GeneralizedRow,Integer> entry : this.frequencies.entrySet()){
+            System.out.println("Root Node "+node+"Row "+entry.getKey()+", freq : "+entry.getValue());
         }
     }
     
@@ -116,7 +121,7 @@ public class Buffer {
         for (int i = 0; i < datasetLength; i += splitSize){
             int start = i;
             int end = (splitSize < datasetLength - i) ? i + splitSize : datasetLength;
-            worker = new Worker(data,hierarchies,node,parentNode,parentNodeBuffer,keysetArray,qidColumns,start,end,worker);
+            worker = new Worker(data,hierarchies,node,parentNode,parentNodeBuffer,keysetArray,qidColumns,start,end,worker,i);
             pool.execute(worker);
         }
         
@@ -125,6 +130,10 @@ public class Buffer {
         //wait all threads to finish
         for (Worker w = worker; w != null; w = w.nextJoin){
             mergeMaps(this.frequencies, w.join());
+        }
+        
+        for(Entry<GeneralizedRow,Integer> entry : this.frequencies.entrySet()){
+            System.out.println("Node "+node+"Row "+entry.getKey()+", freq : "+entry.getValue());
         }
     }
     

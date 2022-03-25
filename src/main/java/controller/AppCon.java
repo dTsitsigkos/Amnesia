@@ -174,7 +174,7 @@ import zenodo.ZenodoFilesToJson;
 @SpringBootApplication
 public class AppCon extends SpringBootServletInitializer {
     private static Class<AppCon> applicationClass = AppCon.class;
-    public static String os = "linux";
+    public static String os = "windows";
     public static String rootPath = System.getProperty("catalina.home");
     public static String parentDir; 
 
@@ -1022,15 +1022,24 @@ class AppController {
         return result;
     }
     
+    @RequestMapping(value="/action/saveregex", method = RequestMethod.POST)
+    public @ResponseBody void saveRegex (@RequestParam("column") int column, @RequestParam("char") String character, @RequestParam("regex") String regex, HttpSession session)  {
+        
+        
+        Data data = (Data) session.getAttribute("data");
+        
+        data.setRegex(column, character.charAt(0), regex.trim());
+    }
+    
     
     @RequestMapping(value="/action/savemask", method = RequestMethod.POST)
-    public @ResponseBody void saveMask (@RequestParam("column") int column, @RequestParam("positions") String positions, @RequestParam("char") String character, HttpSession session)  {
+    public @ResponseBody void saveMask (@RequestParam("column") int column, @RequestParam("positions") String positions, @RequestParam("char") String character, @RequestParam("option") String option, HttpSession session)  {
         int[] pos_arr = Arrays.stream(positions.substring(1, positions.length()-1).split(","))
             .map(String::trim).mapToInt(Integer::parseInt).toArray();
         
         Data data = (Data) session.getAttribute("data");
         
-        data.setMask(column, pos_arr, character.charAt(0));
+        data.setMask(column, pos_arr, character.charAt(0), option);
     }
     
     @RequestMapping(value="/action/saveselectedhier", method = RequestMethod.POST)
@@ -1711,7 +1720,7 @@ class AppController {
         Future<String> future = null;
         System.out.println("Algorithm starts");
         try {
-            if(os.equals("online")){
+            if(os.equals("")){
                 ExecutorService executor = Executors.newCachedThreadPool();
                 final Algorithm temp = algorithm;
                 future = executor.submit( new Callable<String>() {
