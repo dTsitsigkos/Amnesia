@@ -80,7 +80,7 @@ public class HierarchyImplString implements Hierarchy<Double> {
     
     int levelFlash = -1;
     // key: thread id, value: level
-    Map<Integer,Integer> levelpFlash = null;
+    Map<Integer,Integer> levelpFlash = Collections.synchronizedMap(new HashMap());
     
     //@JsonView(View.Hier.class)
     Map<Double, List<Double>> children = null;
@@ -1966,9 +1966,9 @@ public class HierarchyImplString implements Hierarchy<Double> {
             return;
         }
         
-        if(this.levelpFlash == null){
-            this.levelpFlash = new HashMap();
-        }
+//        if(this.levelpFlash == null){
+//            this.levelpFlash = new HashMap();
+//        }
         this.levelpFlash.put(ti, l);
     }
     
@@ -2280,6 +2280,11 @@ public class HierarchyImplString implements Hierarchy<Double> {
     @Override
     public Integer getPopulation(Double rd) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void createLevelsMap(){
+        levelpFlash = Collections.synchronizedMap(new HashMap());
     }
 
     

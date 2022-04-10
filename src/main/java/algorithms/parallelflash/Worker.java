@@ -67,12 +67,14 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
         this.end = end;
         this.nextJoin = nextJoin;
         this.worder_id = wi;
+        System.out.println("worker id: "+this.worder_id);
     }
     
     @Override
     protected Map<GeneralizedRow, Integer> compute() {
         if(parentNode == null && parentNodeBuffer == null){
             try {
+                System.out.println("Node from Root"+node);
                 computeFromRoot();
             } catch (ParseException ex) {
                 Logger.getLogger(Worker.class.getName()).log(Level.SEVERE, null, ex);
@@ -80,6 +82,7 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
         }
         else{
             try {
+                System.out.println("Node from Buffer"+node);
                 computeFromBuffer();
             } catch (ParseException ex) {
                 Logger.getLogger(Worker.class.getName()).log(Level.SEVERE, null, ex);
@@ -129,7 +132,7 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
             //generalize value
             for(int i=0; i<node.getTransformation()[k]; i++){
                 h.setpLevel(this.worder_id,i);
-                
+//                System.out.println("Row value before if range: "+rowValue+" worder id: "+worder_id);
                 if(h.getHierarchyType().equals("range")){
                     if(h.getNodesType().equals("double") ||  h.getNodesType().equals("int")){
                         if ( i ==0 ){
@@ -144,7 +147,8 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
                                 }
                             }
                             else{
-                                rowValue = h.getParent((Double)rowValue,this.worder_id);
+//                                System.out.println("Row value range: "+rowValue+" worder id: "+worder_id);
+                                rowValue = h.getParent((Double)rowValue);
                             }    
                         }
                         else{
@@ -286,8 +290,13 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
     private void computeFromRoot() throws ParseException{
         double[][] dataset = data.getDataSet();
         
+        
         for(int i=start; i<end; i++){
             GeneralizedRow generalizedRow = project(node, qidColumns, dataset[i]);
+//            System.out.println("Generalized Row "+generalizedRow);
+//            if(node.toString().equals("[0, 2]")){
+//                
+//            }
             Integer count;
             
             if((count = frequencies.get(generalizedRow)) != null){
@@ -330,6 +339,7 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
                                 parent = h.getParent(doubleValue);
                                 parentLevel++;
                                 for(int j=0; j<k-1; j++){
+                                    h.setpLevel(this.worder_id,parentLevel);
                                     parent = h.getParent(parent,this.worder_id);
                                     parentLevel++;
                                 }

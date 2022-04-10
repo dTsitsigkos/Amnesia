@@ -55,6 +55,9 @@ public class Buffer {
         int splitSize = (datasetLength % numberOfThreads == 0) ? datasetLength / numberOfThreads : datasetLength / numberOfThreads + 1;
                 
         Worker worker = null;
+        for(Entry<Integer, Hierarchy> h : this.hierarchies.entrySet()){
+            h.getValue().createLevelsMap();
+        }
         for (int i = 0; i < datasetLength; i += splitSize){
             int start = i;
             int end = (splitSize < datasetLength - i) ? i + splitSize : datasetLength;
@@ -68,9 +71,9 @@ public class Buffer {
             mergeMaps(this.frequencies, w.join());
         }
         
-        for(Entry<GeneralizedRow,Integer> entry : this.frequencies.entrySet()){
-            System.out.println("Root Node "+node+"Row "+entry.getKey()+", freq : "+entry.getValue());
-        }
+//        for(Entry<GeneralizedRow,Integer> entry : this.frequencies.entrySet()){
+//            System.out.println("Root Node "+node+"Row "+entry.getKey()+", freq : "+entry.getValue());
+//        }
     }
     
     /**
@@ -118,6 +121,9 @@ public class Buffer {
         int splitSize = (datasetLength % numberOfThreads == 0) ? datasetLength / numberOfThreads : datasetLength / numberOfThreads + 1;
         
         Worker worker = null;
+        for(Entry<Integer, Hierarchy> h : this.hierarchies.entrySet()){
+            h.getValue().createLevelsMap();
+        }
         for (int i = 0; i < datasetLength; i += splitSize){
             int start = i;
             int end = (splitSize < datasetLength - i) ? i + splitSize : datasetLength;
@@ -132,9 +138,9 @@ public class Buffer {
             mergeMaps(this.frequencies, w.join());
         }
         
-        for(Entry<GeneralizedRow,Integer> entry : this.frequencies.entrySet()){
-            System.out.println("Node "+node+"Row "+entry.getKey()+", freq : "+entry.getValue());
-        }
+//        for(Entry<GeneralizedRow,Integer> entry : this.frequencies.entrySet()){
+//            System.out.println("Node "+node+"Row "+entry.getKey()+", freq : "+entry.getValue());
+//        }
     }
     
     public int getSize(){

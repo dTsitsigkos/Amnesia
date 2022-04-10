@@ -1177,5 +1177,10 @@ public class HierarchyImplRangeDemographicAge implements Hierarchy<RangeDouble> 
     public RangeDouble getParent(RangeDouble node, int ti) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
+    @Override
+    public void createLevelsMap() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
     
 }

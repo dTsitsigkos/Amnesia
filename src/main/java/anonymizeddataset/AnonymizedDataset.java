@@ -64,8 +64,10 @@ public class AnonymizedDataset {
     private int recordsTotal;
     private int recordsFiltered;
     private ArrayList<LinkedHashMap> dataOriginal;
+    private boolean onlyAnonymTable;
+    private Object[][] anonymTable = null;
 
-    public AnonymizedDataset( Data _dataset, int _start, int _length, String _selectedNode,Map<Integer, Hierarchy> _quasiIdentifiers, Map<Integer, Set<String>> _toSuppress, String _selectedAttrNames, Map<String, Set<String>> _toSuppressJson) {      
+    public AnonymizedDataset( Data _dataset, int _start, int _length, String _selectedNode,Map<Integer, Hierarchy> _quasiIdentifiers, Map<Integer, Set<String>> _toSuppress, String _selectedAttrNames, Map<String, Set<String>> _toSuppressJson, boolean _onlyAnonymTable) {      
         this.dataset = _dataset;
         this.start = _start;
         this.length = _length;
@@ -76,6 +78,7 @@ public class AnonymizedDataset {
         this.toSuppressJson = _toSuppressJson;
         recordsTotal = dataset.getDataLenght();
         recordsFiltered = dataset.getDataLenght();
+        this.onlyAnonymTable = _onlyAnonymTable;
        
         int i = 0;
         if (quasiIdentifiers != null){
@@ -488,7 +491,8 @@ public class AnonymizedDataset {
                         
                         //
                     }
-                    else{
+                    else if(!onlyAnonymTable){
+                        
                         Double num = (Double)columnData[line][column];
                         columnData[line][column] = dataset.getDictionary().getIdToString().get(num.intValue());
                         if(columnData[line][column] == null){
@@ -505,23 +509,29 @@ public class AnonymizedDataset {
 
         dataAnon = new ArrayList<LinkedHashMap>();
         
-        for ( int i = 0 ; i < columnData.length ; i ++){
-            linkedHashTemp = new LinkedHashMap<>();
-            for (int j = 0 ; j < colNamesType.size() ; j ++){
-                if (colNamesType.get(j).equals("double")){
-                    linkedHashTemp.put(dataset.getColumnByPosition(j), columnData[i][j]);
+        if(onlyAnonymTable){
+            this.anonymTable = columnData;
+        }
+        else{
+        
+            for ( int i = 0 ; i < columnData.length ; i ++){
+                linkedHashTemp = new LinkedHashMap<>();
+                for (int j = 0 ; j < colNamesType.size() ; j ++){
+                    if (colNamesType.get(j).equals("double")){
+                        linkedHashTemp.put(dataset.getColumnByPosition(j), columnData[i][j]);
+                    }
+                    else if (colNamesType.get(j).equals("int")){
+                        linkedHashTemp.put(dataset.getColumnByPosition(j), columnData[i][j]);
+                    }
+                    else{
+    //                    DictionaryString dict = dataset.getDictionary().get(j);
+                        linkedHashTemp.put(dataset.getColumnByPosition(j), columnData[i][j]);
+
+                    }
                 }
-                else if (colNamesType.get(j).equals("int")){
-                    linkedHashTemp.put(dataset.getColumnByPosition(j), columnData[i][j]);
-                }
-                else{
-//                    DictionaryString dict = dataset.getDictionary().get(j);
-                    linkedHashTemp.put(dataset.getColumnByPosition(j), columnData[i][j]);
-                    
-                }
+
+                dataAnon.add(linkedHashTemp);
             }
-            
-            dataAnon.add(linkedHashTemp);
         }
     }
     
@@ -3041,6 +3051,10 @@ public class AnonymizedDataset {
             this.dataOriginal.clear();
         }
         this.dataOriginal = new ArrayList(dataOriginal);
+    }
+    
+    public Object[][] getAnonymTable(){
+        return this.anonymTable;
     }
     
 }

@@ -174,7 +174,7 @@ import zenodo.ZenodoFilesToJson;
 @SpringBootApplication
 public class AppCon extends SpringBootServletInitializer {
     private static Class<AppCon> applicationClass = AppCon.class;
-    public static String os = "windows";
+    public static String os = "linux";
     public static String rootPath = System.getProperty("catalina.home");
     public static String parentDir; 
 
@@ -2024,7 +2024,7 @@ class AppController {
             else{
 //                ArrayList<LinkedHashMap> originalData = data.getPage(start, length);
                 //Map<String, Map<String, String>> allRules = (Map<String, Map<String, String>>)session.getAttribute("anonrules");
-                anonData = new AnonymizedDataset(data,start,length,selectedNode,quasiIdentifiers,toSuppress,selectedAttrNames,toSuppressJson);
+                anonData = new AnonymizedDataset(data,start,length,selectedNode,quasiIdentifiers,toSuppress,selectedAttrNames,toSuppressJson,false);
 //                anonData.setDataOriginal(originalData);
                 if (!data.getClass().toString().contains("SET") && !data.getClass().toString().contains("RelSet") && !data.getClass().toString().contains("Disk")){
                     System.out.println("action/getanondataset TXT ===========");

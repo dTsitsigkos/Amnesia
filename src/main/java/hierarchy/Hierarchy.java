@@ -36,7 +36,7 @@ import java.util.Date;
  */
 public interface Hierarchy <T> {
     public int online_limit = 1000;
-    public String online_version = "onlinefaws";
+    public String online_version = "onlineds";
     public int[][] getHierarchy();
     public void setHierarchy();
     public void setDictionaryData(DictionaryString dict);
@@ -67,6 +67,7 @@ public interface Hierarchy <T> {
     
     public void add(T newObj, T parent) throws LimitException;
     public void clear();
+    public void createLevelsMap();
     public void clearAprioriStructures();
     public void edit(T oldValue, T newValue);
     public Map<Integer, Set<T>> remove(T obj);

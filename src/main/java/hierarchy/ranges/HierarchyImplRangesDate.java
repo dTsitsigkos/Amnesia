@@ -63,7 +63,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     int months = -1;
     int days = -1;
     int levelFlash =-1;
-    Map<Integer,Integer> levelpFlash = null;
+    Map<Integer,Integer> levelpFlash = Collections.synchronizedMap(new HashMap());
     int counterNodes = 0;
     DictionaryString dictData = null;
     DictionaryString dictResults = null;
@@ -1587,9 +1587,9 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
             return;
         }
         
-        if(this.levelpFlash == null){
-            this.levelpFlash = new HashMap();
-        }
+//        if(this.levelpFlash == null){
+//            this.levelpFlash = new HashMap();
+//        }
         this.levelpFlash.put(ti, l);
     }
 
@@ -1925,6 +1925,11 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     @Override
     public Integer getPopulation(RangeDate rd) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void createLevelsMap(){
+        levelpFlash = Collections.synchronizedMap(new HashMap());
     }
 
 

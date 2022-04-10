@@ -151,6 +151,14 @@ public class TXTData implements Data,Serializable{
         }
              
     }
+    
+    public TXTData(DiskData dt){
+        
+    }
+
+    public TXTData() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 
     public double[][] getDataSet() {
         return dataSet;

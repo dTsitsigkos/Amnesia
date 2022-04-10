@@ -68,7 +68,7 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
     BufferedReader br = null;
     RangeDouble root = null;
     int levelFlash = -1;
-    Map<Integer,Integer> levelpFlash = null;
+    Map<Integer,Integer> levelpFlash = Collections.synchronizedMap(new HashMap());
     int counterNodes = 0;
     
     Map<RangeDouble, List<RangeDouble>> children = new HashMap<>();
@@ -1867,6 +1867,8 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
         this.levelFlash = l;
     }
     
+    
+    
     @Override
     public void setpLevel(int ti, int l) {
         if(ti < 0){
@@ -1874,9 +1876,10 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
             return;
         }
         
-        if(this.levelpFlash == null){
-            this.levelpFlash = new HashMap();
-        }
+//        if(this.levelpFlash == null){
+//            this.levelpFlash = new HashMap();
+//        }
+        
         this.levelpFlash.put(ti, l);
     }
 
@@ -1989,6 +1992,11 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
     @Override
     public Integer getPopulation(RangeDouble rd) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void createLevelsMap(){
+        levelpFlash = Collections.synchronizedMap(new HashMap());
     }
 
     
