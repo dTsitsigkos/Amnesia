@@ -474,7 +474,11 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 
 
 ## Version History
-**version 1.3.1 (release date: 25/03/2022)**
+**version 1.3.2 (release date: 10/04/2022)**
+- Bugs fixed in Parallel k-Anonymization.
+- Bug fixed in statistics on solution graph.
+
+**version 1.3.1**
 - Bug fixed in solution graph.
 - Support suffix & regular expressions methods for user-defined masking rules.
 - Bug fixed in date format.
