@@ -6,18 +6,19 @@ The backend of Amnesia is implemented in Java using the Spring framework. Its co
 
 1. Visit Amnesia’s online version (https://amnesia.openaire.eu/amnesia/) provided only for test purposes for small datasets and hierarchies. To anonymize your private data, we recommend you use the following two options.
 
-2. Run [Amnesia’s application](https://amnesia.openaire.eu/download.html) and execute the web request on localhost (port 8181).
+2. Run [Amnesia’s application](https://amnesia.openaire.eu/download.html) without GUI and execute the web request on localhost (port 8181).
 
 3. Clone [Amnesia’s repository](https://github.com/dTsitsigkos/Amnesia)  from Github.
 
     To successfully build the Amnesia engine follow these steps:
     1.   Clone the project
-    2.   Go to controller/AppCon.java and set the variable "os" with desired operation system ("windows" or "linux")
-    3.   Build the project
-    4.   Take the .jar from the "scr/target" directoryDownload pixelmed.jar from http://www.dclunie.com/pixelmed/software/20210920_current/index.html and install manaully to amnesia's Dependencies.
-    5.   Downoload https://amnesia.openaire.eu/countryDistributionZip.ser tin the same folder where Amnesia's jar file will be executed. 
-    6.   Run via terminal java -Xms1024m -Xmx4096m -Dorg.eclipse.jetty.server.Request.maxFormKeys=1000000 -Dorg.eclipse.jetty.server.Request.maxFormContentSize=1000000 -jar "path_to_jar_file" --server.port=8181
-⋅⋅⋅Then you can use the Amnesia’s API as in the previous step.
+    2.   Download pixelmed.jar from http://www.dclunie.com/pixelmed/software/webstart/pixelmed.jar and install manaully to amnesia's Dependencies.
+    3.   Go to controller/AppCon.java and set the variable "os" with desired operation system ("windows" or "linux")
+    4.   Build the project
+    5.   Take the .jar from the "scr/target" directory. 
+    6.   Downoload https://amnesia.openaire.eu/countryDistributionZip.ser and put it in the same folder where Amnesia's jar file will be executed. 
+    7.   Run via terminal java -Xms1024m -Xmx4096m -Dorg.eclipse.jetty.server.Request.maxFormKeys=1000000 -Dorg.eclipse.jetty.server.Request.maxFormContentSize=1000000 -jar "path_to_jar_file" --server.port=8181
+⋅⋅⋅Then you can use the Amnesia’s API as in the following steps.
 
 All the examples below are harmonized with the last two methods on localhost using datasets and hierarchies provided in https://amnesia.openaire.eu/Datasets.zip
 
