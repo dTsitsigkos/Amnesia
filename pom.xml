@@ -76,7 +76,7 @@
             <version>3.25.2</version>
         </dependency>
         
-        <!--You must download jar from pixelmed.com/dicomtoolkit.html-->
+        <!--You must download jar from http://www.dclunie.com/pixelmed/software/webstart/pixelmed.jar-->
 <!--        <dependency> 
             <groupId>pixelmed</groupId>
             <artifactId>pixelmed-java</artifactId>
