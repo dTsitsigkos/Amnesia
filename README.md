@@ -6,7 +6,7 @@ The backend of Amnesia is implemented in Java using the Spring framework. Its co
 
 1. Visit Amnesia’s online version (https://amnesia.openaire.eu/amnesia/) provided only for test purposes for small datasets and hierarchies. To anonymize your private data, we recommend you use the following two options.
 
-2. Run [Amnesia’s application](https://amnesia.openaire.eu/download.html) without GUI and execute the web request on localhost (port 8181).
+2. Run [Amnesia’s application](https://amnesia.openaire.eu/download.html) and execute the web request on localhost (port 8181) or in case you want to prevent GUI execution just run via terminal in Amnesia's folder, java -Xms1024m -Xmx4096m -Dorg.eclipse.jetty.server.Request.maxFormKeys=1000000 -Dorg.eclipse.jetty.server.Request.maxFormContentSize=1000000 -jar amnesiaBackEnd-1.0-SNAPSHOT.jar --server.port=8181
 
 3. Clone [Amnesia’s repository](https://github.com/dTsitsigkos/Amnesia)  from Github.
 
