@@ -179,7 +179,7 @@ Example via Terminal:
 $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/generateHierarchy 
 --form hierType=distinct 
 --form varType=string
---form attribute=”Procedure Codes”
+--form attribute="Procedure Codes"
 --form hierName=codes_hier 
 --form sorting=alphabetical
 --form fanout=3
@@ -198,7 +198,7 @@ Example via Terminal:
 $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/generateHierarchy 
 --form hierType=mask 
 --form varType=string
---form attribute=”Procedure Codes”
+--form attribute="Procedure Codes"
 --form hierName=codes_hier 
 --form length=3
 --out ./mask_hier_p_codes.txt
@@ -293,7 +293,7 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 --form sol="[1,2]" 
 --form suppressed=true
 
-> {"Status":"Fail","Message":"The solution [1,2] satisfies 3-anonymity so > it can not be suppressed!"}
+> {"Status":"Fail","Message":"The solution [1,2] satisfies 3-anonymity so  it can not be suppressed!"}
 ```
 
 ```Shell Session
@@ -323,7 +323,7 @@ We suppose that a simple table dataset has already been imported to Amnesia, and
 ```Shell Session
 # /loadAnonRules [POST]
 $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/loadAnonRules 
---form rules="path/to/anoRules.txt" 
+--form rules="path/to/anonRules.txt" 
 --out ./apply_rules.txt
 ```
 
@@ -366,7 +366,7 @@ Examples via Terminal:
 $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getSuppressPercentage 
 --form sol="[1,2]" 
 
-> {"Status":"Success","percentageSuppress":0.0,"Message":"The solution:   > [1,2] satisfies k=3 anonymity","k":3} 
+> {"Status":"Success","percentageSuppress":0.0,"Message":"The solution: [1,2] satisfies k=3 anonymity","k":3} 
 ```
 
 For unsafe solution e.g. [1,1]
