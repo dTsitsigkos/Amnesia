@@ -231,12 +231,12 @@ The hierarchy was saved in the “distinct_hier_salary.txt” text file.
 
 Example via Terminal:
 ```Shell Session
-# /generateHierarchy [POST]
+# /loadHierarchies  [POST]
 $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/loadHierarchies 
 --form hierarchies=@"path/to/Datasets/Scenarios/Simple Table-Disk based simple table/data1/distinct_hier_salary.txt"  
 --form hierarchies=@"path/to/Datasets/Scenarios/Simple Table-Disk based simple table/data1/distinct_hier_age.txt"
 
-> {"Status":"Success","Message":"Hierarchies have been successfully      > loaded!"}
+> {"Status":"Success","Message":"Hierarchies have been successfully loaded!"}
 ```
 
 **anonymization [POST]**
