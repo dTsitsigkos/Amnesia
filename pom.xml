@@ -7,6 +7,12 @@
     <packaging>jar</packaging>
     <name>amnesiaBackEnd</name>
     
+<!--    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>1.4.3.RELEASE</version>
+        <relativePath/>  lookup parent from repository 
+    </parent>-->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -77,11 +83,11 @@
         </dependency>
         
         <!--You must download jar from http://www.dclunie.com/pixelmed/software/webstart/pixelmed.jar-->
-<!--        <dependency> 
+        <dependency> 
             <groupId>pixelmed</groupId>
             <artifactId>pixelmed-java</artifactId>
             <version>1.0</version>
-        </dependency>-->
+        </dependency>
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
@@ -124,7 +130,7 @@
             <version>1.1.1</version>
         </dependency>
 
-         <!--java-string-similarity--> 
+        <!-- java-string-similarity -->
         <dependency>
             <groupId>info.debatty</groupId>
             <artifactId>java-string-similarity</artifactId>
@@ -132,47 +138,6 @@
         </dependency>
         
     </dependencies>
-    
-    <repositories>
-        <repository>
-            <id>spring-milestones</id>
-            <name>Spring Milestones</name>
-            <url>https://repo.spring.io/milestone</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>repository.springframework.maven.release</id>
-            <name>Spring Framework Maven Release Repository</name>
-            <url>http://maven.springframework.org/milestone/</url>
-        </repository>
-        <repository>
-            <id>org.springframework</id>
-            <url> http://maven.springframework.org/snapshot</url>
-        </repository>
-        <repository>
-            <id>spring-milestone</id>
-            <name>Spring Maven MILESTONE Repository</name>
-            <url>http://repo.spring.io/libs-milestone</url>
-        </repository>
-        <repository>
-            <id>spring-release</id>
-            <name>Spring Maven RELEASE Repository</name>
-            <url>http://repo.spring.io/libs-release</url>
-        </repository>
-    </repositories>
-    <pluginRepositories>
-        <pluginRepository>
-            <id>spring-milestones</id>
-            <name>Spring Milestones</name>
-            <url>https://repo.spring.io/milestone</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </pluginRepository>
-    </pluginRepositories>
-
     
     <build>
         <plugins>
