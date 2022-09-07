@@ -667,4 +667,3 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 **version: 1.0.0**
 
 - Initial release.
-

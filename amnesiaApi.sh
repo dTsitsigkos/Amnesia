@@ -78,4 +78,3 @@ else
     	echo "The dataset was anonymized successfully and the file was downloaded in $exportpath"
     fi
 fi
-
