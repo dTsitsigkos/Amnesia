@@ -60,7 +60,7 @@ public class Graph {
     }
     
     public void print(){
-        int i = 0 ; 
+        int i = 0 ;
         for ( i = 0 ; i < nodeList.size() ; i ++){
             System.out.println(nodeList.get(i).getLabel());
         }

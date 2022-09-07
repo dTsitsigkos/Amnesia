@@ -120,14 +120,14 @@ public class DiskData implements Data,Serializable{
     
    
     
-    private static final String[] formats = { 
+    private static final String[] formats = {
                 "yyyy-MM-dd'T'HH:mm:ss'Z'",   "yyyy-MM-dd'T'HH:mm:ssZ",
                 "yyyy-MM-dd'T'HH:mm:ss",      "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-                "yyyy-MM-dd'T'HH:mm:ss.SSSZ", "yyyy-MM-dd HH:mm:ss", 
-                "MM/dd/yyyy HH:mm:ss",        "MM/dd/yyyy'T'HH:mm:ss.SSS'Z'", 
-                "MM/dd/yyyy'T'HH:mm:ss.SSSZ", "MM/dd/yyyy'T'HH:mm:ss.SSS", 
-                "MM/dd/yyyy'T'HH:mm:ssZ",     "MM/dd/yyyy'T'HH:mm:ss", 
-                "yyyy:MM:dd HH:mm:ss",        "yyyy/MM/dd", 
+                "yyyy-MM-dd'T'HH:mm:ss.SSSZ", "yyyy-MM-dd HH:mm:ss",
+                "MM/dd/yyyy HH:mm:ss",        "MM/dd/yyyy'T'HH:mm:ss.SSS'Z'",
+                "MM/dd/yyyy'T'HH:mm:ss.SSSZ", "MM/dd/yyyy'T'HH:mm:ss.SSS",
+                "MM/dd/yyyy'T'HH:mm:ssZ",     "MM/dd/yyyy'T'HH:mm:ss",
+                "yyyy:MM:dd HH:mm:ss",        "yyyy/MM/dd",
                 "yyyy:MM:dd HH:mm:ss.SS",      "dd/MM/yyyy",
                 "dd MMM yyyy",                "dd-MMM-yyy"};
     
@@ -160,7 +160,7 @@ public class DiskData implements Data,Serializable{
             }
         } catch (Exception ex) {
             Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
-        } 
+        }
         
     }
     
@@ -414,7 +414,7 @@ public class DiskData implements Data,Serializable{
             FileInputStream in2 = new FileInputStream(mapFile);
             ZipOutputStream out = new ZipOutputStream(new FileOutputStream(path+File.separator+"anonymized_files.zip"));
             
-            out.putNextEntry(new ZipEntry(this.inputFile.substring(this.inputFile.lastIndexOf(File.separator)+1))); 
+            out.putNextEntry(new ZipEntry(this.inputFile.substring(this.inputFile.lastIndexOf(File.separator)+1)));
 
             byte[] b = new byte[2048];
             int count;
@@ -547,8 +547,8 @@ public class DiskData implements Data,Serializable{
                                         exc1.printStackTrace();
 //                                        System.out.println("Column : " + colNames[i] + " is chosen as integer and you have double values");
                                         throw new NotFoundValueException("Value \""+temp[i]+"\" is not an integer, \""+ this.colNamesPosition.get(i)+ "\" is an integer column");
-                                    }  
-                                }   
+                                    }
+                                }
                             }
                             else{
                                 dataSet[0][counter1] = 2147483646;
@@ -729,7 +729,7 @@ public class DiskData implements Data,Serializable{
         catch(NotFoundValueException ne){
             throw new NotFoundValueException(ne.getMessage());
         }finally{
-            if(stmnt!=null){   
+            if(stmnt!=null){
                 try {
                     stmnt.close();
                 } catch (SQLException ex) {
@@ -840,7 +840,7 @@ public class DiskData implements Data,Serializable{
                                 }
                                 int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
                                 
-                                ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size(); 
+                                ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size();
                                 total += h.getLevel(((Double)anonymizedTable[row][column]).doubleValue())/((double)h.getHeight()-1)/hierarchies.size();
                             }
                             
@@ -877,7 +877,7 @@ public class DiskData implements Data,Serializable{
                                 }
                                 int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
 
-                                ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size(); 
+                                ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size();
                                 total += h.getLevel(anonymizedId.doubleValue())/((double)h.getHeight()-1)/hierarchies.size();
                             }
                         }
@@ -1147,7 +1147,7 @@ public class DiskData implements Data,Serializable{
                     else if (columnTypes[i].equals("date")){
                         colNamesType.put(counter, "date");
                         if(removedColumn){
-                            newFormatDate[counter] = this.formatsDate[i]; 
+                            newFormatDate[counter] = this.formatsDate[i];
                         }
                     }
                     else{
@@ -1233,7 +1233,7 @@ public class DiskData implements Data,Serializable{
                                     smallDataSet[counter][i] = "date";
                                     this.formatsDate[i] = chVar.lastFormat;
                                 }
-                                else{  
+                                else{
                                     smallDataSet[counter][i] = "string";
                                 }
                             }
@@ -1278,7 +1278,7 @@ public class DiskData implements Data,Serializable{
                                         smallDataSet[0][i] ="date";
                                         this.formatsDate[i] = chVar.lastFormat;
                                     }
-                                    else{  
+                                    else{
                                         smallDataSet[0][i] = "string";
                                     }
                                 }
@@ -1334,7 +1334,7 @@ public class DiskData implements Data,Serializable{
                     ex.printStackTrace();
                     Logger.getLogger(DiskData.class.getName()).log(Level.SEVERE, null, ex);
                 }
-            } 
+            }
             
             if(rs != null){
                 try {
@@ -1354,7 +1354,7 @@ public class DiskData implements Data,Serializable{
         Statement stm = null;
         ResultSet rs = null;
         List<Double> missingValues = new ArrayList<Double>();
-        try{ 
+        try{
             stm = this.conn.createStatement();
             rs = stm.executeQuery(sqlQuery);
             while(rs.next()){
@@ -1810,15 +1810,16 @@ public class DiskData implements Data,Serializable{
  
     
     
-    /*build function for random 
+    /*build function for random
         SELECT * From dataset WHERE (age) In (SELECT age From dataset GROUP by age HAVING Count(*)>=3)
         SELECT * FROM table ORDER BY RANDOM() LIMIT 1;
     
     
         SELECT * FROM mytable
         WHERE (group_id, group_type) IN (
-                                  VALUES ('1234-567', 2), 
-                                         ('4321-765', 3), 
+                                  VALUES ('1234-567', 2),
+                                  VALUES ('1234-567', 2),
+                                         ('4321-765', 3),
                                          ('1111-222', 5)
                                  );*/
     public List<Pair<Double[],List<Integer>>> getSmallRecordsClusters(int k,Set<Integer> quasiIds, boolean insertChecked){
@@ -1836,7 +1837,7 @@ public class DiskData implements Data,Serializable{
                 innerJoin += this.columnNames[col]+",";
                 groupBy += this.columnNames[col]+",";
                 onSql += "dt."+this.columnNames[col]+"=d."+this.columnNames[col]+" AND ";
-                orderBy += "d."+this.columnNames[col]+","; 
+                orderBy += "d."+this.columnNames[col]+",";
             }
            
             innerJoin = replaceLast(innerJoin,",","");
@@ -1980,7 +1981,7 @@ public class DiskData implements Data,Serializable{
     }
     
     public void deleteFromAnonymized(Set<Integer> ids){
-        Statement stmnt = null; 
+        Statement stmnt = null;
         String sqlDelete ="DELETE from anonymized_dataset WHERE id_an IN "+ids.toString().replace("[", "(").replace("]", ")");
         try{
             System.out.println("Delete sql "+sqlDelete);
@@ -2032,7 +2033,7 @@ public class DiskData implements Data,Serializable{
             }
             recordsIdsTemp = this.getRandomNumberBetweenRange(numCounter,this.recordsTotal);
             this.conn.setAutoCommit(false);
-            stmnt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY); 
+            stmnt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
             stmnt.setFetchSize(50);
             result = stmnt.executeQuery(sqlSelect+Arrays.toString(recordsIdsTemp.toArray()).replace("[", "(").replace("]", ")"));
             String sqlSelectIdentical = "SELECT * FROM dataset WHERE ";
@@ -2073,11 +2074,11 @@ public class DiskData implements Data,Serializable{
                 
                 System.out.println("Identical2 "+sqlSelectIdentical+columnNamesTuple+Arrays
                     .stream(recordsAttr)
-                    .map(Arrays::toString) 
+                    .map(Arrays::toString)
                     .collect(Collectors.joining(",")).replace("[", "(").replace("]", ")")+")"+orderBy);
                 resultIdentical = stmnt.executeQuery(sqlSelectIdentical+columnNamesTuple+Arrays
                     .stream(recordsAttr)
-                    .map(Arrays::toString) 
+                    .map(Arrays::toString)
                     .collect(Collectors.joining(",")).replace("[", "(").replace("]", ")")+")"+orderBy);
             }
             
@@ -2115,7 +2116,7 @@ public class DiskData implements Data,Serializable{
                         this.insertChekedTable(allRecordsIds);
                         allRecordsIds.clear();
                     }
-                    previousRec = recordValues; 
+                    previousRec = recordValues;
                     recordValues = new Double[this.sizeOfCol+1];
                 }while(resultIdentical.next());
             }
@@ -2308,7 +2309,7 @@ public class DiskData implements Data,Serializable{
         String insertSql = "INSERT INTO anonymized_dataset SELECT * FROM dataset WHERE id IN ";
         try{
             stm = this.conn.createStatement();
-            stm.execute(insertSql+this.anonymizedRecords.toString().replace("[", "(").replace("]", ")"));           
+            stm.execute(insertSql+this.anonymizedRecords.toString().replace("[", "(").replace("]", ")"));
             this.anonymizedRecords.clear();
         }catch(Exception e){
             e.printStackTrace();
@@ -2344,7 +2345,7 @@ public class DiskData implements Data,Serializable{
                     valuesStr += "?,?,";
                 }
                 else{
-                   insertSql += this.colNamesPosition.get(j)+","; 
+                   insertSql += this.colNamesPosition.get(j)+",";
                    valuesStr += "?,";
                 }
             }
@@ -2509,7 +2510,7 @@ public class DiskData implements Data,Serializable{
                          valuesStr += "?,?,";
                     }
                     else{
-                       insertSql += this.colNamesPosition.get(j)+","; 
+                       insertSql += this.colNamesPosition.get(j)+",";
                        valuesStr += "?,";
                     }
                 }
@@ -2665,7 +2666,7 @@ public class DiskData implements Data,Serializable{
         Double[][] records = new Double[this.sizeOfRows][2];
         try{
             this.conn.setAutoCommit(false);
-            stm = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY); 
+            stm = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
             pstm = this.conn.prepareStatement(updateSql);
             stm.setFetchSize(50);
             result = stm.executeQuery(selectSql);
@@ -2804,7 +2805,7 @@ public class DiskData implements Data,Serializable{
             this.conn.setAutoCommit(false);
             System.out.println("Update new Value "+value);
             String updateSql = "UPDATE anonymized_dataset SET "+this.columnNames[column]+" = ? WHERE id_an IN "+ids.toString().replace("[", "(").replace("]", ")");
-            System.out.println("value "+updateSql); 
+            System.out.println("value "+updateSql);
             pstm = this.conn.prepareStatement(updateSql);
             pstm.setDouble(1, value);
             pstm.executeUpdate();
@@ -2847,7 +2848,7 @@ public class DiskData implements Data,Serializable{
         Double[][] records = new Double[this.sizeOfRows][2];
         try{
             this.conn.setAutoCommit(false);
-            stm = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY); 
+            stm = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
             pstm = this.conn.prepareStatement(updateSql);
             stm.setFetchSize(50);
             result = stm.executeQuery(selectSql);

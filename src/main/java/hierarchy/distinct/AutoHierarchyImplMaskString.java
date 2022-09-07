@@ -103,7 +103,7 @@ public class AutoHierarchyImplMaskString extends HierarchyImplString {
 //            if(i==6){
 //                for (double[] rowData : data){
 //                    itemsSet.add(rowData[column]);
-//                } 
+//                }
 //            }
             if(data[0][column] == -1){
                 data = ((RelSetData) dataset).getSet();
@@ -118,7 +118,7 @@ public class AutoHierarchyImplMaskString extends HierarchyImplString {
                 for (double[] rowData : data){
                    itemsSet.add(rowData[column]);
                    strSet.add(this.dictData.getIdToString((int) rowData[column]));
-                } 
+                }
             }
         }
         else{
@@ -129,7 +129,7 @@ public class AutoHierarchyImplMaskString extends HierarchyImplString {
         }
         
         
-        //build leaf level 
+        //build leaf level
         ArrayList<Double> initList = new ArrayList<>(itemsSet);
         
         this.height = this.length+1;

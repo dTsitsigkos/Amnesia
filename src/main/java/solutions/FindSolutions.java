@@ -73,7 +73,7 @@ public class FindSolutions {
         //find statistics for eveery single QI
 
         
-        if(qids.length > 1){ 
+        if(qids.length > 1){
             for(int i=0; i<qids.length; i++){
                 int[] curQids = new int[1];
                 curQids[0] = qids[i];
@@ -364,7 +364,7 @@ public class FindSolutions {
                              //System.out.println("valueeeeeeeeeeeeeeeee = " +  anonymizedValue);
                             anonymizedValue = h.getParent((Double)anonymizedValue);
                             //System.out.println("afterrrrrrrrrrrrrrrrrrrrrr = " +  anonymizedValue);
-                        }    
+                        }
                     }
                     else{
 
@@ -381,7 +381,7 @@ public class FindSolutions {
                             }
                             else{
                                 d = getDateFromString(value.toString());
-                            }   
+                            }
                         }
                         else{
                             rd = (RangeDate) value;
@@ -406,7 +406,7 @@ public class FindSolutions {
                                     //System.out.println("mpika3333");
                                     //System.out.println("edwwwwwwwwwwwwwwwww = " + d.toString());
                                     anonymizedValue = h.getParent(d);
-                                }    
+                                }
                             }
                             else{
                                 //System.out.println("mpika222222222222");
@@ -431,7 +431,7 @@ public class FindSolutions {
                                     //System.out.println("mpika3333");
                                    // System.out.println("edwwwwwwwwwwwwwwwww = " + rd.toString());
                                     anonymizedValue = h.getParent(rd);
-                                }    
+                                }
                             }
                             else{
                                 //System.out.println("mpika222222222222");

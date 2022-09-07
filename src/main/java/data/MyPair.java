@@ -22,8 +22,8 @@ import data.Pair;
  */
 public class MyPair {
     private double min;
-    private double max; 
-    private Data dataset = null; 
+    private double max;
+    private Data dataset = null;
     private String vartype = null;
     
     public MyPair(){
@@ -77,7 +77,7 @@ public class MyPair {
                     if ( data[i][columnIndex] != 2147483646.0 &&  !Double.isNaN(data[i][columnIndex]) ){
                         if(data[i][columnIndex] > max){
                             max = data[i][columnIndex];
-                        } 
+                        }
                         else if(data[i][columnIndex] < min ){
                             min = data[i][columnIndex];
                         }
@@ -109,7 +109,7 @@ public class MyPair {
                 }
 
                 for( int i=counter; i<data.length; i++){
-                    Double d = (Double)data[i][columnIndex];   
+                    Double d = (Double)data[i][columnIndex];
                     date = dictionary.getIdToString(d.intValue());
                     cal1 = Calendar.getInstance();
                     if ( !date.equals("NaN") ){
@@ -118,7 +118,7 @@ public class MyPair {
                             int tempDate = cal1.get(Calendar.YEAR);
                             if(tempDate > max){
                                 max = tempDate;
-                            } 
+                            }
                             else if(tempDate < min ){
                                 min = tempDate;
                             }

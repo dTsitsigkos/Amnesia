@@ -20,7 +20,7 @@ public class Results {
         nonAnonymizeOccurrences = _nonAnonymizeOccurrences;
         anonymizedOccurrences = _anonymizedOccurrences;
         possibleOccurences = _possibleOccurence;
-        estimatedRate = _estimatedRate;     
+        estimatedRate = _estimatedRate;
     }
     
     public Results (){

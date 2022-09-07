@@ -20,11 +20,11 @@ import java.util.Map;
  * @author jimakos
  */
 public class AutoHierarchyImplRangesNumbers2 extends HierarchyImplRangesNumbers{
-     //variables for autogenerating 
+     //variables for autogenerating
     Double start = null;
     Double end = null;
     Double step = null;
-    int fanout = 0;  
+    int fanout = 0;
 
     
     public AutoHierarchyImplRangesNumbers2(String _name, String _nodesType, String _hierarchyType, Double _start, Double _end, Double _step, int _fanout) {
@@ -156,13 +156,13 @@ public class AutoHierarchyImplRangesNumbers2 extends HierarchyImplRangesNumbers{
             int p = 0;
             for ( int k = 0 ; k < initListTemp.size() ; k = k + 1 ){
                 //RangeDouble d = new RangeDouble(initListTemp.get(k-1), initListTemp.get(k));
-                ArrayList<RangeDouble> childsTemp = new ArrayList<RangeDouble>(); 
+                ArrayList<RangeDouble> childsTemp = new ArrayList<RangeDouble>();
 
 
                 while( p < prevLevelYear.size() &&  ((prevLevelYear.get(p).upperBound < initListTemp.get(k).upperBound ) || (prevLevelYear.get(p).upperBound == initListTemp.get(k).upperBound ))){
                     childsTemp.add(prevLevelYear.get(p));
                     parents.put(prevLevelYear.get(p), initListTemp.get(k));
-                    p = p + 1;        
+                    p = p + 1;
                 }
                    
                 
@@ -183,7 +183,7 @@ public class AutoHierarchyImplRangesNumbers2 extends HierarchyImplRangesNumbers{
             
             initList = new ArrayList<RangeDouble>();
             initList.addAll(initListTemp);
-            initListTemp = new ArrayList<RangeDouble>(); 
+            initListTemp = new ArrayList<RangeDouble>();
         }
         
         
@@ -270,7 +270,7 @@ public class AutoHierarchyImplRangesNumbers2 extends HierarchyImplRangesNumbers{
         ranNull.setNodesType(nodesType);
         stats.put(ranNull,new NodeStats(1));
         
-        ///////////////////////////////////////////// 
+        /////////////////////////////////////////////
         
         
 //        System.out.println("all Parents");

@@ -176,7 +176,7 @@ public class AppCon extends SpringBootServletInitializer {
     private static Class<AppCon> applicationClass = AppCon.class;
     public static String os = "linux";
     public static String rootPath = System.getProperty("catalina.home");
-    public static String parentDir; 
+    public static String parentDir;
 
     public static void main(String[] args) throws URISyntaxException {
         SpringApplication.run(applicationClass, args);
@@ -250,7 +250,7 @@ class AppController {
 //                String rootPath = System.getProperty("catalina.home");
                 //String rootPath = "/usr/local/apache-tomcat-8.0.15";
 //                String rootPath = "/var/lib/tomcat8";
-                dir = new File(rootPath + File.separator + "amnesia"+ File.separator + session.getId());  
+                dir = new File(rootPath + File.separator + "amnesia"+ File.separator + session.getId());
                 if (!dir.exists()){
                     dir.mkdirs();
                 }
@@ -288,7 +288,7 @@ class AppController {
     //                File dir1 = f.getAbsoluteFile().getParentFile();
     //                String rootPath = dir1.toString();
                     //////////////////////////////////////////////////////////////
-                    dir = new File(rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId());  
+                    dir = new File(rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId());
                     if (!dir.exists()){
                         dir.mkdirs();
                     }
@@ -296,7 +296,7 @@ class AppController {
                 else{
 
                     dir = new File(input);
-                } 
+                }
             }
             
                     
@@ -419,7 +419,7 @@ class AppController {
                 errMes.setSuccess(false);
                 errMes.setProblem("file name exists. Change the name of the file.");
                 problem = true;
-            }           
+            }
             else{
                 // Create the input stream to uploaded file to read data from it.
                 reader = (FileInputStream) file.getInputStream();
@@ -429,7 +429,7 @@ class AppController {
                 writer = new FileOutputStream(outputFile);
 
                 // Iteratively read data from 'uploadedFileRef' and write to
-                // 'outputFile';            
+                // 'outputFile';
                 int bytesRead = 0;
                 while ((bytesRead = reader.read(buffer)) != -1) {
                     writer.write(buffer);
@@ -458,7 +458,7 @@ class AppController {
         }*/
         
 //        DecimalFormat decFormat = new DecimalFormat();
-//        DecimalFormatSymbols decSymbols = decFormat.getDecimalFormatSymbols();           
+//        DecimalFormatSymbols decSymbols = decFormat.getDecimalFormatSymbols();
 //        System.out.println("Decimal separator is : " + decSymbols.getDecimalSeparator());
 //        System.out.println("Thousands separator is : " + decSymbols.getGroupingSeparator());
         
@@ -476,7 +476,7 @@ class AppController {
 //                    File f = new File(System.getProperty("java.class.path"));
 //                    File dir1 = f.getAbsoluteFile().getParentFile();
 //                    String rootPath = dir1.toString();
-//                    dir = new File(rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId());  
+//                    dir = new File(rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId());
 //                    if (!dir.exists()){
 //                        dir.mkdirs();
 //                    }
@@ -485,7 +485,7 @@ class AppController {
                     //System.out.println("session id  = " + session.getId());
 //                    String rootPath = System.getProperty("catalina.home");
 //                    String rootPath = "/var/lib/tomcat8";
-                    dir = new File(rootPath + File.separator + "amnesia"+ File.separator + session.getId());  
+                    dir = new File(rootPath + File.separator + "amnesia"+ File.separator + session.getId());
                     
 //                    System.out.println("dir name = " + dir.getAbsolutePath() + "\t root path = " + rootPath);
                     if (!dir.exists()){
@@ -529,7 +529,7 @@ class AppController {
     //                    String rootPath = dir1.toString();
                         //////////////////////////////////////////////////////////////
                         
-                        dir = new File(rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId());  
+                        dir = new File(rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId());
                         if (!dir.exists()){
                             dir.mkdirs();
                         }
@@ -540,7 +540,7 @@ class AppController {
                                 System.out.println("Delete all");
                                 this.deleteFiles(session);
                             }
-                            dir = new File(rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId());  
+                            dir = new File(rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId());
                             if (!dir.exists()){
                                 dir.mkdirs();
                             }
@@ -573,7 +573,7 @@ class AppController {
                             session.setAttribute("filename", file.getOriginalFilename());
                         }
                         dir = new File(input);
-                    }   
+                    }
                 }
 //                }
 //                else{
@@ -648,7 +648,7 @@ class AppController {
                         //	+ " because the file was empty.";
                 errMes.setSuccess(false);
                 errMes.setProblem("You failed to upload " + file.getOriginalFilename() +"because the file was empty.");
-                problem = true;     
+                problem = true;
                 return  errMes;
         }
         
@@ -781,7 +781,7 @@ class AppController {
         else if (datatype.equals("set")){
             data = new SETData(fullPath,del,dict);
             data.readDataset(null,null);
-            String[][] small = data.getSmallDataSet(); 
+            String[][] small = data.getSmallDataSet();
         }
         else if(datatype.equals("RelSet")){
             data = new RelSetData(fullPath,del,delset,dict);
@@ -924,7 +924,7 @@ class AppController {
 
             File dir = new File(rootPath);
 
-            String fullPath = dir + File.separator + filename; 
+            String fullPath = dir + File.separator + filename;
             fstream = new FileInputStream(fullPath);
             in = new DataInputStream(fstream);
             br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
@@ -1352,7 +1352,7 @@ class AppController {
                     }catch(Exception e){
                         e.printStackTrace();
                         
-                        // TODO exception 
+                        // TODO exception
                     }
                 }
                 else if(count==3){
@@ -1363,11 +1363,11 @@ class AppController {
                     }catch(Exception e){
                          e.printStackTrace();
                         
-                        // TODO exception 
+                        // TODO exception
                     }
                 }
                 else{
-                    /// TODO exception 
+                    /// TODO exception
                     
                     System.out.println("Count "+count);
                 }
@@ -1413,7 +1413,7 @@ class AppController {
         Hierarchy h = null;
 
         
-        hierarchies = (Map<String, Hierarchy>) session.getAttribute("hierarchies");        
+        hierarchies = (Map<String, Hierarchy>) session.getAttribute("hierarchies");
 
         if ( hierarchies!= null){
             
@@ -1423,7 +1423,7 @@ class AppController {
         ///System.out.println("node = " + node);
         //if ( !node.equals("(null)")){
             //System.out.println("Node="+node);
-            nGraph = h.getGraph(node, level);    
+            nGraph = h.getGraph(node, level);
         //}
         //if ( nGraph == null){
          //   System.out.println("i am hereeeeeeeeee");
@@ -1685,7 +1685,7 @@ class AppController {
                 }
                 algorithm = new AprioriShort();
             }
-            else*/ 
+            else*/
             if(algorithmSelected.equals("apriori")){
                 if(!(data instanceof SETData)){
                     //ErrorWindow.showErrorWindow("No set-valued dataset loaded!");
@@ -1847,7 +1847,7 @@ class AppController {
         for ( LatticeNode n : results){
             if ( minSum == n.getLevel()){
                 infoLossFirstStep.add(n);
-            }         
+            }
         }
         
         //second step, min max hierarchy
@@ -1984,7 +1984,7 @@ class AppController {
                 toSuppressJson = new HashMap<String, Set<String>>();
                 for (Map.Entry<Integer, Set<String>> entry : toSuppress.entrySet()) {
                     if ( entry.getKey().toString().equals("-1")){
-                        for (Map.Entry<Integer, Hierarchy> entry1 : quasiIdentifiers.entrySet()) {             
+                        for (Map.Entry<Integer, Hierarchy> entry1 : quasiIdentifiers.entrySet()) {
                             if ( FLAG == false){
                                 FLAG = true;
                                 selectedAttrNames = data.getColumnByPosition((Integer)entry1.getKey());
@@ -1999,7 +1999,7 @@ class AppController {
                     else{
                         selectedAttrNames = data.getColumnByPosition((Integer)entry.getKey());
                         toSuppressJson.put(selectedAttrNames,entry.getValue());
-                    }               
+                    }
                 }
             }
             else{
@@ -2096,7 +2096,7 @@ class AppController {
     @RequestMapping(value="/action/savedataset") //method = RequestMethod.POST
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public @ResponseBody void saveDataset (HttpServletRequest request,HttpSession session , HttpServletResponse response) throws FileNotFoundException, IOException {
-        Object [][] exportData = null; 
+        Object [][] exportData = null;
         
         if(request !=null){
             System.out.println("app export datasettttttt");
@@ -2116,7 +2116,7 @@ class AppController {
         this.createInputPath(inputPath, session);
         if(!(data instanceof DICOMData)){
             File file = new File(inputPath + File.separator +filename);
-            file.createNewFile(); 
+            file.createNewFile();
         }
         /*System.out.println(file.getAbsolutePath());
         try {
@@ -2137,7 +2137,7 @@ class AppController {
             File file = new File(filePathToBeServed);
             InputStream inputStream = new FileInputStream(file);
             response.setContentType("application/force-download");
-            response.setHeader("Content-Disposition", "attachment; filename="+file.getName()+".txt"); 
+            response.setHeader("Content-Disposition", "attachment; filename="+file.getName()+".txt");
             IOUtils.copy(inputStream, response.getOutputStream());
             response.flushBuffer();
             inputStream.close();
@@ -2173,7 +2173,7 @@ class AppController {
         //response.addHeader("Content-Disposition", "attachment; filename=" + file.getName());
         
         /*InputStream inputStream = new FileInputStream(file);
-        response.addHeader("Content-Disposition", "attachment; filename="+file.getName()); 
+        response.addHeader("Content-Disposition", "attachment; filename="+file.getName());
         response.setContentType("text/csv");
         IOUtils.copy(inputStream, response.getOutputStream());
         response.flushBuffer();
@@ -2208,7 +2208,7 @@ class AppController {
     
     @RequestMapping(value="/action/saveanonymizedataset") //method = RequestMethod.POST
     public @ResponseBody void saveAnonymizeDataset ( HttpSession session , HttpServletResponse response) throws FileNotFoundException, IOException, ParseException, InterruptedException {
-        Object [][] exportData = null; 
+        Object [][] exportData = null;
 
         Data data = (Data) session.getAttribute("data");
         String filename = (String)session.getAttribute("filename");
@@ -2268,7 +2268,7 @@ class AppController {
                         System.out.println("DAta length "+data.getRecordsTotal());
                         anonData.setLength(data.getRecordsTotal());
                         anonData.anonymizeWithImportedRules(allRules,file.getAbsolutePath());
-                    }               
+                    }
                 }
             }
         }
@@ -2316,7 +2316,7 @@ class AppController {
     public @ResponseBody JSONObject getDataverseFiles ( HttpSession session,@RequestParam("usertoken") String usertoken, @RequestParam("server_url") String server_url, @RequestParam("dataset_id") String dataset_id ) throws FileNotFoundException, IOException, MalformedURLException, Exception {
         List<DataverseFile> files = null;
         if(server_url.endsWith("/")){
-            server_url = server_url.substring(0, server_url.length() - 1); 
+            server_url = server_url.substring(0, server_url.length() - 1);
         }
         files = DataverseConnection.getDataverseFiles(server_url, usertoken, dataset_id);
         if(files==null){
@@ -2360,7 +2360,7 @@ class AppController {
             ) throws FileNotFoundException, IOException {
         
         if(server_url.endsWith("/")){
-            server_url = server_url.substring(0, server_url.length() - 1); 
+            server_url = server_url.substring(0, server_url.length() - 1);
         }
         
         List<DataverseFile> files = (List<DataverseFile>) session.getAttribute("dataversefiles");
@@ -2379,14 +2379,14 @@ class AppController {
         
         
         if(os.equals("online")){
-            dir = new File(this.rootPath + File.separator + "amnesia"+ File.separator + session.getId());  
+            dir = new File(this.rootPath + File.separator + "amnesia"+ File.separator + session.getId());
             if (!dir.exists()){
                 dir.mkdirs();
             }
             inputPath = this.rootPath + File.separator + "amnesia"+ File.separator + session.getId();
         }
         else{
-            dir = new File(rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId());  
+            dir = new File(rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId());
             if (!dir.exists()){
                 dir.mkdirs();
             }
@@ -2430,14 +2430,14 @@ class AppController {
         }
         if ( inputPath == null){
             if(os.equals("online")){
-                dir = new File(this.rootPath + File.separator + "amnesia"+ File.separator + session.getId());  
+                dir = new File(this.rootPath + File.separator + "amnesia"+ File.separator + session.getId());
                 if (!dir.exists()){
                     dir.mkdirs();
                 }
                 inputPath = this.rootPath + File.separator + "amnesia"+ File.separator + session.getId();
             }
             else{
-                dir = new File(rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId());  
+                dir = new File(rootPath + File.separator + "amnesiaResults"+ File.separator + session.getId());
                 if (!dir.exists()){
                     dir.mkdirs();
                 }
@@ -2487,7 +2487,7 @@ class AppController {
         //String usertoken = "cSQgGzD08dJ11RMyRzLRhU4hi57LK454T8sovlw6Z2STZrQbzg809wUt6ywt";
         String inputPath = (String)session.getAttribute("inputpath");
         String fileNameInput = (String)session.getAttribute("filename");
-        File dir = new File(inputPath);  
+        File dir = new File(inputPath);
         if (!dir.exists()){
                 dir.mkdirs();
         }
@@ -2520,11 +2520,11 @@ class AppController {
     
     @RequestMapping(value="/action/savefiletodataverse", method = RequestMethod.POST) //method = RequestMethod.POST
     public @ResponseBody String saveFileToDataverse ( HttpSession session, @RequestParam("usertoken") String usertoken, @RequestParam("descr") String descr,
-            @RequestParam("server_url") String server_url, @RequestParam("dataset_id") String dataset_id) throws FileNotFoundException, 
+            @RequestParam("server_url") String server_url, @RequestParam("dataset_id") String dataset_id) throws FileNotFoundException,
             IOException, ParseException, InterruptedException{
         
         if(server_url.endsWith("/")){
-            server_url = server_url.substring(0, server_url.length() - 1); 
+            server_url = server_url.substring(0, server_url.length() - 1);
         }
         
         String url = null;
@@ -2574,7 +2574,7 @@ class AppController {
         this.createInputPath(inputPath, session);
         //String filename = null;
         
-        Object [][] exportData = null; 
+        Object [][] exportData = null;
 
         if (url.equals("mydataset.html")){
             this.saveDataset(null,session, null);
@@ -2591,14 +2591,14 @@ class AppController {
         
         System.out.println("url = " + url);
         
-        //crete deposition 
-       Long depositionId = ZenodoConnection.createDeposition(usertoken, 
-                title, 
-                type, 
-                description, 
+        //create deposition
+       Long depositionId = ZenodoConnection.createDeposition(usertoken,
+                title,
+                type,
+                description,
                 author,
                 affiliation,
-                access, 
+                access,
                 keywords);
        
         System.out.println("depositionId2222 = " + depositionId);
@@ -2612,9 +2612,9 @@ class AppController {
         System.out.println("depositionId = " + depositionId);
         
         //upload file to deposition
-        if(!ZenodoConnection.uploadFileToDeposition(depositionId, 
-                file, 
-                filename, 
+        if(!ZenodoConnection.uploadFileToDeposition(depositionId,
+                file,
+                filename,
                 usertoken)){
             //Show error
             ZenodoConnection.getErrorMessage();
@@ -2665,7 +2665,7 @@ class AppController {
     @RequestMapping(value="/action/getsetdata", produces = "application/json", method = RequestMethod.POST) //method = RequestMethod.POST
     public @ResponseBody ErrorMessage getSetData ( HttpSession session   ) throws FileNotFoundException, IOException {
         ErrorMessage errMes = new ErrorMessage();
-        try{ 
+        try{
             Data data = null;
             String rootPath = (String)session.getAttribute("inputpath");
             String filename = (String)session.getAttribute("filename");
@@ -2692,7 +2692,7 @@ class AppController {
 
             data = new SETData(fullPath,",",dict);
             data.readDataset(null, null);
-            session.setAttribute("data", data);   
+            session.setAttribute("data", data);
             errMes.setSuccess(true);
             errMes.setProblem("Set-valued dataset was successfully saved on server");
             return errMes;
@@ -2789,7 +2789,7 @@ class AppController {
                 parentId = dictData.getStringToId(parent);
             }
             else{
-               parentId = dictHier.getStringToId(parent); 
+               parentId = dictHier.getStringToId(parent);
             }
 //            Double parentVal=null;
 ////            System.out.println("Parent "+parent);
@@ -3027,7 +3027,7 @@ class AppController {
                 }
             }
             else{ // distinct
-                //// TODO edit check intdouble existence 
+                //// TODO edit check intdouble existence
                 h.edit(Double.parseDouble(oldNode), Double.parseDouble(newNode));
             }
         }
@@ -3111,7 +3111,7 @@ class AppController {
                 if(delnode.equals("(null)")){
                     delValue = Double.NaN;
                     try{
-                       h.remove(delValue); 
+                       h.remove(delValue);
                     }catch(Exception e){
                         h.remove(2147483646.0);
                     }
@@ -3189,7 +3189,7 @@ class AppController {
     
     @JsonView(View.Solutions.class)
     @RequestMapping(value="/action/getsolutionstatistics", method = RequestMethod.GET) //method = RequestMethod.POST
-    public @ResponseBody SolutionsArrayList getSolutionStatistics (@RequestParam("selectedattributenames") String selectedAttrNames, HttpSession session)  {  
+    public @ResponseBody SolutionsArrayList getSolutionStatistics (@RequestParam("selectedattributenames") String selectedAttrNames, HttpSession session)  {
         
         Map<SolutionHeader, SolutionStatistics> solMap = null;
         Map<SolutionHeader, SolutionStatistics> solMapSuppress = (Map<SolutionHeader, SolutionStatistics>)session.getAttribute("solmapsuppress");
@@ -3202,7 +3202,7 @@ class AppController {
         Data dataset = (Data)session.getAttribute("data");
         String selectedAttr = null;
         String []temp = null;
-        String del = ",";        
+        String del = ",";
         int k = (int)session.getAttribute("k");
         boolean FLAG = false;
         Map<Integer, Set<String>> toSuppress;
@@ -3272,7 +3272,7 @@ class AppController {
         
         for (Map.Entry<SolutionHeader, SolutionStatistics> entry : solMap.entrySet()) {
                 solStat = entry.getValue();
-                solStat.sort();         
+                solStat.sort();
                 Set<String> setAnon = new HashSet<>();
                 int count = 0;
 
@@ -3305,7 +3305,7 @@ class AppController {
                     }
 
 
-        }           
+        }
         
         for (Map.Entry<SolutionHeader, SolutionStatistics> entry : solMap.entrySet()) {
            
@@ -3315,7 +3315,7 @@ class AppController {
                 if (nonAnonymizedCount.get(entry.getKey()) != null){
                     percentageSuppress = ((double)nonAnonymizedCount.get(entry.getKey())/dataSizeSuppress) * 100;
  
-                    DecimalFormat df = new DecimalFormat("#.##");      
+                    DecimalFormat df = new DecimalFormat("#.##");
                     percentageSuppress = Double.valueOf((df.format(percentageSuppress)).replaceAll(",", "."));
                 }
                 solStat = entry.getValue();
@@ -3785,10 +3785,10 @@ class AppController {
         for (Map.Entry<SolutionHeader, SolutionStatistics> entry : solMap.entrySet()) {
                 solStat = entry.getValue();
                 solStat.sort();
-                //solutionsArr = solStat.getPage(0, 100);          
+                //solutionsArr = solStat.getPage(0, 100);
                 Set<String> setAnon = new HashSet<>();
-                int count = 0;       
-                for(SolutionAnonValues values : solStat.getKeyset()){         
+                int count = 0;
+                for(SolutionAnonValues values : solStat.getKeyset()){
                     //System.out.println("sol = " + values.toString() + "\t support = " + solStat.getSupport(values)+ "\tk =" + k );
                     
                    if ( selectedAttrNames.equals(entry.getKey().toString())){
@@ -3822,7 +3822,7 @@ class AppController {
                 if (nonAnonymizedCount.get(entry.getKey()) != null){
                     percentageSuppress = ((double)nonAnonymizedCount.get(entry.getKey())/dataSizeSuppress) * 100;
  
-                    DecimalFormat df = new DecimalFormat("#.##");  
+                    DecimalFormat df = new DecimalFormat("#.##");
                     percentageSuppress = Double.valueOf((df.format(percentageSuppress)).replaceAll(",", "."));
                 }
                 solStat = entry.getValue();
@@ -3909,7 +3909,7 @@ class AppController {
     
     
     @RequestMapping(value="/action/deletesuppress", method = RequestMethod.POST) //method = RequestMethod.POST
-    public @ResponseBody void deleteSuppress ( HttpSession session)  {  
+    public @ResponseBody void deleteSuppress ( HttpSession session)  {
         if (session.getAttribute("tosuppress") != null){
             session.removeAttribute("tosuppress");
         }
@@ -4088,7 +4088,7 @@ class AppController {
         double []minArr = new double[identifiersArray.length];
         double []maxArr = new double[identifiersArray.length];
         AnonymizedDataset anonData = (AnonymizedDataset)session.getAttribute("anondata");
-        ArrayList<ResultsToJson> resultList = new ArrayList<ResultsToJson>(); 
+        ArrayList<ResultsToJson> resultList = new ArrayList<ResultsToJson>();
         ResultsToJson resultsToJson = null;
         double[] resultArr = null;
         
@@ -4231,11 +4231,11 @@ class AppController {
         
         AnonymizationRules anonRules = new AnonymizationRules();
         if(data instanceof SETData){
-            Map<Double, Double> results = (Map<Double, Double>) session.getAttribute("results");    
+            Map<Double, Double> results = (Map<Double, Double>) session.getAttribute("results");
             anonRules.export(file, data, results, quasiIdentifiers);
         }
         else if(data instanceof RelSetData ){
-            Map<Integer, Map<Object,Object>> results = (Map<Integer,Map<Object,Object>>) session.getAttribute("results"); 
+            Map<Integer, Map<Object,Object>> results = (Map<Integer,Map<Object,Object>>) session.getAttribute("results");
             anonRules.exportRelSet(file, data, results, quasiIdentifiers);
         }
         else{
@@ -4462,7 +4462,7 @@ class AppController {
            DataInputStream inData = new DataInputStream(fileStream);
            BufferedReader br = new BufferedReader(new  InputStreamReader(inData,StandardCharsets.UTF_8));
            
-           String strline; 
+           String strline;
            List<String> vartypesArr,relationsArr;
            List<Boolean> checkColumnsArr;
            int k=0;
@@ -4487,13 +4487,13 @@ class AppController {
                        if(attributes.length>1 && attributes.length<=3){
                            if(!attributes[0].equals("true") && !attributes[0].equals("false")){
                                error_msg += "In "+columnInfo[0]+": bollean type must be true or false.\n";
-                           }                           
+                           }
                            checkColumnsArr.add ( attributes[0].equals("true"));
                            
                            if(!possibleTypes.contains(attributes[1])){
-                              error_msg += "In "+columnInfo[0]+": not accepted variable type. It must be one of the "+Arrays.toString(possibleTypes.toArray())+"\n"; 
+                              error_msg += "In "+columnInfo[0]+": not accepted variable type. It must be one of the "+Arrays.toString(possibleTypes.toArray())+"\n";
                            }
-                           vartypesArr.add(attributes[1].replace("decimal", "double")); 
+                           vartypesArr.add(attributes[1].replace("decimal", "double"));
                            
                            if(attributes.length==3){
                                relationsArr.add( attributes[2] );
@@ -4645,8 +4645,8 @@ class AppController {
             HttpSession session, HttpServletResponse response) throws IOException{
         
         //@RequestParam("typehier") String typehier, @RequestParam("vartype") String vartype,@RequestParam("onattribute") int onattribute,
-        //@RequestParam("step") double step, @RequestParam("sorting") String sorting, @RequestParam("hiername") String hiername, 
-        //@RequestParam("fanout") int fanout, @RequestParam("limits") String limits, @RequestParam("months") int months, 
+        //@RequestParam("step") double step, @RequestParam("sorting") String sorting, @RequestParam("hiername") String hiername,
+        //@RequestParam("fanout") int fanout, @RequestParam("limits") String limits, @RequestParam("months") int months,
         //@RequestParam("days") int days, @RequestParam("years") int years,  @RequestParam("length") int length
         
         try{
@@ -4986,7 +4986,7 @@ class AppController {
             for(Map.Entry<Integer,Hierarchy> quasi : quasiIdentifiers.entrySet()){
                 attributes += data.getColumnByPosition(quasi.getKey())+" ";
             }
-            attributes = attributes.substring(0, attributes.length() - 1); 
+            attributes = attributes.substring(0, attributes.length() - 1);
             Map<SolutionHeader, SolutionStatistics> solMap = (Map<SolutionHeader, SolutionStatistics>) session.getAttribute("solutionstatistics");
             this.findSolutionStatistics(session);
             SolutionsArrayList stats = this.getSolutionStatistics(attributes, session);
@@ -5072,7 +5072,7 @@ class AppController {
                         return;
                     }
                 }
-                attributes = attributes.substring(0, attributes.length() - 1); 
+                attributes = attributes.substring(0, attributes.length() - 1);
                 Map<SolutionHeader, SolutionStatistics> solMap = (Map<SolutionHeader, SolutionStatistics>) session.getAttribute("solutionstatistics");
                 this.findSolutionStatistics(session);
                 SolutionsArrayList stats = this.getSolutionStatistics(attributes, session);
@@ -5125,7 +5125,7 @@ class AppController {
                         return;
                     }
                 }
-                attributes = attributes.substring(0, attributes.length() - 1); 
+                attributes = attributes.substring(0, attributes.length() - 1);
                 this.findSolutionStatistics(session);
                 System.out.println("Attributes "+attributes);
                 SolutionsArrayList stats = this.getSolutionStatistics(attributes, session);
@@ -5199,7 +5199,7 @@ class AppController {
                     for(Map.Entry<Integer,Hierarchy> quasi : quasiIdentifiers.entrySet()){
                         attributes += data.getColumnByPosition(quasi.getKey())+" ";
                     }
-                    attributes = attributes.substring(0, attributes.length() - 1); 
+                    attributes = attributes.substring(0, attributes.length() - 1);
                     Map<SolutionHeader, SolutionStatistics> solMap = (Map<SolutionHeader, SolutionStatistics>) session.getAttribute("solutionstatistics");
                     this.findSolutionStatistics(session);
                     SolutionsArrayList stats = this.getSolutionStatistics(attributes, session);
@@ -5463,7 +5463,7 @@ class AppController {
 
 
         return "ok\n";
-    }    
+    }
       
     
     ///////////////action/anondataexists/////////////////////other functions//////////////////////////////////

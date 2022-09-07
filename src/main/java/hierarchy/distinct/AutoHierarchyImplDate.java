@@ -69,7 +69,7 @@ public class AutoHierarchyImplDate extends HierarchyImplString {
         height = 4;
         
 
-        //build leaf level 
+        //build leaf level
         ArrayList<Double> initList = new ArrayList<>(itemsSet);
 
         Collections.sort(initList);
@@ -144,7 +144,7 @@ public class AutoHierarchyImplDate extends HierarchyImplString {
         childrenList = new ArrayList<Double>();
         mapLevel2 = new HashMap<Double,Set>();
         for (Map.Entry<Double, Set> entry : mapLevel1.entrySet()) {
-            String postCode = dict.getIdToString(entry.getKey().intValue()); 
+            String postCode = dict.getIdToString(entry.getKey().intValue());
             tempSplit = postCode.split(del);
             String subStr = tempSplit[1];
             Double postCodeId = entry.getKey();
@@ -169,7 +169,7 @@ public class AutoHierarchyImplDate extends HierarchyImplString {
                 if(!dict.containsString("*")){
                     dict.putIdToString(strCount, "*");
                     dict.putStringToId("*", strCount++);
-                } 
+                }
                 
                 parents.put(subStrId,(double)dict.getStringToId("*"));
                 

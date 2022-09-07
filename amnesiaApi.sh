@@ -26,7 +26,7 @@ while [ "$1" != "" ]; do
     	shift
     	check_path $1
     	dataset=" --form files=@$1 "
-    elif [ "$1" == "-t" ]; then 
+    elif [ "$1" == "-t" ]; then
     	shift
     	check_path $1
     	template=" --form files=@$1 "
@@ -40,7 +40,7 @@ while [ "$1" != "" ]; do
     else
     	check_path $1
     	hiers+=" --form files=@$1 "
-    fi		
+    fi
 
     # Shift all the parameters down by one
     shift
@@ -69,12 +69,12 @@ if [[ ${httpCode} -ne "" ]] && [[ ${httpCode} -ne 200 ]]; then
     exit 1
 fi
 
-if [ ${CURL_RETURN_CODE} -ne 0 ]; then  
+if [ ${CURL_RETURN_CODE} -ne 0 ]; then
     echo "Curl connection failed with return code - ${CURL_RETURN_CODE}"
 else
 	if [ "$template" == "" ]; then
-    	echo "Template was downloaded successfully in $exportpath" 
-    else 
+    	echo "Template was downloaded successfully in $exportpath"
+    else
     	echo "The dataset was anonymized successfully and the file was downloaded in $exportpath"
     fi
 fi

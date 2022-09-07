@@ -1,6 +1,6 @@
 /* 
  * Copyright (C) 2015 "IMIS-Athena R.C.",
- * Institute for the Management of Information Systems, part of the "Athena" 
+ * Institute for the Management of Information Systems, part of the "Athena"
  * Research and Innovation Centre in Information, Communication and Knowledge Technologies.
  * [http://www.imis.athena-innovation.gr/]
  * 
@@ -43,18 +43,18 @@ import java.util.Set;
  * @author serafeim
  */
 public class AutoHierarchyImplString extends HierarchyImplString {
-    //variables for autogenerating 
+    //variables for autogenerating
     String attribute = null;
     String sorting = null;
     int fanout = 0;
-    //boolean exact = false;  
+    //boolean exact = false;
     Data dataset = null;
     int randomNumber = 0;
     
     //generator for random numbers
     Random gen = new Random();
     
-    public AutoHierarchyImplString(String _name, String _nodesType, String _hierarchyType, String _attribute, 
+    public AutoHierarchyImplString(String _name, String _nodesType, String _hierarchyType, String _attribute,
                                     String _sorting, int _fanout, Data _data) {
         super(_name, _nodesType,_data.getDictionary());
         attribute = _attribute;
@@ -118,7 +118,7 @@ public class AutoHierarchyImplString extends HierarchyImplString {
 //            if(i==6){
 //                for (double[] rowData : data){
 //                    itemsSet.add(rowData[column]);
-//                } 
+//                }
 //            }
             if(data[0][column] == -1){
                 data = ((RelSetData) dataset).getSet();
@@ -131,7 +131,7 @@ public class AutoHierarchyImplString extends HierarchyImplString {
             else{
                 for (double[] rowData : data){
                    itemsSet.add(rowData[column]);
-                } 
+                }
             }
         }
         else{
@@ -144,7 +144,7 @@ public class AutoHierarchyImplString extends HierarchyImplString {
         int curHeight = height - 1;
         System.out.println("size: " + itemsSet.size() + " fanout: " + fanout + " height: " + height);
 
-        //build leaf level 
+        //build leaf level
         ArrayList<Double> initList = new ArrayList<>(itemsSet);
         
 //        if ( initList.get(initList.size()-1) == 2147483646.0 ||  initList.get(initList.size()-1).isNaN() ){
@@ -158,7 +158,7 @@ public class AutoHierarchyImplString extends HierarchyImplString {
         
         if(sorting.equals("random")){
             Collections.shuffle(initList);
-        } 
+        }
         else if(sorting.equals("alphabetical")){
             System.out.println("alphabeticalllll");
 //            Collections.sort(initList);
@@ -231,7 +231,7 @@ public class AutoHierarchyImplString extends HierarchyImplString {
                     }
                 }
                 
-                //array size is not curFanout (elements finished), resize 
+                //array size is not curFanout (elements finished), resize
                 if(j != fanout){
                     tempArray = Arrays.copyOf(tempArray, j);
                 }
@@ -294,6 +294,6 @@ public class AutoHierarchyImplString extends HierarchyImplString {
     
     private String randomNumber(){
         return "Random" + randomNumber++;
-    }  
+    }
     
-}      
+}

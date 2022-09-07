@@ -45,7 +45,7 @@ public class Slave extends Thread{
     private static Pair<Double[],List<Integer>>[] randomRecs;
     private Map<Integer,Hierarchy> hierarchies;
     private static AtomicInteger clusterIdCounter;
-    private static ClusterDistTree distTree; 
+    private static ClusterDistTree distTree;
     
     private static Map<Integer,Double[][]> clusterRecs;
     private static Double[][][] anonymizedRecs;
@@ -238,7 +238,7 @@ public class Slave extends Thread{
                     synchronized(clusters){
                         clusters.update(newClusterId, clusterRecords[i][0].intValue(), distance);
                     }
-                    newCentroid.update(clusterRecords[i],true); 
+                    newCentroid.update(clusterRecords[i],true);
                 }
                 remainder--;
                 i++;
@@ -269,7 +269,7 @@ public class Slave extends Thread{
                     synchronized(clusters){
                         clusters.update(newClusterId, clusterRecords[i][0].intValue(), distance);
                     }
-                    newCentroid.update(clusterRecords[i],true); 
+                    newCentroid.update(clusterRecords[i],true);
                 }
                 i++;
             }
@@ -301,7 +301,7 @@ public class Slave extends Thread{
         System.out.println("Thread "+this.slaveId+"distance");
         int recordId;
         int newCluster;
-        Centroid cOld=null,cNew=null;       
+        Centroid cOld=null,cNew=null;
         try{
             int start = this.range.lowerBound.intValue();
             int end = this.range.upperBound.intValue() >= records.length ? records.length-1 : this.range.upperBound.intValue();
@@ -325,7 +325,7 @@ public class Slave extends Thread{
                                 if(distance < minDistance){
                                     minDistance = distance;
                                     centroidCluster = j;
-                                }    
+                                }
                             }
                         }
                         
@@ -341,7 +341,7 @@ public class Slave extends Thread{
 
 
                         if(newCluster < 0){
-                            this.centroids[centroidCluster].update(record,true); 
+                            this.centroids[centroidCluster].update(record,true);
                         }
                         else{
                             this.centroids[centroidCluster] = cOld;
@@ -357,7 +357,7 @@ public class Slave extends Thread{
                                 if(distance < minDistance){
                                     minDistance = distance;
                                     centroidCluster = j;
-                                }    
+                                }
                             }
                         }
                         
@@ -365,7 +365,7 @@ public class Slave extends Thread{
                         synchronized(clusters){
                             newCluster = this.clusters.put(centroidCluster,recordId,minDistance,null);
                         }
-                        this.centroids[centroidCluster].update(record,true); 
+                        this.centroids[centroidCluster].update(record,true);
                     }
                     
                 }else{
@@ -406,7 +406,7 @@ public class Slave extends Thread{
                                     if(distance < minDistance){
                                         minDistance = distance;
                                         centroidCluster = j;
-                                    }    
+                                    }
                                 }
                             }
                             semaphore.acquire();

@@ -469,7 +469,7 @@ public class ClusterBasedAlgorithm implements Algorithm {
 //                    childsTree = ((int)(this.diskClusters.getLastClusterId() * this.clustersProportion));
 //                }
 //                else{
-//                   childsTree = 30; 
+//                   childsTree = 30;
 //                }
                 if (this.diskClusters.getmaxIdCluster() > 100) {
                     this.cltree = new ClusterDistTree(this.clustersCentroids, ((int) (this.diskClusters.getmaxIdCluster() * this.clustersProportion)), this.diskClusters.getmaxIdCluster());
@@ -656,7 +656,7 @@ public class ClusterBasedAlgorithm implements Algorithm {
         } else {
             this.treeChildClusters = (int) (this.diskClusters.numOfClusters() * 0.2);
         }
-        long recordSize = this.treeChildClusters * 2 * (this.k - 1) * Double.BYTES;    //// records from clusters which will come in the main memory 
+        long recordSize = this.treeChildClusters * 2 * (this.k - 1) * Double.BYTES;    //// records from clusters which will come in the main memory
         long heapFreeSize = Runtime.getRuntime().maxMemory() - (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
         if (recordSize > heapFreeSize) {
             long availableSize = ((Long) (heapFreeSize * 10 / 100));
