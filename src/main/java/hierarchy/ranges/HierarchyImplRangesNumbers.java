@@ -329,7 +329,7 @@ public class HierarchyImplRangesNumbers implements Hierarchy<RangeDouble>{
             
             int counter = 1;
 
-            //write parents - childen to file
+            //write parents - children to file
             for(int curLevel = height - 2; curLevel >= 0; curLevel--){
                 for (RangeDouble curParent : this.allParents.get(curLevel)){
                     StringBuilder sb = new StringBuilder();

@@ -105,7 +105,7 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
         
         /////////////////////////////////previous Code/////////////////////////////////////////////
         
-            //months contruction
+            //months construction
             while ( currentDate.before(dateEnd)){
                 monthsArr.add(currentDate);
 
@@ -279,7 +279,7 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
            
            ArrayList<Date> yearsArr = new ArrayList<Date>();  
            
-           //years bottom level contruction
+           //years bottom level construction
             while ( currentDate.before(dateEnd) ){
                 yearsArr.add(currentDate);
 

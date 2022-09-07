@@ -107,7 +107,7 @@ public class Apriori implements Algorithm {
         for (Map.Entry<Integer,String> entry : dict.idToString.entrySet()) {
             System.out.println(entry.getKey()+" : "+entry.getValue());
         }*/
-        System.out.println("trie construct start for m="+size);
+        System.out.println("try construct start for m="+size);
         
         while((transaction = getNextTransaction()) != null){
 //            System.out.println("transaction = ");
@@ -157,7 +157,7 @@ public class Apriori implements Algorithm {
             //System.out.println("i am hereeeeeee");
         }
         
-        System.out.println("trie constrcted for m="+size);
+        System.out.println("tried construct for m="+size);
         
         //System.out.println("Trieeeeeeeeeeeee "  );
         //trie.printTree(trie.getRoot());

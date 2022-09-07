@@ -681,7 +681,7 @@ class AppController {
         DataInputStream in = null;
         BufferedReader br = null;
         String strLine = null;
-        String delimeter = null;
+        String delimiter = null;
         String result = null;
         Map<String,Hierarchy> hierarchies = null;
         DictionaryString dict = null;
@@ -726,10 +726,10 @@ class AppController {
         else if (datatype.equals("tabular")){
 
             if ( del == null ){
-                delimeter = ",";
+                delimiter = ",";
             }
             else{
-                delimeter = del;
+                delimiter = del;
             }
             
             System.out.println("del "+del);
@@ -740,16 +740,16 @@ class AppController {
             
             if(!fullPath.toLowerCase().endsWith(".xml")){
                 while ((strLine = br.readLine()) != null){
-                    if ( strLine.contains(delimeter)){
-                        data = new TXTData(fullPath,delimeter,dict);
+                    if ( strLine.contains(delimiter)){
+                        data = new TXTData(fullPath,delimiter,dict);
                     }
                     else{
                         if ((strLine = br.readLine()) != null){
-                            if ( strLine.contains(delimeter)){
-                                //data = new SETData(fullPath,delimeter);
+                            if ( strLine.contains(delimiter)){
+                                //data = new SETData(fullPath,delimiter);
                             }
                             else{
-                                data = new TXTData(fullPath,delimeter,dict);
+                                data = new TXTData(fullPath,delimiter,dict);
                             }
                         }
                     }
@@ -2187,7 +2187,7 @@ class AppController {
             
 
             byte[] outputByte = new byte[50000];
-            //copy binary contect to output stream
+            //copy binary context to output stream
             while(fileIn.read(outputByte, 0, 50000) != -1)
             {
                 out.write(outputByte, 0, 50000);
@@ -2884,7 +2884,7 @@ class AppController {
                 }
             }
             else{
-                //// TODO add check intdouble existance
+                //// TODO add check intdouble existence
                 if(newNode.equals("(null)")){
                     if(h.getParent(Double.NaN)!=null || h.getParent(2147483646.0)!=null){
                         return "The node exists in hierarchy";
@@ -3027,7 +3027,7 @@ class AppController {
                 }
             }
             else{ // distinct
-                //// TODO edit check intdouble existance 
+                //// TODO edit check intdouble existence 
                 h.edit(Double.parseDouble(oldNode), Double.parseDouble(newNode));
             }
         }
@@ -4957,7 +4957,7 @@ class AppController {
                 jsonAnswer.put("Message","To produce a k="+k+" anonymity solution, it must be suppressed by "+suppress+"%");
             }
             else{
-                jsonAnswer.put("Message","The solution: ["+sol+"] statisfies k="+k+" anonymity");
+                jsonAnswer.put("Message","The solution: ["+sol+"] satisfies k="+k+" anonymity");
             }
             response.getOutputStream().print(jsonAnswer.toString());
         }catch(Exception e){
@@ -5224,7 +5224,7 @@ class AppController {
                     response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                     JSONObject jsonAnswer = new JSONObject();
                     jsonAnswer.put("Status","Fail");
-                    jsonAnswer.put("Message","The \"sol\" field needs only fot simple table data!");
+                    jsonAnswer.put("Message","The \"sol\" field needs only for simple table data!");
                     response.getOutputStream().print(jsonAnswer.toString());
                 }
                 else if(sol!=null){

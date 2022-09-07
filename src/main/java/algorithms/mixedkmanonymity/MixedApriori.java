@@ -671,7 +671,7 @@ public class MixedApriori implements Algorithm {
             while((transaction =(this.anonymize_property.equals("relational") ? getNextTransactionRelational() : getNextTransactionMixed())) != null){
 //                System.out.println("TRansaction "+Arrays.toString(transaction.toArray()));
                 Set<Pair<Integer,Object>> expandedTransaction = expandTransaction(transaction);
-//                System.out.println("Expaned TRansaction "+Arrays.toString(expandedTransaction.toArray()));
+//                System.out.println("Expanded TRansaction "+Arrays.toString(expandedTransaction.toArray()));
                 combinations = MixedCombinations.getCombinations(expandedTransaction, size, hierarchies);
 
                  if (combinations != null && !combinations.isEmpty()){

@@ -374,7 +374,7 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
             
             int counter = 1;
 
-            //write parents - childen to file
+            //write parents - children to file
             for(int curLevel = height - 2; curLevel >= 0; curLevel--){
                 for (Double curParent : this.allParents.get(curLevel)){
                     if(this.getChildren(curParent) == null){

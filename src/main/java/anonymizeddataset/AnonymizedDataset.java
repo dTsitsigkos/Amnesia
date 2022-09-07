@@ -2249,7 +2249,7 @@ public class AnonymizedDataset {
      */
     private Object anonymizeValue(Object value, Hierarchy h, int level) throws ParseException{
         Object anonymizedValue = value;
-//        System.out.println("level "+level+" heirarchy "+h.getName()+"value "+value);
+//        System.out.println("level "+level+" hierarchy "+h.getName()+"value "+value);
         for(int i=0; i<level; i++){
             h.setLevel(i);
             if(h.getHierarchyType().equals("range")){

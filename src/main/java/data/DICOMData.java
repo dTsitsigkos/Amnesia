@@ -224,7 +224,7 @@ public class DICOMData implements Data {
         
         try{
             if(dictionary.isEmpty() && dictHier.isEmpty()){
-                System.out.println("Both empy load data");
+                System.out.println("Both empty load data");
                 stringCount = 1;
             }
             else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
@@ -977,7 +977,7 @@ public class DICOMData implements Data {
     public void setMask(int column, int[] positions, char character, String option) {
         int stringCount;
         if(dictionary.isEmpty() && dictHier.isEmpty()){
-            System.out.println("Both empy load data");
+            System.out.println("Both empty load data");
             stringCount = 1;
         }
         else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
@@ -1079,7 +1079,7 @@ public class DICOMData implements Data {
     public void setRegex(int column, char character, String regex) {
         int stringCount;
         if(dictionary.isEmpty() && dictHier.isEmpty()){
-            System.out.println("Both empy load data");
+            System.out.println("Both empty load data");
             stringCount = 1;
         }
         else if(!dictionary.isEmpty() && !dictHier.isEmpty()){

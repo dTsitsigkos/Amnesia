@@ -83,7 +83,7 @@ public class TXTData implements Data,Serializable{
     private double dataSet[][] = null;
     private int sizeOfRows = 0;
     private int sizeOfCol = 0;
-    private String delimeter = null;
+    private String delimiter = null;
 //    private static int counterNamesType=0;
 //    private static int counterNamesPosition=0;
     
@@ -144,10 +144,10 @@ public class TXTData implements Data,Serializable{
         
         this.inputFile = inputFile;
         if ( del == null ){
-            delimeter = ",";
+            delimiter = ",";
         }
         else{
-            delimeter = del;
+            delimiter = del;
         }
              
     }
@@ -289,7 +289,7 @@ public class TXTData implements Data,Serializable{
         int counter = 0;
         int stringCount;
         if(dictionary.isEmpty() && dictHier.isEmpty()){
-            System.out.println("Both empy load data");
+            System.out.println("Both empty load data");
             stringCount = 1;
         }
         else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
@@ -321,7 +321,7 @@ public class TXTData implements Data,Serializable{
 //                System.out.println("Edw mpainei");
                 //do not read the fist line
                 if (FLAG == true){
-                    temp = strLine.split(delimeter,-1);
+                    temp = strLine.split(delimiter,-1);
                     for ( int i = 0 ; i < temp.length ; i ++){
                         if (checkColumns[i] == true){
                             temp[i] = temp[i].trim().replaceAll("\"", "").replaceAll("[\uFEFF-\uFFFF]", "").replace(".", "").replace("[","(").replace("]", ")");;
@@ -346,7 +346,7 @@ public class TXTData implements Data,Serializable{
                     continue;
                 }
                 else{
-                    temp = strLine.split(delimeter,-1);
+                    temp = strLine.split(delimiter,-1);
 //                    System.out.println("line "+strLine);
                     counter1 = 0;
                     for (int i = 0; i < temp.length ; i ++ ){
@@ -916,7 +916,7 @@ public class TXTData implements Data,Serializable{
                 
                 //save column names
                 if (FLAG == true){
-                    colNames = strLine.split(delimeter,-1);
+                    colNames = strLine.split(delimiter,-1);
                     for ( int i = 0 ; i < colNames.length ; i ++){
                         if ( checkColumns[i] == true){
                             colNamesType.put(counter,null);
@@ -997,7 +997,7 @@ public class TXTData implements Data,Serializable{
             while ((strLine = br.readLine()) != null)   {
                 //escape first row
                 if (FLAG == true){
-                    temp = strLine.split(delimeter,-1);
+                    temp = strLine.split(delimiter,-1);
                     columnNames = new String[temp.length];
                     smallDataSet = new String[6][temp.length];
                     this.formatsDate = new String[temp.length];
@@ -1019,7 +1019,7 @@ public class TXTData implements Data,Serializable{
                 }
                 //save column types
                 else{
-                    temp = strLine.split(delimeter,-1);
+                    temp = strLine.split(delimiter,-1);
                     System.out.println("strLine = " + strLine);
                     /*for ( int i = 0 ; i < temp.length ; i ++){
                         System.out.println("tempp =" + temp[i]);
@@ -1494,7 +1494,7 @@ public class TXTData implements Data,Serializable{
         
         // out put file 
         
-        System.out.println("done orgiginal data");
+        System.out.println("done original data");
     }
 
     @Override
@@ -1511,7 +1511,7 @@ public class TXTData implements Data,Serializable{
     public void setMask(int column, int[] positions, char character,String option) {
         int stringCount;
         if(dictionary.isEmpty() && dictHier.isEmpty()){
-            System.out.println("Both empy load data");
+            System.out.println("Both empty load data");
             stringCount = 1;
         }
         else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
@@ -1614,7 +1614,7 @@ public class TXTData implements Data,Serializable{
     public void setRegex(int column, char character, String regex) {
         int stringCount;
         if(dictionary.isEmpty() && dictHier.isEmpty()){
-            System.out.println("Both empy load data");
+            System.out.println("Both empty load data");
             stringCount = 1;
         }
         else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
