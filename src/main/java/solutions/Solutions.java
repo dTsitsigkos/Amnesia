@@ -38,8 +38,8 @@ public class Solutions {
         return color;
     }
 
-    
-    
+
+
 
     public void setLabel(String label) {
         this.label = label;

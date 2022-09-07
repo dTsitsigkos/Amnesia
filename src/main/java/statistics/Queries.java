@@ -99,7 +99,7 @@ public class Queries {
     }
     
     public void calculateNonAnonymized(){
-        boolean FLAG = true;  
+        boolean FLAG = true;
         String valueStr;
         Hierarchy h = null;
         int []diff = new int[identifiersArr.length];
@@ -122,7 +122,7 @@ public class Queries {
                             else{
                                 FLAG = false;
                                 break;
-                            }    
+                            }
                         }
                         else{
                             FLAG = false;
@@ -143,7 +143,7 @@ public class Queries {
                             else{
                                 FLAG = false;
                                 break;
-                            }  
+                            }
                         }
 
                         else{
@@ -158,20 +158,20 @@ public class Queries {
                                 else{
                                     FLAG = false;
                                     break;
-                                }    
+                                }
                             }
                             else{
                                 FLAG = false;
                                 break;
                             }
-                        }               
+                        }
                     }
                 }
             }
             if (FLAG == true){
                 nonAnonymizeOccurrences++;
             }
-        } 
+        }
 
         System.out.println("nonAnonymizeOccurrences = " + nonAnonymizeOccurrences);
         results.setNonAnonymizeOccurrences(nonAnonymizeOccurrences +"");
@@ -207,14 +207,14 @@ public class Queries {
                             value = distinctArr[i];
                         }
                         else{
-                            value = Double.parseDouble(distinctArr[i]);    
+                            value = Double.parseDouble(distinctArr[i]);
                         }
                         
                         if ( h.getLevel(value) != null){
 
                             if(h.getLevel(value) == (h.getHeight()-1-hierarchyLevel[i]) ){//erwisi idio epipedo me tin hierarchia...to tupos deksia einai epeidi i ierarchies arxikopoipountai apo panw pros ta katw enw efarmozontai anapoda
                                 //out.println("11111111111111111");
-                                //estimatedRate = 0.0; 
+                                //estimatedRate = 0.0;
                                 newDistinctArr[i] = value +"";
                             }
                             else if (h.getLevel(value) > (h.getHeight()-1-hierarchyLevel[i]) ){//i erwtisi pio xamila apo tin hierarchia
@@ -237,7 +237,7 @@ public class Queries {
                                 }
                                 else{
                                     FLAGQueryGreaterHier = true;
-                                    diff[i] = (h.getHeight()-1-hierarchyLevel[i])- h.getLevel(value) ;                             
+                                    diff[i] = (h.getHeight()-1-hierarchyLevel[i])- h.getLevel(value) ;
                                 }
                                  //newDistinctArr[i] = value +"";
                             }
@@ -247,8 +247,8 @@ public class Queries {
                             value = distinctArr[i];
                             }
                             else{
-                                value = Double.parseDouble(distinctArr[i]);    
-                            }    
+                                value = Double.parseDouble(distinctArr[i]);
+                            }
                             newDistinctArr[i] = value +"";
                         }
                     }
@@ -257,8 +257,8 @@ public class Queries {
                             value = distinctArr[i];
                         }
                         else{
-                            value = Double.parseDouble(distinctArr[i]);    
-                        }    
+                            value = Double.parseDouble(distinctArr[i]);
+                        }
                         newDistinctArr[i] = value +"";
                     }
                 }
@@ -298,7 +298,7 @@ public class Queries {
                                         FLAG = true;
                                     }
                                     else{
-                                        recordStr = recordStr + "," + newValue; 
+                                        recordStr = recordStr + "," + newValue;
                                     
                                     }
                                 }
@@ -316,7 +316,7 @@ public class Queries {
                                         FLAG = true;
                                     }
                                     else{
-                                        recordStr = recordStr + "," + newValue; 
+                                        recordStr = recordStr + "," + newValue;
                                     
                                     }
                                 }
@@ -344,7 +344,7 @@ public class Queries {
                                     FLAG = true;
                                 }
                                 else{
-                                    recordStr = recordStr + "," + r.toString(); 
+                                    recordStr = recordStr + "," + r.toString();
 
                                 }
                             }
@@ -363,7 +363,7 @@ public class Queries {
                                     FLAG = true;
                                 }
                                 else{
-                                    recordStr = recordStr + "," + newValue; 
+                                    recordStr = recordStr + "," + newValue;
 
                                 }
                             }
@@ -373,7 +373,7 @@ public class Queries {
                                     FLAG = true;
                                 }
                                 else{
-                                    recordStr = recordStr + "," + dataset[row][column]; 
+                                    recordStr = recordStr + "," + dataset[row][column];
 
                                 }
                             }
@@ -385,7 +385,7 @@ public class Queries {
                                 FLAG = true;
                             }
                             else{
-                                recordStr = recordStr + "," + minArr[column] +"-" +maxArr[column]; 
+                                recordStr = recordStr + "," + minArr[column] +"-" +maxArr[column];
 
                             }
                         }*/
@@ -397,7 +397,7 @@ public class Queries {
                         FLAG = true;
                     }
                     else{
-                        recordStr = recordStr + "," + "null"; 
+                        recordStr = recordStr + "," + "null";
 
                     }
                 }
@@ -475,7 +475,7 @@ public class Queries {
                                                     int sumOfChildrenValue = h.findAllChildren(distinctArr[column], 0,true);
                                                     //System.out.println("sumOfChildren11111111111111111 = " + sumOfChildrenValue);
                                                     double prob = h.findAllChildren(newDistinctArr[column], 0,true);
-                                                    //System.out.println("prob = " + prob);        
+                                                    //System.out.println("prob = " + prob);
                                                     prob = sumOfChildrenValue/prob;
                                                     //System.out.println("prob22222222222 = " + prob);
                                                     estimatedRate = prob;
@@ -484,7 +484,7 @@ public class Queries {
                                                     int sumOfChildrenValue = h.findAllChildren(distinctArr[column], 0,true);
                                                    // System.out.println("sumOfChildren11111111111111111 = " + sumOfChildrenValue);
                                                     double prob = h.findAllChildren(newDistinctArr[column], 0,true);
-                                                    //System.out.println("prob = " + prob);        
+                                                    //System.out.println("prob = " + prob);
                                                     //System.out.println("sumOfChildren = " + sumOfChildrenValue + "\tprob = " + prob);
                                                     prob = sumOfChildrenValue/prob;
                                                     estimatedRate = estimatedRate*prob;
@@ -508,19 +508,19 @@ public class Queries {
                                             else{
                                                 estimatedRate = estimatedRate*1.0;
                                             }
-                                        } 
+                                        }
                                     }
                                     else{
                                         estimatedRate = 0.0;
                                         FLAG2 = false;
                                             //break;
-                                    }   
+                                    }
                                 }
                                 else{
                                     estimatedRate = 0.0;
                                     FLAG2 = false;
                                     //break;
-                                } 
+                                }
 
                             }
                             else{
@@ -548,7 +548,7 @@ public class Queries {
                                 else{
                                     FLAG2 = false;
                                     estimatedRate = 0.0;
-                                }  
+                                }
 
                             }
                         }
@@ -567,7 +567,7 @@ public class Queries {
 
                                         FLAG = false;
                                         //break;
-                                    } 
+                                    }
 
                                     if (newDistinctArr[column] != null){
                                         //System.out.println("value = " +Double.parseDouble(newDistinctArr[column]) +"\t" +Double.parseDouble(dataAnon) );
@@ -594,7 +594,7 @@ public class Queries {
                                                             prob = sumOfChildrenValue/prob;
                                                             estimatedRate = estimatedRate*prob;
                                                             //System.out.println("summmmmmmOfChildren = " + sumOfChildrenValue + "\tprob = " + prob +"\testimmated = " + estimatedRate);
-                                                        } 
+                                                        }
                                                     }
                                                     else{
                                                         if (counter == 0){
@@ -614,19 +614,19 @@ public class Queries {
                                                     else{
                                                         estimatedRate = estimatedRate*1.0;
                                                     }
-                                                } 
+                                                }
                                         }
                                         else{
                                             FLAG2 = false;
                                             estimatedRate = 0.0;
                                             //break;
-                                        }   
+                                        }
                                     }
                                     else{
                                         FLAG2 = false;
                                         estimatedRate = 0.0;
                                          //break;
-                                    }   
+                                    }
 
                                 }
                                 else{
@@ -659,7 +659,7 @@ public class Queries {
                                         FLAG2 = false;
                                         estimatedRate = 0.0;
                                         //break;
-                                    }   
+                                    }
                                 }
 
                             }
@@ -792,7 +792,7 @@ public class Queries {
                         }
                     }
                     counter++;
-                } 
+                }
             }
             if (FLAG == true){
                 anonymizedOccurrences++;
@@ -822,4 +822,3 @@ public class Queries {
     
     
 }
-

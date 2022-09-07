@@ -1,6 +1,6 @@
 # Amnesia ReST API Structure
 
-## Introduction 
+## Introduction
 
 The backend of Amnesia is implemented in Java using the Spring framework. Its components offer a ReST API that handles anonymization requests issued by the web interface. It uses a temporary local storage for the anonymization purposes and final results are returned by the ReST interface. There are three ways to communicate with Amnesia’s backend procedures:
 
@@ -15,8 +15,8 @@ The backend of Amnesia is implemented in Java using the Spring framework. Its co
     2.   Download pixelmed.jar from http://www.dclunie.com/pixelmed/software/webstart/pixelmed.jar and install manually to amnesia's Dependencies.
     3.   Go to controller/AppCon.java and set the variable "os" with desired operation system ("windows" or "linux")
     4.   Build the project
-    5.   Take the .jar from the "scr/target" directory. 
-    6.   Download https://amnesia.openaire.eu/countryDistributionZip.set and put it in the same folder where Amnesia's jar file will be executed. 
+    5.   Take the .jar from the "scr/target" directory.
+    6.   Download https://amnesia.openaire.eu/countryDistributionZip.set and put it in the same folder where Amnesia's jar file will be executed.
     7.   Run via terminal java -Xms1024m -Xmx4096m -Dorg.eclipse.jetty.server.Request.maxFormKeys=1000000 -Dorg.eclipse.jetty.server.Request.maxFormContentSize=1000000 -jar "path_to_jar_file" --server.port=8181
 ⋅⋅⋅Then you can use the Amnesia’s API as in the following steps.
 
@@ -31,8 +31,8 @@ Web services require a field called “Session” as an argument. “Session” 
 Example via Terminal:
 
 ```Shell Session
-# /getSession [POST] 
-$ curl -X POST http://localhost:8181/getSession 
+# /getSession [POST]
+$ curl -X POST http://localhost:8181/getSession
 > {"Status":"Success","Session_Id":"D6DF59C4A03432B79BC61961F1671EDB"}
 ```
 
@@ -41,7 +41,7 @@ $ curl -X POST http://localhost:8181/getSession
 - datasetType: tabular -> Simple table, set-> Sets of values, RelSet -> Table with a set-valued attribute and Disk -> Disk based simple table
 - del: Delimiter of dataset
 - columnsType: Json string with keys the columns’ names and values the data type (int, double, string, date, set(hierarchy ‘s variable type must be string))
-- session: Set session id as header parameter 
+- session: Set session id as header parameter
 
 ##### Additional parameters
 - if datasetType is RelSet
@@ -50,10 +50,10 @@ $ curl -X POST http://localhost:8181/getSession
 Examples via Terminal:
 - Simple Table (tabular)
 ```Shell Session
-# /loadData [POST] 
-$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/loadData 
---form file=@"/path/to/Datasets/Scenarios/Simple Table-Disk based simple table/data1/newData.txt"  
---form del=, 
+# /loadData [POST]
+$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/loadData
+--form file=@"/path/to/Datasets/Scenarios/Simple Table-Disk based simple table/data1/newData.txt"
+--form del=,
 --form datasetType=tabular --form columnsType="{\"zipcode\":\"int\",\"age\":\"int\",\"gender\":\"string\",\"salary\":\"int\"}"
 
 > {"Status":"Success","Message":"Dataset loaded successfully!"}
@@ -65,10 +65,10 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 
 ```Shell Session
 # /loadData [POST]
-$  curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/loadData  
+$  curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/loadData
 --form file=@"/path/to/Datasets/Scenarios/Sets of Values/data1/setNumbers.csv"
---form del="|" 
---form datasetType=set 
+--form del="|"
+--form datasetType=set
 --form columnsType="{\"Procedure Codes\": \"set\"}"
 
 > {"Status":"Success","Message":"Dataset loaded successfully!"}
@@ -80,11 +80,11 @@ $  curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http
 
 ```Shell Session
 # /loadData [POST]
-$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/loadData 
---form file=@"/path/to/Datasets/Scenarios/Table with a set-valued attribute/data1/mixedDataSet.csv"  
---form del=, 
---form delSet="|" 
---form datasetType=RelSet 
+$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/loadData
+--form file=@"/path/to/Datasets/Scenarios/Table with a set-valued attribute/data1/mixedDataSet.csv"
+--form del=,
+--form delSet="|"
+--form datasetType=RelSet
 --form columnsType="{\"Procedure Codes\": \"set\", \"salary\":\"int\", \"age\":\"int\", \"date\":\"date\"}"
 
 > {"Status":"Success","Message":"Dataset loaded successfully!"}
@@ -93,10 +93,10 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 - Disk based simple table (Disk)
 ```Shell Session
 # /loadData [POST]
-$  curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8084/amnesia/loadData 
---form file=@"/path/to/Datasets/Scenarios/Simple Table-Disk based simple table/data1/newData.txt"  
---form del=, 
---form datasetType=Disk 
+$  curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8084/amnesia/loadData
+--form file=@"/path/to/Datasets/Scenarios/Simple Table-Disk based simple table/data1/newData.txt"
+--form del=,
+--form datasetType=Disk
 --form columnsType="{\"zipcode\":\"int\",\"age\":\"int\",\"gender\":\"string\",\"salary\":\"int\"}"
 
 > {"Status":"Success","Message":"Dataset loaded successfully!"}
@@ -104,7 +104,7 @@ $  curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http
 
 **generateHierarchy [POST]**
 
-Hierarchy autogeneration requires loading the dataset initially to find the appropriate values in a specific column to generate a new hierarchy.  In the examples below, we consider that the mixedDataSet.csv dataset (Table with a set-valued attribute) has been loaded. 
+Hierarchy autogeneration requires loading the dataset initially to find the appropriate values in a specific column to generate a new hierarchy.  In the examples below, we consider that the mixedDataSet.csv dataset (Table with a set-valued attribute) has been loaded.
 
 - hierType: type of hierarchy (mask (only for string data),distinct,range}
 - varType: (int,double,string,date)
@@ -126,11 +126,11 @@ Hierarchy autogeneration requires loading the dataset initially to find the appr
 Example via Terminal:
 ```Shell Session
 # /generateHierarchy [POST]
-$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/generateHierarchy 
---form hierType=range 
+$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/generateHierarchy
+--form hierType=range
 --form varType=int
---form attribute=age 
---form hierName=age_hier 
+--form attribute=age
+--form hierName=age_hier
 --form startLimit=1
 --form endLimit=100
 --form fanout=3
@@ -153,11 +153,11 @@ The hierarchy is stored in the “range_hier_age.txt” text file
 Example via Terminal:
 ```Shell Session
 # /generateHierarchy [POST]
-$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/generateHierarchy 
---form hierType=range 
+$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/generateHierarchy
+--form hierType=range
 --form varType=date
---form attribute=date 
---form hierName=date_hier 
+--form attribute=date
+--form hierName=date_hier
 --form startYear=1940
 --form endYear=2016
 --form years=5
@@ -176,11 +176,11 @@ The hierarchy is stored in the “range_hier_date.txt” text file.
 Example via Terminal:
 ```Shell Session
 # /generateHierarchy [POST]
-$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/generateHierarchy 
---form hierType=distinct 
+$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/generateHierarchy
+--form hierType=distinct
 --form varType=string
 --form attribute="Procedure Codes"
---form hierName=codes_hier 
+--form hierName=codes_hier
 --form sorting=alphabetical
 --form fanout=3
 --out ./hier_p_codes.txt
@@ -195,11 +195,11 @@ The hierarchy is stored in the “hier_p_codes.txt” text file.
 Example via Terminal:
 ```Shell Session
 # /generateHierarchy [POST]
-$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/generateHierarchy 
---form hierType=mask 
+$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/generateHierarchy
+--form hierType=mask
 --form varType=string
 --form attribute="Procedure Codes"
---form hierName=codes_hier 
+--form hierName=codes_hier
 --form length=3
 --out ./mask_hier_p_codes.txt
 ```
@@ -213,11 +213,11 @@ The hierarchy is stored in the “mask_hier_p_codes.txt” text file.
 Example via Terminal:
 ```Shell Session
 # /generateHierarchy [POST]
-$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/generateHierarchy 
---form hierType=distinct 
+$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/generateHierarchy
+--form hierType=distinct
 --form varType=int
 --form attribute=salary
---form hierName=salary_hier 
+--form hierName=salary_hier
 --form sorting=numeric
 --form fanout=3
 --out ./distinct_hier_salary.txt
@@ -227,13 +227,13 @@ The hierarchy was saved in the “distinct_hier_salary.txt” text file.
 
 **loadHierarchies [POST]**
 - hierarchies: MultipartFile[], list of hierarchies files in .txt format
-- session: Set session id as header parameter 
+- session: Set session id as header parameter
 
 Example via Terminal:
 ```Shell Session
 # /loadHierarchies  [POST]
-$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/loadHierarchies 
---form hierarchies=@"path/to/Datasets/Scenarios/Simple Table-Disk based simple table/data1/distinct_hier_salary.txt"  
+$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/loadHierarchies
+--form hierarchies=@"path/to/Datasets/Scenarios/Simple Table-Disk based simple table/data1/distinct_hier_salary.txt"
 --form hierarchies=@"path/to/Datasets/Scenarios/Simple Table-Disk based simple table/data1/distinct_hier_age.txt"
 
 > {"Status":"Success","Message":"Hierarchies have been successfully loaded!"}
@@ -243,15 +243,15 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 - bind: json string {colName1:hierName1,colName2:hierName2,..,colNameN:hierNameN}
 - k: at least k same records (int)
 - m: optional, depends on the dataset type.(Sets, RelSet) (int)
-- session: Set session id as header parameter 
+- session: Set session id as header parameter
 
-Returns a json string of possible solutions if the executed algorithm is Flash (simple table dataset)  e.g. {sol1:{[1,1], unsafe},sol2:{[1,2], safe}} or the anonymized dataset. 
+Returns a json string of possible solutions if the executed algorithm is Flash (simple table dataset)  e.g. {sol1:{[1,1], unsafe},sol2:{[1,2], safe}} or the anonymized dataset.
 
 Example via Terminal for simple table dataset:
 ```Shell Session
 # /anonymization [POST]
-$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/anonymization 
---form bind="{\"age\":\"age\",\"salary\":\"salary\"}" 
+$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/anonymization
+--form bind="{\"age\":\"age\",\"salary\":\"salary\"}"
 --form k=3
 
 > {"Solutions":{
@@ -270,10 +270,10 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 Example via Terminal for table with with a set-valued attribute:
 ```Shell Session
 # /anonymization [POST]
-$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/anonymization  
---form bind="{\"age\":\"age\",\"salary\":\"salary\", \"Procedure Codes\": \"myNumHier\" }"  
---form k=3 
---form m=2 
+$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/anonymization
+--form bind="{\"age\":\"age\",\"salary\":\"salary\", \"Procedure Codes\": \"myNumHier\" }"
+--form k=3
+--form m=2
 --out ./anonymized_mixedData.csv
 ```
 
@@ -282,15 +282,15 @@ The anonymized data are stored in “anonymized_mixedData.csv” file
 **getAnonRules [POST]**
 - sol: json string array which contain the anonymize level of each quasi-identifier e.g. [1,2] only for simple table data
 - suppressed: boolean for only for simple table data
-- session: Set session id as header parameter 
+- session: Set session id as header parameter
 
-The current endpoint is not supported for disk-based data (Disk based simple table) because the algorithm is executed using clustering and similarities that do not generate anonymization rules. 
+The current endpoint is not supported for disk-based data (Disk based simple table) because the algorithm is executed using clustering and similarities that do not generate anonymization rules.
 
 Examples via Terminal for simple table data:
 ```Shell Session
 # /getAnonRules [POST]
-$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getAnonRules 
---form sol="[1,2]" 
+$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getAnonRules
+--form sol="[1,2]"
 --form suppressed=true
 
 > {"Status":"Fail","Message":"The solution [1,2] satisfies 3-anonymity so  it can not be suppressed!"}
@@ -298,9 +298,9 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 
 ```Shell Session
 # /getAnonRules [POST]
-curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getAnonRules 
---form sol="[1,2]" 
---form suppressed=false 
+curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getAnonRules
+--form sol="[1,2]"
+--form suppressed=false
 --out ./anonRules.txt
 ```
 
@@ -309,7 +309,7 @@ The anonymized rules are stored in the “anonRules.txt” file.
 Example via Terminal for  table with with a set-valued attribute:
 ```Shell Session
 # /getAnonRules [POST]
-$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getAnonRules 
+$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getAnonRules
 --out ./anonRules_mixed.txt
 ```
 
@@ -319,11 +319,11 @@ The anonymized rules are stored in the “anonRules_mixed.txt” file.
 - rules: MultipartFile, the of anonymized rules in .txt format
 - session: Set session id as header parameter
 
-We suppose that a simple table dataset has already been imported to Amnesia, and we have exported the anonymization rules in the “anonRules.txt” as in the previous example. 
+We suppose that a simple table dataset has already been imported to Amnesia, and we have exported the anonymization rules in the “anonRules.txt” as in the previous example.
 ```Shell Session
 # /loadAnonRules [POST]
-$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/loadAnonRules 
---form rules="path/to/anonRules.txt" 
+$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/loadAnonRules
+--form rules="path/to/anonRules.txt"
 --out ./apply_rules.txt
 ```
 
@@ -344,13 +344,13 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 
 **getSolution [POST]**
 - sol: json string array which contain the anonymize level of each quasi-identifier e.g. [1,2]
-- session: Set session id as header parameter 
+- session: Set session id as header parameter
 
 Example via Terminal:
 ```Shell Session
 # /getSolution [POST]
-$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getSolution 
---form sol="[1,2]"  
+$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getSolution
+--form sol="[1,2]"
 --out ./anonymized_simple_table_data.txt
 ```
 
@@ -363,20 +363,20 @@ The anonymized dataset is stored in the “anonymized_simple_table_data.txt” t
 Examples via Terminal:
 ```Shell Session
 # /getSuppressPercentage [POST]
-$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getSuppressPercentage 
---form sol="[1,2]" 
+$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getSuppressPercentage
+--form sol="[1,2]"
 
-> {"Status":"Success","percentageSuppress":0.0,"Message":"The solution: [1,2] satisfies k=3 anonymity","k":3} 
+> {"Status":"Success","percentageSuppress":0.0,"Message":"The solution: [1,2] satisfies k=3 anonymity","k":3}
 ```
 
 For unsafe solution e.g. [1,1]
 
 ```Shell Session
 # /getSuppressPercentage [POST]
-$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getSuppressPercentage 
---form sol="[1,1]" 
+$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getSuppressPercentage
+--form sol="[1,1]"
 
-> {"Status":"Success","percentageSuppress":0.3,"Message":"To produce a k=3 anonymity solution, it must be suppressed by 0.3%","k":3} 
+> {"Status":"Success","percentageSuppress":0.3,"Message":"To produce a k=3 anonymity solution, it must be suppressed by 0.3%","k":3}
 ```
 
 **getSuppressedSolution [POST]**
@@ -389,31 +389,31 @@ Examples via Terminal:
 # /getSuppressedSolution [POST]
 $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getSuppressedSolution --form sol="[1,2]"
 
-> {"Status":"Fail","Message":"The solution [1,2] satisfies 3-anonymity so > it can not be suppressed!"} 
+> {"Status":"Fail","Message":"The solution [1,2] satisfies 3-anonymity so > it can not be suppressed!"}
 ```
 
 For unsafe solution e.g. [1,1]
 ```Shell Session
 # /getSuppressedSolution [POST]
-$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getSuppressedSolution 
---form sol="[1,1]" 
---out ./anonymized_suppressed_dataset.txt 
+$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getSuppressedSolution
+--form sol="[1,1]"
+--out ./anonymized_suppressed_dataset.txt
 ```
 
-The suppressed anonymized dataset is stored in the “anonymized_suppressed_dataset.txt” text file. 
+The suppressed anonymized dataset is stored in the “anonymized_suppressed_dataset.txt” text file.
 
 
 **getStatistics [POST]**
 - sol: json string array which contain the anonymize level of each quasi-identifier e.g. [1,2]
-- quasi_ids: String[], list of columns which are quasi-identifiers 
+- quasi_ids: String[], list of columns which are quasi-identifiers
 - session: Set session id as header parameter (setHeader("Cookie", "JSESSIONID="+ SessionID)
 
 Examples via Terminal:
 - For age column
 ```Shell Session
 # /getStatistics [POST]
-$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getStatistics 
---form sol="[1,2]" 
+$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getStatistics
+--form sol="[1,2]"
 --form quasi_ids=age
 
 > {"Status":"Success",
@@ -430,13 +430,13 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 > {"numberOfValues":"0","value":"problematic records"},
 > {"numberOfValues":"0","value":"Records with support less than 3%"}],
 > "TotalRecords":999,
-> "k":3} 
+> "k":3}
 ```
 
 - For salary column
 ```Shell Session
 # /getStatistics [POST]
-$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getStatistics --form sol="[1,2]" --form quasi_ids=salary 
+$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getStatistics --form sol="[1,2]" --form quasi_ids=salary
 
 > {"Status":"Success",
 > "AnonymizedStats":[
@@ -447,12 +447,12 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 > "k":3}
 ```
 
-- For age and salary combined 
+- For age and salary combined
 ```Shell Session
 # /getStatistics [POST]
-$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getStatistics 
---form sol="[1,2]" 
---form quasi_ids=age 
+$ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http://localhost:8181/getStatistics
+--form sol="[1,2]"
+--form quasi_ids=age
 --form quasi_ids=salary
 
 > {"Status":"Success",
@@ -526,7 +526,7 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 **version 1.2.5**
 - Cleaning non-printable characters
  
-- Keep 128 characters from the titles of columns 
+- Keep 128 characters from the titles of columns
 
 - Cleaning titles of columns from undesired characters
 
@@ -667,4 +667,3 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 **version: 1.0.0**
 
 - Initial release.
-

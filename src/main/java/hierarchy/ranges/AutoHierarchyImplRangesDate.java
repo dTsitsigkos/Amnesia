@@ -174,13 +174,13 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
                             calendar.set(Calendar.DAY_OF_MONTH, (calendar.getActualMaximum(Calendar.DAY_OF_MONTH)));
                         }
                         else{
-                            calendar.set(Calendar.DAY_OF_MONTH, (calendar.get(Calendar.DAY_OF_MONTH) + days));    
+                            calendar.set(Calendar.DAY_OF_MONTH, (calendar.get(Calendar.DAY_OF_MONTH) + days));
                         }
                         calendar.set(Calendar.HOUR, 0);
                         currentDate2 = calendar.getTime();
 
                         //fix days of the last range
-                        if (!currentDate2.before(currentDate3) || currentDate2.equals(currentDate3) ){                   
+                        if (!currentDate2.before(currentDate3) || currentDate2.equals(currentDate3) ){
 
                             //daysArr.add(currentDate3);
 
@@ -269,7 +269,7 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
                 throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
             }
             
-            children.put(root, allC);     
+            children.put(root, allC);
             
             ////////////////////////////////////////////////////////////////////////////////////////
        }
@@ -277,7 +277,7 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
        
            //System.out.println("autogenerateeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
            
-           ArrayList<Date> yearsArr = new ArrayList<Date>();  
+           ArrayList<Date> yearsArr = new ArrayList<Date>();
            
            //years bottom level construction
             while ( currentDate.before(dateEnd) ){
@@ -305,10 +305,10 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
                     if (calendarTemp2.get(Calendar.YEAR) - calendarTemp.get(Calendar.YEAR) < years ){
                         //System.out.println("calendarTemp1 = " + calendarTemp.get(Calendar.YEAR) + "\tcalendarTemp2 = " + calendarTemp2.get(Calendar.YEAR) + "\tyears = " +years );
 
-                        //System.out.println("current Date = " + currentDate + "\t currentDate2 = " + currentDate2 + "\t dateEnd = " + dateEnd);   
+                        //System.out.println("current Date = " + currentDate + "\t currentDate2 = " + currentDate2 + "\t dateEnd = " + dateEnd);
                         
                         yearsArr.remove(yearsArr.size()-1);
-                        yearsArr.remove(yearsArr.size()-1); 
+                        yearsArr.remove(yearsArr.size()-1);
                         
                     }
                     
@@ -399,7 +399,7 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
                 int p = 1;
                 for ( int k = 1 ; k < yearsArrTemp.size() ; k = k + 2 ){
                     RangeDate d = new RangeDate(yearsArrTemp.get(k-1), yearsArrTemp.get(k));
-                    ArrayList<RangeDate> childsTemp = new ArrayList<RangeDate>(); 
+                    ArrayList<RangeDate> childsTemp = new ArrayList<RangeDate>();
                     
                     
                    
@@ -407,7 +407,7 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
                         while( p < prevLevelYear.size() &&  (prevLevelYear.get(p).before(yearsArrTemp.get(k)) || prevLevelYear.get(p).equals(yearsArrTemp.get(k)) )){
                             childsTemp.add(new RangeDate (prevLevelYear.get(p-1),prevLevelYear.get(p)));
                             parents.put(new RangeDate (prevLevelYear.get(p-1),prevLevelYear.get(p)), new RangeDate(yearsArrTemp.get(k-1), yearsArrTemp.get(k)));
-                            p = p + 2;        
+                            p = p + 2;
                         }
                     
                         counterNodes += childsTemp.size() ;
@@ -432,7 +432,7 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
                 
                 yearsArr = new ArrayList<Date>();
                 yearsArr.addAll(yearsArrTemp);
-                yearsArrTemp = new ArrayList<Date>(); 
+                yearsArrTemp = new ArrayList<Date>();
                 //numOfRanges = yearsArr.size()/2;
                 
             }
@@ -530,7 +530,7 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
                     
 //                    System.out.println("months = " + monthsArr.toString());
                     
-                    childsTemp = new ArrayList<RangeDate>(); 
+                    childsTemp = new ArrayList<RangeDate>();
                     for( int k = firstlimit ; k < monthsArr.size() ; k = k + 2){
                         childsTemp.add(new RangeDate(monthsArr.get(k-1), monthsArr.get(k) ));
                         parents.put(new RangeDate(monthsArr.get(k-1), monthsArr.get(k) ),  new RangeDate(yearsArr.get(j-1), yearsArr.get(j)));
@@ -578,13 +578,13 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
 
                             calendar.setTime(currentDate);
 
-                            calendar.set(Calendar.DAY_OF_MONTH, (calendar.get(Calendar.DAY_OF_MONTH) + days));    
+                            calendar.set(Calendar.DAY_OF_MONTH, (calendar.get(Calendar.DAY_OF_MONTH) + days));
                             
                             calendar.set(Calendar.HOUR, 0);
                             currentDate2 = calendar.getTime();
 
                             //fix days of the last range
-                            if (!currentDate2.before(currentDate3) || currentDate2.equals(currentDate3) ){                   
+                            if (!currentDate2.before(currentDate3) || currentDate2.equals(currentDate3) ){
 
                                 //daysArr.add(currentDate3);
 
@@ -616,7 +616,7 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
                             daysArr.add(currentDate);
                         }
                         
-                        childsTemp = new ArrayList<RangeDate>(); 
+                        childsTemp = new ArrayList<RangeDate>();
                         for( int k = firstlimit ; k < daysArr.size() ; k = k + 2){
                             childsTemp.add(new RangeDate(daysArr.get(k-1), daysArr.get(k) ));
                             parents.put(new RangeDate(daysArr.get(k-1), daysArr.get(k) ),  new RangeDate(monthsArr.get(i-1), monthsArr.get(i)));
@@ -718,7 +718,7 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
             children.put(ranNull,null);
             stats.put(ranNull,new NodeStats(1));
             
-       } 
+       }
        
        
         
@@ -820,12 +820,12 @@ public class AutoHierarchyImplRangesDate extends HierarchyImplRangesDate{
             bdEnd = bdStart.add(bdStep);
             if(bdEnd.compareTo(bdFixEnd) > 0 || bdEnd.compareTo(bdFixEnd) == 0){
             bdEnd = bdFixEnd;
-            }   
+            }
             RangeDouble r = new RangeDouble();
             r.lowerBound = bdStart.doubleValue();
             r.upperBound = bdEnd.doubleValue();
             System.out.println("lower = " + r.lowerBound + "\tupper = " + r.upperBound +"\t find = " + (r.upperBound + step) +"\t end = " + end);
-            r.nodesType = nodesType;          
+            r.nodesType = nodesType;
             if ( r.upperBound + step > end ){
             double diff = end - r.upperBound;
             if ( diff > step/2 ){

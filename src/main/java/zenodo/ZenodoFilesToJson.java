@@ -145,13 +145,13 @@ public class ZenodoFilesToJson {
 
             union = union - intersection;
             jaccSim = (union - intersection)/union;
-            jaccDist = 1 - jaccSim; 
+            jaccDist = 1 - jaccSim;
 
             //System.out.println("union = " + union);
             //System.out.println("intersection = " + intersection);
             //System.out.println("jaccSim = " + jaccSim);
             //System.out.println("jaccDist = " + jaccDist);
-        }    
+        }
             
 
         return jaccDist;

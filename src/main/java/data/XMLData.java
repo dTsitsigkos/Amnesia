@@ -78,14 +78,14 @@ public class XMLData implements Data {
     @JsonView(View.SmallDataSet.class)
     private String errorMessage = null;
     
-    private static final String[] formats = { 
+    private static final String[] formats = {
                 "yyyy-MM-dd'T'HH:mm:ss'Z'",   "yyyy-MM-dd'T'HH:mm:ssZ",
                 "yyyy-MM-dd'T'HH:mm:ss",      "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-                "yyyy-MM-dd'T'HH:mm:ss.SSSZ", "yyyy-MM-dd HH:mm:ss", 
-                "MM/dd/yyyy HH:mm:ss",        "MM/dd/yyyy'T'HH:mm:ss.SSS'Z'", 
-                "MM/dd/yyyy'T'HH:mm:ss.SSSZ", "MM/dd/yyyy'T'HH:mm:ss.SSS", 
-                "MM/dd/yyyy'T'HH:mm:ssZ",     "MM/dd/yyyy'T'HH:mm:ss", 
-                "yyyy:MM:dd HH:mm:ss",        "yyyy/MM/dd", 
+                "yyyy-MM-dd'T'HH:mm:ss.SSSZ", "yyyy-MM-dd HH:mm:ss",
+                "MM/dd/yyyy HH:mm:ss",        "MM/dd/yyyy'T'HH:mm:ss.SSS'Z'",
+                "MM/dd/yyyy'T'HH:mm:ss.SSSZ", "MM/dd/yyyy'T'HH:mm:ss.SSS",
+                "MM/dd/yyyy'T'HH:mm:ssZ",     "MM/dd/yyyy'T'HH:mm:ss",
+                "yyyy:MM:dd HH:mm:ss",        "yyyy/MM/dd",
                 "yyyy:MM:dd HH:mm:ss.SS",      "dd/MM/yyyy",
                 "dd MMM yyyy",                "dd-MMM-yyy"};
     
@@ -153,7 +153,7 @@ public class XMLData implements Data {
                                     //System.out.println("date111111" );
                                     SimpleDateFormat sf = new SimpleDateFormat("dd/MM/yyyy");
 
-                                    //Date date = sf.parse(tmstmp); 
+                                    //Date date = sf.parse(tmstmp);
                                     //System.out.println("date = " + date );
 //                                    System.out.println("return = " +sf.format(d1));
                                     //System.out.println(date.);
@@ -161,21 +161,21 @@ public class XMLData implements Data {
                                     tmstmp = sf.format(d1);
                                     return tmstmp;
                                 }
-                            } 
+                            }
                         }
                         else{
 //                            System.out.println("parse = " + parse);
                             //System.out.println("date111111" );
                             SimpleDateFormat sf = new SimpleDateFormat("dd/MM/yyyy");
 
-                            //Date date = sf.parse(tmstmp); 
+                            //Date date = sf.parse(tmstmp);
                             //System.out.println("date = " + date );
 //                            System.out.println("return = " +sf.format(d1));
                             //System.out.println(date.);
                             tmstmp = null;
                             tmstmp = sf.format(d1);
                             return tmstmp;
-                        }                        
+                        }
                     }
  
                     //System.out.println("Printing the value of " + parse);
@@ -211,7 +211,7 @@ public class XMLData implements Data {
         dataSet = new double[sizeOfRows][columnNames.length];
         
         try{
-            fXmlFile = new File(this.inputFile); 
+            fXmlFile = new File(this.inputFile);
             dbFactory = DocumentBuilderFactory.newInstance();
             dBuilder = dbFactory.newDocumentBuilder();
             doc = (Document) dBuilder.parse(fXmlFile);
@@ -220,7 +220,7 @@ public class XMLData implements Data {
             String[] value=null;
             for(int i=0; i<nList.getLength(); i++){ // records
                 Node medicalEvent = nList.item(i);
-                if (medicalEvent.getNodeType() == Node.ELEMENT_NODE) { 
+                if (medicalEvent.getNodeType() == Node.ELEMENT_NODE) {
                     Element mediEventElement = (Element) medicalEvent;
                     NodeList clinicVars = mediEventElement.getElementsByTagName("ns1:ClinicalVariables");    // split
                     value  = new String[this.namesToColumns.size()] ;
@@ -245,7 +245,7 @@ public class XMLData implements Data {
                                             //ErrorWindow.showErrorWindow("Column : " + colNames[i] + " is chosen as integer and you have double values");
                                             System.out.println("Column : " + colNames[i] + " is chosen as integer and you have double values");
                                             return null;
-                                        }   
+                                        }
                                     }
                                     else{
                                         dataSet[rec][col] = 2147483646;
@@ -312,7 +312,7 @@ public class XMLData implements Data {
                                         //if string is present in the dictionary, get its id
                                         int stringId = dictionary.getStringToId(var);
                                         dataSet[rec][col] = stringId;
-                                    } 
+                                    }
                                 }
                             }
                         }
@@ -455,13 +455,13 @@ public class XMLData implements Data {
         }
         
         try{
-            fXmlFile = new File(this.inputFile); 
+            fXmlFile = new File(this.inputFile);
             dbFactory = DocumentBuilderFactory.newInstance();
             dBuilder = dbFactory.newDocumentBuilder();
             doc = (Document) dBuilder.parse(fXmlFile);
 
             NodeList nList = doc.getElementsByTagName("MedicalEvent");
-            for(int i=0; i<nList.getLength(); i++){ // records  
+            for(int i=0; i<nList.getLength(); i++){ // records
                 
                 
                 //write table data
@@ -622,7 +622,7 @@ public class XMLData implements Data {
         
         try{
 //            System.out.println("file path: "+this.inputFile);
-            fXmlFile = new File(this.inputFile); 
+            fXmlFile = new File(this.inputFile);
             dbFactory = DocumentBuilderFactory.newInstance();
             dBuilder = dbFactory.newDocumentBuilder();
             doc = (Document) dBuilder.parse(fXmlFile);
@@ -727,7 +727,7 @@ public class XMLData implements Data {
                                         else if(chVar.isDate(value)){
                                             smallDataSet[0][colNum] ="date";
                                         }
-                                        else{  
+                                        else{
                                             smallDataSet[0][colNum] = "string";
                                         }
                                     }

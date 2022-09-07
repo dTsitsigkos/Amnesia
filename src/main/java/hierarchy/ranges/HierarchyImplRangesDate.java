@@ -152,7 +152,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
             else if(tokens[0].equalsIgnoreCase("height")){
                 this.height = Integer.parseInt(tokens[1]);
             }
-        }   
+        }
     }
     
     private void loadHierarchy() throws IOException, ParseException, LimitException{
@@ -176,14 +176,14 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
             }
             else{
                pDate.lowerBound = this.getDateFromString(tokens[0], true);
-               pDate.upperBound = this.getDateFromString(tokens[0], false); 
+               pDate.upperBound = this.getDateFromString(tokens[0], false);
             }
             //pDate.nodesType = nodesType;
             
             boolean isChild = false;
             List<RangeDate> ch = new ArrayList<>();
             for (String token : tokens){
-                if(token.equals("has")){ 
+                if(token.equals("has")){
                     isChild = true;
                     continue;
                 }
@@ -216,7 +216,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                     }
                     this.stats.put(newDate, new NodeStats(curLevel));
                     
-                    this.parents.put(newDate, pDate);  
+                    this.parents.put(newDate, pDate);
                 }
                 else{
                     this.stats.put(newDate, new NodeStats(curLevel-1));
@@ -269,10 +269,10 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                         tempArr1.add(tempChild.get(i));
                     }
                 }
-            }           
+            }
             allParents.put(level, tempArr1);
             tempArr2 = (ArrayList<RangeDate>) tempArr1.clone();
-            level ++;  
+            level ++;
         }
     }
 
@@ -439,7 +439,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                         for (RangeDate child : this.getChildren(curParent)){
                             sb.append(((RangeDate)child).dateToExportHierString(translateDateViaLevel(curLevel + 1)));
                             sb.append(" ");
-                        } 
+                        }
                         writer.println(((RangeDate)curParent).dateToExportHierString(translateDateViaLevel(curLevel)) + " has " + sb.toString());
                     }
                     
@@ -449,7 +449,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                 writer.println();
                 
             }
-            writer.close(); 
+            writer.close();
         } catch (FileNotFoundException | UnsupportedEncodingException ex) {
             Logger.getLogger(HierarchyImplDouble.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -558,7 +558,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                   root.setUpperBound(newValue.upperBound);
                   this.stats.put(root, new NodeStats(0));
             }
-            else{ // node with parent and children 
+            else{ // node with parent and children
                 this.children.put(newValue,childrenListNew);
                 this.children.remove(oldValue);
                 
@@ -754,7 +754,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                nodestat.setWeight(1);
                this.statsDistinct.put(columnData[c], nodestat);
             }
-        }   
+        }
     }
     
     public void compute(RangeDate r, Double value, boolean whichContain, boolean isRoot,Data dataset){
@@ -771,7 +771,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
             }
         }
         else{
-            try {             
+            try {
                 if(r.contains2(dataset.getDictionary().getIdToString(value.intValue()),whichContain)){
 //                System.out.println("Compute111111");
 //                System.out.println("value = " + value.toString());
@@ -1092,7 +1092,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
             temp = nodeInput.split("-");
 //            System.out.println("Length "+temp.length);
             if(temp.length == 2){
-                try {        
+                try {
                     if (!nodeInput.equals("(null)")){
                         node  = new RangeDate( this.getDateFromString(temp[0],true), this.getDateFromString(temp[1],false));
                     }
@@ -1105,7 +1105,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                 }
             }
             else{
-                try {        
+                try {
                     if (!nodeInput.equals("(null)")){
                         node  = new RangeDate( this.getDateFromString(nodeInput,true), this.getDateFromString(nodeInput,false));
                     }
@@ -1134,7 +1134,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                      
                         if ( nodeChilds != null){
                            
-                            for (int j = 0 ; j < nodeChilds.size() ; j ++){                                
+                            for (int j = 0 ; j < nodeChilds.size() ; j ++){
                                 
                                 if (this.getLevel(nodeChilds.get(j)) == this.height -1){
                                     color = "red";
@@ -1151,7 +1151,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                                 }
                                 
                                 
-                                n = new Node(label,label,i+1,color,this.hierarchyType + "," +this.nodesType);  
+                                n = new Node(label,label,i+1,color,this.hierarchyType + "," +this.nodesType);
                                 graph.setNode(n);
                                 e = new Edge(nodeRange.dateToString(translateDateViaLevel(i)),nodeChilds.get(j).dateToString(translateDateViaLevel(i+1)));
                                 graph.setEdge(e);
@@ -1191,7 +1191,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                                     label = nodeChilds.get(j).dateToString(i+1);
                                 }
                                                                
-                                n = new Node(label,label,i+1,color,this.hierarchyType + "," +this.nodesType);  
+                                n = new Node(label,label,i+1,color,this.hierarchyType + "," +this.nodesType);
                                 graph.setNode(n);
                                 e = new Edge(nodeRange.dateToString(i),nodeChilds.get(j).dateToString(i+1));
                                 graph.setEdge(e);
@@ -1232,7 +1232,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                                     label = nodeChilds.get(j).dateToString(translateDateViaLevel(1))+"";
                                 }
                                 
-                                n = new Node(label,label,i+1,color,this.hierarchyType + "," +this.nodesType);  
+                                n = new Node(label,label,i+1,color,this.hierarchyType + "," +this.nodesType);
                                 graph.setNode(n);
                                 e = new Edge(nodeRange.dateToString(translateDateViaLevel(0)),nodeChilds.get(j).dateToString(translateDateViaLevel(1)));
                                 graph.setEdge(e);
@@ -1249,7 +1249,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
 
 
             }
-        //}        
+        //}
         
         Collections.reverse(graph.getNodeList());
         Collections.reverse(graph.getEdgeList());
@@ -1403,11 +1403,11 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                     if(dictionary.getIdToString((int)dataset[i][col]).equals("NaN")){
                         RangeDate nullDate = new RangeDate(null,null);
                         if(this.parents.get(nullDate)==null){
-                            return "Node (null) for spaces values and non-Date values, is not defined in the hierarchy \""+this.name+"\""; 
+                            return "Node (null) for spaces values and non-Date values, is not defined in the hierarchy \""+this.name+"\"";
                         }
                     }
                     else if(!root.contains(dictionary.getIdToString((int)dataset[i][col]))){
-                      return "Value \""+dictionary.getIdToString((int)dataset[i][col])+"\" is not defined in the hierarchy \""+this.name+"\""; 
+                      return "Value \""+dictionary.getIdToString((int)dataset[i][col])+"\" is not defined in the hierarchy \""+this.name+"\"";
                     }
                 } catch (ParseException ex) {
                    Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);
@@ -1417,11 +1417,11 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
                         if(HierarchyImplString.getWholeDictionary().getIdToString((int)dataset[i][col]).equals("NaN")){
                              RangeDate nullDate = new RangeDate(null,null);
                              if(this.parents.get(nullDate)==null){
-                                 return "Node (null) for spaces values and non-Date values, is not defined in the hierarchy \""+this.name+"\""; 
+                                 return "Node (null) for spaces values and non-Date values, is not defined in the hierarchy \""+this.name+"\"";
                              }
                          }
                          else if(!root.contains(HierarchyImplString.getWholeDictionary().getIdToString((int)dataset[i][col]))){
-                           return "Value \""+dictionary.getIdToString((int)dataset[i][col])+"\" is not defined in the hierarchy \""+this.name+"\""; 
+                           return "Value \""+dictionary.getIdToString((int)dataset[i][col])+"\" is not defined in the hierarchy \""+this.name+"\"";
                          }
                     }catch (ParseException ex) {
                         Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);

@@ -52,7 +52,7 @@ public class MixedSolutionCombinations {
             domain.add(temp);
         }
         
-        List<Pair<Integer,Object>> prefix = new ArrayList<Pair<Integer,Object>>(); 
+        List<Pair<Integer,Object>> prefix = new ArrayList<Pair<Integer,Object>>();
         combGen(results, prefix, 0, base.size(), domain, base);
     }
     
@@ -78,7 +78,7 @@ public class MixedSolutionCombinations {
             while((Double)temp!=-1){
                result.add(((MixedApriori)alg).convertToPair(current.getKey(), temp));
                temp = hierarchy.getParentId((Double)temp);
-            } 
+            }
         }
     }
     
@@ -119,7 +119,7 @@ public class MixedSolutionCombinations {
                             }
                         }
                         else{
-                           temp.put(i,prefix.get(i)); 
+                           temp.put(i,prefix.get(i));
                         }
                     }
                     else{
@@ -247,7 +247,7 @@ public class MixedSolutionCombinations {
                                 else{
                                     temp.add(depth,((MixedApriori)alg).convertToPair(prefix.get(i).getKey(), -1.0));
                                 }
-                            }  
+                            }
                         }
                         else{
                             if(MixedCombinations.sameBranch(temp.get(i), domain.get(depth).get(j),this.hierarchies)){
@@ -257,7 +257,7 @@ public class MixedSolutionCombinations {
                                 else{
                                     temp.add(depth,((MixedApriori)alg).convertToPair(prefix.get(i).getKey(), -1.0));
                                 }
-                            }  
+                            }
                         }
                         
                     }
@@ -267,7 +267,7 @@ public class MixedSolutionCombinations {
                    continue;
                }
                combGen(results, temp, depth+1, size, domain, base);
-           } 
+           }
         }
     }
     

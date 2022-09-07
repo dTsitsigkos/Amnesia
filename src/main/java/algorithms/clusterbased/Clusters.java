@@ -591,7 +591,7 @@ public class Clusters {
                 this.currentSizeCl.put(clusterId, this.currentSizeCl.get(clusterId)+1);
                 if(this.withSplits && this.currentSizeCl.get(clusterId) == size+1){
                     if(split != null){
-                        split.acquire();   
+                        split.acquire();
                     }
                     this.executeBatch(clusterId);
                     newCluster = split(clusterId);
@@ -602,7 +602,7 @@ public class Clusters {
                 }
                 else if(counterInserts >= this.threshold){
                     if(split != null){
-                        split.acquire();   
+                        split.acquire();
                     }
                     this.executeBatch();
 
@@ -613,7 +613,7 @@ public class Clusters {
             }
             else if(counterInserts >= this.threshold){
                 if(split != null){
-                    split.acquire();   
+                    split.acquire();
                 }
                 this.executeBatch();
 
@@ -735,7 +735,7 @@ public class Clusters {
             ResultSet rs = stm.executeQuery(sqlSelect);
             ResultSetMetaData resultMeta = rs.getMetaData();
             Double[] record = new Double[resultMeta.getColumnCount()-3];
-            int size_cluster=0,i=0; 
+            int size_cluster=0,i=0;
             this.lastClusterId++;
             this.currentSizeCl.put(lastClusterId, 0);
             Centroid newCentroid = null;
@@ -772,7 +772,7 @@ public class Clusters {
                 else{
                     double distance = newCentroid.computeDistance(record,true);
                     this.update(clusterId, record[0].intValue(), distance);
-                    newCentroid.update(record,true); 
+                    newCentroid.update(record,true);
                 }
                 remainder--;
             }
@@ -802,7 +802,7 @@ public class Clusters {
                 else{
                     double distance = newCentroid.computeDistance(record,true);
                     this.update(clusterId, record[0].intValue(), distance);
-                    newCentroid.update(record,true); 
+                    newCentroid.update(record,true);
                 }
             }
             newClusters.add(this.lastClusterId);

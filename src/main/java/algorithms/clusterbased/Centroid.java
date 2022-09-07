@@ -92,7 +92,7 @@ public class Centroid {
             for(Entry<Integer,Pair<String,Object>> entry : this.centroidValues.entrySet()){
                 int column = entry.getKey();
                 Object centroidValue = null;
-                Object newValue = null ; 
+                Object newValue = null ;
                 Hierarchy hier = this.quasiHiers.get(column);
                 column = withRecId ? column+1 : column;
 //                if(record[column] != 2147483646.0){
@@ -166,7 +166,7 @@ public class Centroid {
                 }
 //                }
 //                else{
-//                   newValue = centroidValue; 
+//                   newValue = centroidValue;
 //                }
 
                 if(newValue!=null)
@@ -187,7 +187,7 @@ public class Centroid {
         Map<Integer,Pair<String,Object>> updated = new HashMap();
         for(Entry<Integer,Pair<String,Object>> entry : this.centroidValues.entrySet()){
             int column = entry.getKey();
-            Object newValue =null; 
+            Object newValue =null;
             Hierarchy hier = this.quasiHiers.get(column);
             if(hier.getHierarchyType().equals("distinct")){
                 Double centroidValue = (Double)entry.getValue().getValue();
@@ -197,7 +197,7 @@ public class Centroid {
             else{
                 if(hier.getNodesType().equals("date")){
                     Object centroidValue = entry.getValue().getValue();
-                    Object centroidValue2 = c.centroidValues.get(entry.getKey()).getValue();                  
+                    Object centroidValue2 = c.centroidValues.get(entry.getKey()).getValue();
                     Date dateCentroid=null,dateRec=null;
                     dateCentroid = new Date(this.dateValues.get(column));
                     dateRec = new Date(c.dateValues.get(column));
@@ -223,7 +223,7 @@ public class Centroid {
                             timeCentroid = dateCentroid.getTime();
                             
                         }
-                        long timeRec = c.dateValues.get(column); 
+                        long timeRec = c.dateValues.get(column);
                         if(timeRec == 0){
                             timeRec = dateRec.getTime();
                            
@@ -251,7 +251,7 @@ public class Centroid {
                         }
                         else{
                             newValue = ((HierarchyImplRangesDate)hier).findCommonRange((RangeDate)centroidValue,(RangeDate)centroidValue2);
-                        }                        
+                        }
                     }
                     else{
                         newValue = centroidValue;
@@ -431,7 +431,7 @@ public class Centroid {
             if(hier.getHierarchyType().equals("distinct")){
                 for(int i=0; i<records.length; i++){
                    records[i][entry.getKey()+1] = (Double)entry.getValue().getValue();
-                } 
+                }
             }
             else{
                 if(hier.getNodesType().equals("date")){

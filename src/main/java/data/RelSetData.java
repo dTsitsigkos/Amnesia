@@ -95,16 +95,16 @@ public class RelSetData implements Data {
     Map<Integer,String> biggerSample = null;
     
     
-    private static final String[] formats = { 
+    private static final String[] formats = {
                 "yyyy-MM-dd'T'HH:mm:ss'Z'",   "yyyy-MM-dd'T'HH:mm:ssZ",
                 "yyyy-MM-dd'T'HH:mm:ss",      "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-                "yyyy-MM-dd'T'HH:mm:ss.SSSZ", "yyyy-MM-dd HH:mm:ss", 
-                "MM/dd/yyyy HH:mm:ss",        "MM/dd/yyyy'T'HH:mm:ss.SSS'Z'", 
-                "MM/dd/yyyy'T'HH:mm:ss.SSSZ", "MM/dd/yyyy'T'HH:mm:ss.SSS", 
-                "MM/dd/yyyy'T'HH:mm:ssZ",     "MM/dd/yyyy'T'HH:mm:ss", 
-                "yyyy:MM:dd HH:mm:ss",        "yyyy/MM/dd", 
+                "yyyy-MM-dd'T'HH:mm:ss.SSSZ", "yyyy-MM-dd HH:mm:ss",
+                "MM/dd/yyyy HH:mm:ss",        "MM/dd/yyyy'T'HH:mm:ss.SSS'Z'",
+                "MM/dd/yyyy'T'HH:mm:ss.SSSZ", "MM/dd/yyyy'T'HH:mm:ss.SSS",
+                "MM/dd/yyyy'T'HH:mm:ssZ",     "MM/dd/yyyy'T'HH:mm:ss",
+                "yyyy:MM:dd HH:mm:ss",        "yyyy/MM/dd",
                 "yyyy:MM:dd HH:mm:ss.SS",      "dd/MM/yyyy",
-                "dd MMM yyyy",                "dd-MMM-yyy"};  
+                "dd MMM yyyy",                "dd-MMM-yyy"};
     
     
     public RelSetData(String inputFile, String del,String delSet,DictionaryString dict){
@@ -217,7 +217,7 @@ public class RelSetData implements Data {
                                 str = dictHier.getIdToString((int) setData[randomIndexToSwap][l]);
                             }
                             writer.print(str);
-                            if(l!=setData[randomIndexToSwap].length-1){    
+                            if(l!=setData[randomIndexToSwap].length-1){
                                 writer.print(this.delimeterSet);
                             }
                             
@@ -283,7 +283,7 @@ public class RelSetData implements Data {
             FileInputStream in2 = new FileInputStream(mapFile);
             ZipOutputStream out = new ZipOutputStream(new FileOutputStream(path+File.separator+"anonymized_files.zip"));
             
-            out.putNextEntry(new ZipEntry(this.inputFile.substring(this.inputFile.lastIndexOf(File.separator)+1))); 
+            out.putNextEntry(new ZipEntry(this.inputFile.substring(this.inputFile.lastIndexOf(File.separator)+1)));
 
             byte[] b = new byte[2048];
             int count;
@@ -340,7 +340,7 @@ public class RelSetData implements Data {
                                     //System.out.println("date111111" );
                                     SimpleDateFormat sf = new SimpleDateFormat("dd/MM/yyyy");
 
-                                    //Date date = sf.parse(tmstmp); 
+                                    //Date date = sf.parse(tmstmp);
                                     //System.out.println("date = " + date );
 //                                    System.out.println("return = " +sf.format(d1));
                                     //System.out.println(date.);
@@ -348,21 +348,21 @@ public class RelSetData implements Data {
                                     tmstmp = sf.format(d1);
                                     return tmstmp;
                                 }
-                            } 
+                            }
                         }
                         else{
 //                            System.out.println("parse = " + parse);
                             //System.out.println("date111111" );
                             SimpleDateFormat sf = new SimpleDateFormat("dd/MM/yyyy");
 
-                            //Date date = sf.parse(tmstmp); 
+                            //Date date = sf.parse(tmstmp);
                             //System.out.println("date = " + date );
 //                            System.out.println("return = " +sf.format(d1));
                             //System.out.println(date.);
                             tmstmp = null;
                             tmstmp = sf.format(d1);
                             return tmstmp;
-                        }                        
+                        }
                     }
  
                     //System.out.println("Printing the value of " + parse);
@@ -450,7 +450,7 @@ public class RelSetData implements Data {
                                     } catch (java.lang.NumberFormatException exc) {
                                         //ErrorWindow.showErrorWindow("Column : " + colNames[i] + " is chosen as integer and you have double values");
                                         throw new NotFoundValueException("Value \""+temp[i]+"\" is not an integer, \""+ colNames[i]+ "\" is an integer column");
-                                    }   
+                                    }
                                 }
                                 else{
                                     relationalData[counter][counter1] = 2147483646;
@@ -804,7 +804,7 @@ public class RelSetData implements Data {
                                 }
                                 int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
                                 
-                                ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size();  
+                                ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size();
                                 total += h.getLevel(((Double)anonymizedTable[row][column]).doubleValue())/((double)h.getHeight()-1)/hierarchies.size();
                             }
                             
@@ -841,7 +841,7 @@ public class RelSetData implements Data {
                                 }
                                 int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
 
-                                ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size(); 
+                                ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size();
                                 total += h.getLevel(anonymizedId.doubleValue())/((double)h.getHeight()-1)/hierarchies.size();
                             }
                         }
@@ -1015,7 +1015,7 @@ public class RelSetData implements Data {
                         colNamesType.put(counter, "date");
     //                        dictionary.put(counter, new DictionaryString());
                         if(removedColumn){
-                            newFormatDate[counter] = this.formatsDate[i]; 
+                            newFormatDate[counter] = this.formatsDate[i];
                         }
                     }
                     else if(columnTypes[i].equals("set")){
@@ -1114,7 +1114,7 @@ public class RelSetData implements Data {
                                     smallDataSet[counter][i] = "set";
                                     
                                 }
-                                else{  
+                                else{
                                     smallDataSet[counter][i] = "string";
                                 }
                             }
@@ -1167,7 +1167,7 @@ public class RelSetData implements Data {
                                     else if(temp[i].contains(this.delimeterSet)){
                                         smallDataSet[0][i] = "set";
                                     }
-                                    else{  
+                                    else{
                                         smallDataSet[0][i] = "string";
                                     }
                                 }

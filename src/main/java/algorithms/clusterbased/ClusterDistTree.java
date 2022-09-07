@@ -19,7 +19,7 @@ public class ClusterDistTree {
     
     Centroid parents[][]; /// level,parents
     int depth;
-//    Centroid[][][] centroids;  // last level 
+//    Centroid[][][] centroids;  // last level
     int children;
     int pointer_to_last;
     Map<Integer,Integer> levelsToSize;

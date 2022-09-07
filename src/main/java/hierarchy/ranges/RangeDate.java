@@ -46,7 +46,7 @@ public class RangeDate {
         this.upperBound = upperBound;
     }
     
-    @Override 
+    @Override
     public String toString(){
        StringBuilder sb = new StringBuilder();
 
@@ -55,7 +55,7 @@ public class RangeDate {
        sb.append(this.upperBound);
 
        return sb.toString();
-    }     
+    }
     
     @Override
     public boolean equals(Object obj){
@@ -95,7 +95,7 @@ public class RangeDate {
             return 0;
         }
         else if(this.upperBound==null && this.lowerBound==null){
-           return -1; 
+           return -1;
         }
         else if(d.upperBound==null && d.lowerBound==null){
             return 1;
@@ -259,7 +259,7 @@ public class RangeDate {
             }
             else{
                 return false;
-            }  
+            }
         }
     }
     
@@ -279,7 +279,7 @@ public class RangeDate {
                 str = calendar.get(Calendar.YEAR) + "-" +calendar2.get(Calendar.YEAR);
             }
             if((calendar.get(Calendar.YEAR) != calendar2.get(Calendar.YEAR)) && ((calendar.get(Calendar.MONTH) + 1) == 1 && (calendar2.get(Calendar.MONTH) + 1) == 12) &&  (calendar.get(Calendar.DAY_OF_MONTH) == 1 && calendar2.get(Calendar.DAY_OF_MONTH) == 31)){
-                return str; 
+                return str;
             }
             else{
                 if(calendar.get(Calendar.DAY_OF_MONTH) == 1 && lastDayOfMonth(calendar2.get(Calendar.YEAR),(calendar2.get(Calendar.MONTH) + 1),calendar2.get(Calendar.DAY_OF_MONTH)) && calendar.get(Calendar.MONTH) != calendar2.get(Calendar.MONTH)){
@@ -383,7 +383,7 @@ public class RangeDate {
                     }
                     else{
                         str = calendar.get(Calendar.YEAR) + "," +calendar2.get(Calendar.YEAR);
-                    }					
+                    }
                     break;
                 case 1:
                     str = (calendar.get(Calendar.MONTH) + 1) + "/" + calendar.get(Calendar.YEAR) + "," + (calendar2.get(Calendar.MONTH)  + 1) + "/" + calendar2.get(Calendar.YEAR);

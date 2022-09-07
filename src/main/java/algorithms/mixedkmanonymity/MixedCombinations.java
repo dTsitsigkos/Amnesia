@@ -230,7 +230,7 @@ public class MixedCombinations {
             }
             else if(first.getValue() instanceof RangeDouble || second.getValue() instanceof RangeDouble){
                 RangeDouble firstDouble;
-                RangeDouble secondDouble; 
+                RangeDouble secondDouble;
                 if(first.getValue() instanceof RangeDouble){
                     firstDouble = (RangeDouble) first.getValue();
                     secondDouble = (RangeDouble) h.getParent((Double) second.getValue());

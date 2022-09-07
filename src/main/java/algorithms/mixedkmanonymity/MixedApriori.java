@@ -273,7 +273,7 @@ public class MixedApriori implements Algorithm {
             for(int i=0; i<originalTransaction.length; i++){
                 if(this.columns.contains(i)){
                     Pair<Integer,Object> value = this.convertToPair(i, originalTransaction[i]);
-                    transaction.add(value); 
+                    transaction.add(value);
 
                 }
             }
@@ -290,7 +290,7 @@ public class MixedApriori implements Algorithm {
                 }
                 else{
                     if(i!=this.setColumn && this.columns.contains(i))
-                        value = this.convertToPair(i, originalTransaction[i]); 
+                        value = this.convertToPair(i, originalTransaction[i]);
                 }
                 if(value!=null)
                     transaction.add(value);
@@ -317,7 +317,7 @@ public class MixedApriori implements Algorithm {
         for(int i=0; i<originalTransaction.length; i++){
            
             Pair<Integer,Object> value = this.convertToPair(i, originalTransaction[i]);
-            transaction.add(originalTransaction[i]);    
+            transaction.add(originalTransaction[i]);
         }
         nextIndex++;
         return transaction;
@@ -345,7 +345,7 @@ public class MixedApriori implements Algorithm {
                 System.out.println("ok with tree "+this.anonymize_property+" m = "+j);
                 sortTrie();
                 System.out.println("ok with sort "+this.anonymize_property+" m = "+j);
-                fixAll();  
+                fixAll();
                 System.out.println("ok with fix "+this.anonymize_property+" m = "+j);
             }
             
@@ -534,9 +534,9 @@ public class MixedApriori implements Algorithm {
         if(numOfVisits != trieSet.size()){
             Set<Double> return_comb;
             if(this.keysSet==null){
-              this.keysSet =  (Set<Double>[]) this.trieSet.keySet().toArray(new HashSet[trieSet.size()]);  
+              this.keysSet =  (Set<Double>[]) this.trieSet.keySet().toArray(new HashSet[trieSet.size()]);
             }
-//            
+//
             return_comb =  this.keysSet[numOfVisits];
             if(trieSet.get(return_comb) >= k){
                 return null;
@@ -766,7 +766,7 @@ public class MixedApriori implements Algorithm {
             }
         }
 //        else{
-//           Set<Pair<Integer,Object>> combNode; 
+//           Set<Pair<Integer,Object>> combNode;
 //           while((combNode = preorderNextRelational()) != null){
 //               
 //           }
@@ -774,8 +774,8 @@ public class MixedApriori implements Algorithm {
     }
     
     
-     private void resetTestGens(){ /// if set relational 
-        if(this.anonymize_property.equals("set")){ 
+     private void resetTestGens(){ /// if set relational
+        if(this.anonymize_property.equals("set")){
 //            List<Integer> leavesIds = this.hierarchySet.getNodeIdsInLevel(0);
             
             for(Double leafId : domainLeavesSet){
@@ -813,7 +813,7 @@ public class MixedApriori implements Algorithm {
         }
     }
     
-    private double getTotalCost() { /// if set relational 
+    private double getTotalCost() { /// if set relational
         double res = 0;
         int count=0;
         if(this.anonymize_property.equals("set")){
@@ -863,7 +863,7 @@ public class MixedApriori implements Algorithm {
         return res;
     }
     
-    private double getTestCost() {  /// if set relational 
+    private double getTestCost() {  /// if set relational
         double res = 0;
         int count =0;
         if(this.anonymize_property.equals("set")){
@@ -917,7 +917,7 @@ public class MixedApriori implements Algorithm {
 //                                System.out.println("Cost Double Test val "+testCost+" original val "+leafId+" cost "+costsRelational.get(this.convertToPair(entry.getKey(),testCost))*hierarchy.getWeight(((Double)leafId).doubleValue()));
                             }
                             else{
-                                res += costsRelational.get(this.convertToPair(entry.getKey(),testCost))*hierarchy.getWeight(leafId); 
+                                res += costsRelational.get(this.convertToPair(entry.getKey(),testCost))*hierarchy.getWeight(leafId);
 //                                System.out.println("Cost Test val"+testCost+" cost "+costsRelational.get(this.convertToPair(entry.getKey(),testCost))*hierarchy.getWeight(leafId));
                             }
                         }
@@ -935,7 +935,7 @@ public class MixedApriori implements Algorithm {
     
     
     
-    private void createInternalStructures() { // if set relational 
+    private void createInternalStructures() { // if set relational
         // domainSize it is complicated for relational data
         // pointMap
         // testGens
@@ -1020,7 +1020,7 @@ public class MixedApriori implements Algorithm {
 //                        Set<Double> children = this.hierarchySet.getChildrenIds(nodeId);
 //                        if(children!=null){
 //                            if(height == 1){
-//                               costsSet.put(nodeId.doubleValue(), (double)children.size() / (double)domainSize); 
+//                               costsSet.put(nodeId.doubleValue(), (double)children.size() / (double)domainSize);
 //                            }
 //                            else{
 //                                for(Double child : children){
@@ -1142,10 +1142,10 @@ public class MixedApriori implements Algorithm {
                                 }
                                 if(this.getLevel(node) == 1){
                                     if(children!=null){
-                                        costsRelational.put(node, (double)children.size() / (double)domainSize); 
+                                        costsRelational.put(node, (double)children.size() / (double)domainSize);
                                     }
                                     else{
-                                        costsRelational.put(node, (double)findNumOfChildren(node) / (double)domainSize); 
+                                        costsRelational.put(node, (double)findNumOfChildren(node) / (double)domainSize);
                                     }
 //                                    System.out.println("node "+node+" with cost "+costsRelational.get(node) + " and height "+height);
                                 }
@@ -1164,7 +1164,7 @@ public class MixedApriori implements Algorithm {
 //                                    System.out.println("node "+" with cost "+costsRelational.get(node)+" and height "+height);
 //                                    if(height == hierarchy.getHeight()-1){
 //                                        testGensRelational.put(node, -1);
-//                                    } 
+//                                    }
                                 }
                             }
                             else{
@@ -1217,7 +1217,7 @@ public class MixedApriori implements Algorithm {
                         }
                     }
                 }
-            }     
+            }
             
         }
         
@@ -1292,7 +1292,7 @@ public class MixedApriori implements Algorithm {
                     return 0;
                 }
                 
-            } 
+            }
         });
         for(Pair<Integer,Object> item : transaction){
             expanded.add(item);
@@ -1326,7 +1326,7 @@ public class MixedApriori implements Algorithm {
             while((Double)temp!=-1){
                result.add(this.convertToPair(current.getKey(), temp));
                temp = hierarchy.getParentId((Double)temp);
-            } 
+            }
         }
         
     }
@@ -1356,7 +1356,7 @@ public class MixedApriori implements Algorithm {
                 return null;
 //            }
         }
-    } 
+    }
     
     
     ////////////////////////////////////////////////////////////////////////////////
@@ -1376,7 +1376,7 @@ public class MixedApriori implements Algorithm {
             else{
                 try {
                     if(((RangeDate) genVal.getValue()).contains(this.dataset.getDictionary().getIdToString((((Double)child).intValue())))){
-                        children.add(child); 
+                        children.add(child);
                     }
                 } catch (ParseException ex) {
                     Logger.getLogger(MixedApriori.class.getName()).log(Level.SEVERE, null, ex);
@@ -1470,12 +1470,12 @@ public class MixedApriori implements Algorithm {
         for(Double child : children){
             if(node.getValue() instanceof RangeDouble){
                 if(((RangeDouble)node.getValue()).contains(child)){
-                   count++; 
+                   count++;
                 }
                 
             }
             else{
-                try { 
+                try {
                     if(((RangeDate)node.getValue()).contains(this.dataset.getDictionary().getIdToString(child.intValue()))){
                         count++;
                     }
@@ -1484,7 +1484,7 @@ public class MixedApriori implements Algorithm {
                     System.out.println("Problem with parsing "+ex.getMessage());
                 }
                
-            }    
+            }
         }
         
         return count;
@@ -1710,7 +1710,7 @@ public class MixedApriori implements Algorithm {
                 for(Object child : children){
                     
                     genTest(this.convertToPair(generalized.getKey(),child), generalized);
-                } 
+                }
             }
         }
     }
@@ -1720,7 +1720,7 @@ public class MixedApriori implements Algorithm {
             testGensRelational.put(o, g.getValue());
         }
         else{
-            Set<Object> children; 
+            Set<Object> children;
             Hierarchy hierarchy =  this.hierarchies.get(o.getKey());
             children = this.hierarchies.get(o.getKey()).getChildrenIds((Double)o.getValue());
             if(children != null){
@@ -1752,7 +1752,7 @@ public class MixedApriori implements Algorithm {
             }
         }
         
-        existingCost = getTotalCost();  //// TODO change relational condition 
+        existingCost = getTotalCost();  //// TODO change relational condition
         newCost = getTestCost();
         
 //        System.out.println("exist cost "+existingCost+" test cost "+newCost+" for "+comb+" sum "+(newCost - existingCost));
@@ -1793,7 +1793,7 @@ public class MixedApriori implements Algorithm {
             if(i!=this.setColumn){
                 Pair<Integer,Object> value = getTranslation(this.convertToPair(i, originalTransaction[i]));
                 if(value!=null){
-                    anonTransaction.add(value); 
+                    anonTransaction.add(value);
                 }
             }
         }
@@ -1858,7 +1858,7 @@ public class MixedApriori implements Algorithm {
                     this.anonymize_relational[i][entry.getKey()] = rulesRelationalColumn.get(this.relationalData[i][entry.getKey()]);
                 }
             }
-        }   
+        }
     }
     
     private List<Pair<Integer,Object>> getNextTransactionMixed(){
@@ -1889,7 +1889,7 @@ public class MixedApriori implements Algorithm {
                 }
             }
             if(value!=null){
-                anonTransaction.add(value); 
+                anonTransaction.add(value);
             }
         }
         
@@ -1900,7 +1900,7 @@ public class MixedApriori implements Algorithm {
 //            if(i!=this.setColumn){
 //                Pair<Integer,Object> value = getTranslation(this.convertToPair(i, originalTransactionRelational[i]));
 //                if(value!=null){
-//                    anonTransaction.add(value); 
+//                    anonTransaction.add(value);
 //                }
 //            }
 //        }
@@ -1908,7 +1908,7 @@ public class MixedApriori implements Algorithm {
 //        for(int i=0; i<originalTransactionSet.length; i++){
 //            Pair<Integer,Object> value = getTranslation(this.convertToPair(this.setColumn, originalTransactionSet[i]));
 //            if(value!=null){
-//                anonTransaction.add(value); 
+//                anonTransaction.add(value);
 //            }
 //        }
             // do not forget -1 represent the set column
@@ -1988,7 +1988,7 @@ public class MixedApriori implements Algorithm {
 //                            value = ((Integer) value).doubleValue();
 //                        }
 //                        else{
-//                           value = (Double) value; 
+//                           value = (Double) value;
 //                        }
 //                        rules.put(value, pointMapRelational.get(this.convertToPair(entry.getKey(), value))[1]);
 //                    }
@@ -2012,7 +2012,7 @@ public class MixedApriori implements Algorithm {
                         value = ((Integer) value).doubleValue();
                     }
                     else{
-                       value = (Double) value; 
+                       value = (Double) value;
                     }
                     
                     if(anonymizedValue instanceof Integer){
@@ -2025,7 +2025,7 @@ public class MixedApriori implements Algorithm {
                             value = ((Integer) value).doubleValue();
                         }
                         else{
-                           value = (Double) value; 
+                           value = (Double) value;
                         }
                         
                         if(anonymizedValue instanceof Integer){

@@ -32,6 +32,6 @@ public class ColumnsNamesAndTypes {
 
     public void setType(String type) {
         this.type = type;
-    }  
+    }
     
 }
