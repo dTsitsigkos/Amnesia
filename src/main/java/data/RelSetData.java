@@ -60,7 +60,7 @@ public class RelSetData implements Data {
     private double setData[][] = null;
     private int sizeOfRows = 0;
     private int sizeOfCol = 0;
-    private String delimeter = null;
+    private String delimiter = null;
     @JsonView(View.GetDataTypes.class)
     private String delimeterSet = null;
     @JsonView(View.SmallDataSet.class)
@@ -123,10 +123,10 @@ public class RelSetData implements Data {
         
         this.inputFile = inputFile;
         if ( del == null ){
-            delimeter = ",";
+            delimiter = ",";
         }
         else{
-            delimeter = del;
+            delimiter = del;
         }
         
         delimeterSet = delSet;
@@ -313,7 +313,7 @@ public class RelSetData implements Data {
             Logger.getLogger(TXTData.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        System.out.println("done orgiginal data");
+        System.out.println("done original data");
     }
     
     public void setColumnNames(String[] columnNames) {
@@ -409,7 +409,7 @@ public class RelSetData implements Data {
                 
                 //do not read the fist line
                 if (FLAG == true){
-                    temp = strLine.split(delimeter,-1);
+                    temp = strLine.split(delimiter,-1);
                     for ( int i = 0 ; i < temp.length ; i ++){
                         if (checkColumns[i] == true){
                             temp[i] = temp[i].trim().replaceAll("\"", "").replaceAll("[\uFEFF-\uFFFF]", "").replace(".", "").replace("[","(").replace("]", ")");;
@@ -435,7 +435,7 @@ public class RelSetData implements Data {
                 }
                 else{
                     
-                    temp = strLine.split(delimeter,-1);
+                    temp = strLine.split(delimiter,-1);
                     counter1 = 0;
                     for (int i = 0; i < temp.length ; i ++ ){
                         if (checkColumns[i] == true){
@@ -977,7 +977,7 @@ public class RelSetData implements Data {
             
             while ((strLine = br.readLine()) != null)   {
                 if (firstLineNames == true){
-                    colNames = strLine.split(delimeter,-1);
+                    colNames = strLine.split(delimiter,-1);
                     for ( int i = 0 ; i < colNames.length ; i ++){
                         if ( checkColumns[i] == true){
                             colNamesType.put(counter,null);
@@ -1066,7 +1066,7 @@ public class RelSetData implements Data {
             br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
             while ((strLine = br.readLine()) != null)   {
                 if(firstLine){
-                    temp = strLine.split(delimeter,-1);
+                    temp = strLine.split(delimiter,-1);
                     columnNames = new String[temp.length];
                     smallDataSet = new String[6][temp.length];
                     this.formatsDate = new String[temp.length];
@@ -1083,7 +1083,7 @@ public class RelSetData implements Data {
                     firstLine = false;
                 }
                 else{
-                    temp = strLine.split(delimeter,-1);
+                    temp = strLine.split(delimiter,-1);
                     
                     if( temp.length != columnNames.length){
                         System.out.println("columnNames = " + columnNames.length +"\t temp = " + temp.length );
@@ -1442,7 +1442,7 @@ public class RelSetData implements Data {
     public void setMask(int column, int[] positions, char character, String option) {
         int stringCount;
         if(dictionary.isEmpty() && dictHier.isEmpty()){
-            System.out.println("Both empy load data");
+            System.out.println("Both empty load data");
             stringCount = 1;
         }
         else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
@@ -1606,7 +1606,7 @@ public class RelSetData implements Data {
     public void setRegex(int column, char character, String regex) {
         int stringCount;
         if(dictionary.isEmpty() && dictHier.isEmpty()){
-            System.out.println("Both empy load data");
+            System.out.println("Both empty load data");
             stringCount = 1;
         }
         else if(!dictionary.isEmpty() && !dictHier.isEmpty()){

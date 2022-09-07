@@ -74,7 +74,7 @@ public class SETData implements Data,Serializable {
     @JsonView(View.GetColumnNames.class)
     private String dataType = "setdata";
     @JsonView(View.GetDataTypes.class)
-    private String delimeter = null;
+    private String delimiter = null;
     @JsonView(View.GetDataTypes.class)
     private Map <Integer,String> colNamesType = null;
     private CheckVariables chVar = null;
@@ -112,12 +112,12 @@ public class SETData implements Data,Serializable {
         
         
         this.inputFile = inputFile;
-        System.out.println("DElimeter Set "+del);
+        System.out.println("DElimiter Set "+del);
         if ( del == null ){
-            delimeter = ",";
+            delimiter = ",";
         }
         else{
-            delimeter = del;
+            delimiter = del;
         
         }
         
@@ -138,7 +138,7 @@ public class SETData implements Data,Serializable {
         
         //save column types
         else{
-        temp = strLine.split(delimeter);
+        temp = strLine.split(delimiter);
         if (chVar.isInt(temp[0])){
         colNamesType.put(0, "int");
         }
@@ -221,7 +221,7 @@ public class SETData implements Data,Serializable {
             fstream = new FileInputStream(inputFile);
             in = new DataInputStream(fstream);
             br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
-            System.out.println("del save set "+delimeter);
+            System.out.println("del save set "+delimiter);
             
             while ((strLine = br.readLine()) != null){
                 
@@ -242,7 +242,7 @@ public class SETData implements Data,Serializable {
 //                    System.out.println("strLine = " + strLine);
   
                    
-                    temp = strLine.split("\\"+delimeter,-1);
+                    temp = strLine.split("\\"+delimiter,-1);
 //                    System.out.println("Set Data "+temp[0]);
                     
                     
@@ -413,7 +413,7 @@ public class SETData implements Data,Serializable {
 //    }
     
     public String getDelimiter(){
-        return this.delimeter;
+        return this.delimiter;
     }
     
     @Override
@@ -450,7 +450,7 @@ public class SETData implements Data,Serializable {
 
                         if(anonymizedTable[row][column] instanceof String){
                             String anonymizedValueRow = (String) anonymizedTable[row][column];
-                            String[] anonValues = anonymizedValueRow.split("\\"+delimeter,-1);
+                            String[] anonValues = anonymizedValueRow.split("\\"+delimiter,-1);
 //                            System.out.println("Array "+Arrays.toString(anonValues));
                             for(String anonVal : anonValues){
                                 Integer anonymizedId = this.getDictionary().getStringToId().get(anonVal);
@@ -639,7 +639,7 @@ public class SETData implements Data,Serializable {
                 
                 //save column types
                 else{
-                    /*temp = strLine.split(delimeter);
+                    /*temp = strLine.split(delimiter);
                     if (chVar.isInt(temp[0])){
                     colNamesType.put(0, "int");
                     }
@@ -689,7 +689,7 @@ public class SETData implements Data,Serializable {
         
         //save column types
         else{
-        temp = strLine.split(delimeter);
+        temp = strLine.split(delimiter);
         if (chVar.isInt(temp[0])){
         typeOfVar[0] = "int";
         }
@@ -766,7 +766,7 @@ public class SETData implements Data,Serializable {
                     if(var == null){
                         var = dictHier.getIdToString((int)dataSet[i][j]);
                     }
-                    linkedHashTemp.put(columnNames[0], linkedHashTemp.get(columnNames[0]) +delimeter+var);
+                    linkedHashTemp.put(columnNames[0], linkedHashTemp.get(columnNames[0]) +delimiter+var);
                 }
                 
             }
@@ -935,7 +935,7 @@ public class SETData implements Data,Serializable {
     public void setMask(int column, int[] positions, char character, String option) {
         int stringCount;
         if(dictionary.isEmpty() && dictHier.isEmpty()){
-            System.out.println("Both empy load data");
+            System.out.println("Both empty load data");
             stringCount = 1;
         }
         else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
@@ -1043,7 +1043,7 @@ public class SETData implements Data,Serializable {
     public void setRegex(int column, char character, String regex) {
         int stringCount;
         if(dictionary.isEmpty() && dictHier.isEmpty()){
-            System.out.println("Both empy load data");
+            System.out.println("Both empty load data");
             stringCount = 1;
         }
         else if(!dictionary.isEmpty() && !dictHier.isEmpty()){

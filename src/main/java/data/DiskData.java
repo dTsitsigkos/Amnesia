@@ -78,7 +78,7 @@ public class DiskData implements Data,Serializable{
     private String inputFile = null;
     @JsonView(View.GetColumnNames.class)
     private String dataType = "disk";
-    private String delimeter = null;
+    private String delimiter = null;
     private int sizeOfRows = 0;
     private String urlDatabase = null;
     private Connection conn = null;
@@ -134,7 +134,7 @@ public class DiskData implements Data,Serializable{
     public DiskData(String inputfile,String del,DictionaryString dict){
         this.recordsTotal = 0;
         this.inputFile = inputfile;
-        this.delimeter = del;
+        this.delimiter = del;
         colNamesType = new TreeMap<Integer,String>();
         colNamesPosition = new HashMap<Integer,String>();
         chVar = new CheckVariables();
@@ -530,7 +530,7 @@ public class DiskData implements Data,Serializable{
                 if(strLine.trim().isEmpty()){
                     continue;
                 }
-                temp = strLine.split(delimeter,-1);
+                temp = strLine.split(delimiter,-1);
                 counter1 = 0;
                 for (int i = 0; i < temp.length ; i ++ ){
                     if (checkColumns[i] == true){
@@ -1112,7 +1112,7 @@ public class DiskData implements Data,Serializable{
                 
                 //save column names
                 if (FLAG == true){
-                    colNames = strLine.split(delimeter,-1);
+                    colNames = strLine.split(delimiter,-1);
                     for ( int i = 0 ; i < colNames.length ; i ++){
                         if ( checkColumns[i] == true){
                             colNamesType.put(counter,null);
@@ -1187,7 +1187,7 @@ public class DiskData implements Data,Serializable{
             while ((strLine = br.readLine()) != null)   {
                 //escape first row
                 if (FLAG == true){
-                    temp = strLine.split(delimeter,-1);
+                    temp = strLine.split(delimiter,-1);
                     columnNames = new String[temp.length];
                     smallDataSet = new String[6][temp.length];
                     this.formatsDate = new String[temp.length];
@@ -1209,7 +1209,7 @@ public class DiskData implements Data,Serializable{
                 }
                 //save column types
                 else{
-                    temp = strLine.split(delimeter,-1);
+                    temp = strLine.split(delimiter,-1);
                     
                     if( temp.length != columnNames.length){
                         System.out.println("columnNames = " + columnNames.length +"\t temp = " + temp.length );
@@ -1454,7 +1454,7 @@ public class DiskData implements Data,Serializable{
             System.out.println("Records "+counterRow);
             
         }catch (OutOfMemoryError e) {
-            System.err.println("Error outofMemory free"+Runtime.getRuntime().freeMemory()+" Curent "+Runtime.getRuntime().totalMemory()+" max "+Runtime.getRuntime().maxMemory());
+            System.err.println("Error outofMemory free"+Runtime.getRuntime().freeMemory()+" Current "+Runtime.getRuntime().totalMemory()+" max "+Runtime.getRuntime().maxMemory());
             e.printStackTrace();
         }
         
@@ -2607,7 +2607,7 @@ public class DiskData implements Data,Serializable{
             return result;
         }catch(SQLException ex){
             ex.printStackTrace();
-            System.err.println("Error: "+ex.getMessage()+" check table existance disk");
+            System.err.println("Error: "+ex.getMessage()+" check table existence disk");
             Logger.getLogger(Clusters.class.getName()).log(Level.SEVERE, null, ex);
             
             if(rs!=null){
@@ -2678,7 +2678,7 @@ public class DiskData implements Data,Serializable{
             
             int stringCount;
             if(dictionary.isEmpty() && dictHier.isEmpty()){
-                System.out.println("Both empy load data");
+                System.out.println("Both empty load data");
                 stringCount = 1;
             }
             else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
@@ -2860,7 +2860,7 @@ public class DiskData implements Data,Serializable{
             
             int stringCount;
             if(dictionary.isEmpty() && dictHier.isEmpty()){
-                System.out.println("Both empy load data");
+                System.out.println("Both empty load data");
                 stringCount = 1;
             }
             else if(!dictionary.isEmpty() && !dictHier.isEmpty()){

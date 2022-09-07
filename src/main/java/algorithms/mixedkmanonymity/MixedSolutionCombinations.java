@@ -197,7 +197,7 @@ public class MixedSolutionCombinations {
                                 }
                             }
                         }catch(Exception e){
-                            System.out.println("PRoble with parsing "+e.getMessage());
+                            System.out.println("PRoblem with parsing "+e.getMessage());
                             return 0;
                         }
                     }

@@ -488,7 +488,7 @@ public class HierarchyImplString implements Hierarchy<Double> {
         for (Map.Entry<Double, Double> entry : parents.entrySet()) {
             System.out.println(entry.getKey()+" : "+entry.getValue());
         }
-        System.out.println("childrens");
+        System.out.println("children");
         for (Map.Entry<Double, List<Double>> entry : children.entrySet()) {
             System.out.println(entry.getKey()+" : "+entry.getValue());
         }
@@ -568,7 +568,7 @@ public class HierarchyImplString implements Hierarchy<Double> {
             writer.println();
             int counter = 1;
             
-            //write parents - childen to file
+            //write parents - children to file
             for(int curLevel = height - 2; curLevel >= 0; curLevel--){
                 //System.out.println("i = " + curLevel + "\t children = " + this.allParents.get(curLevel).toString() );
                 //List<String> p = this.allParents.get(curLevel);
@@ -1449,7 +1449,7 @@ public class HierarchyImplString implements Hierarchy<Double> {
     public void buildDictionary(DictionaryString dictionary) {
 //        int id = dictionary.getMaxUsedId();
 //        
-//        //add values to dictionnary bottom-up
+//        //add values to dictionary bottom-up
 //        for(int curLevel = Collections.max(this.allParents.keySet()); curLevel != -1; curLevel--){
 //            for(String value : this.allParents.get(curLevel)){
 //                if(!dictionary.containsString(value)){

@@ -12,11 +12,11 @@ The backend of Amnesia is implemented in Java using the Spring framework. Its co
 
     To successfully build the Amnesia engine follow these steps:
     1.   Clone the project
-    2.   Download pixelmed.jar from http://www.dclunie.com/pixelmed/software/webstart/pixelmed.jar and install manaully to amnesia's Dependencies.
+    2.   Download pixelmed.jar from http://www.dclunie.com/pixelmed/software/webstart/pixelmed.jar and install manually to amnesia's Dependencies.
     3.   Go to controller/AppCon.java and set the variable "os" with desired operation system ("windows" or "linux")
     4.   Build the project
     5.   Take the .jar from the "scr/target" directory. 
-    6.   Downoload https://amnesia.openaire.eu/countryDistributionZip.ser and put it in the same folder where Amnesia's jar file will be executed. 
+    6.   Download https://amnesia.openaire.eu/countryDistributionZip.set and put it in the same folder where Amnesia's jar file will be executed. 
     7.   Run via terminal java -Xms1024m -Xmx4096m -Dorg.eclipse.jetty.server.Request.maxFormKeys=1000000 -Dorg.eclipse.jetty.server.Request.maxFormContentSize=1000000 -jar "path_to_jar_file" --server.port=8181
 ⋅⋅⋅Then you can use the Amnesia’s API as in the following steps.
 
@@ -281,7 +281,7 @@ The anonymized data are stored in “anonymized_mixedData.csv” file
 
 **getAnonRules [POST]**
 - sol: json string array which contain the anonymize level of each quasi-identifier e.g. [1,2] only for simple table data
-- suppresed: boolean for only for simple table data
+- suppressed: boolean for only for simple table data
 - session: Set session id as header parameter 
 
 The current endpoint is not supported for disk-based data (Disk based simple table) because the algorithm is executed using clustering and similarities that do not generate anonymization rules. 
@@ -586,7 +586,7 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 
 - New clustering disk based algorithm.
 
-- Setted limits on dataset's records and on hierarchy's nodes for on-line version.
+- Set limits on dataset's records and on hierarchy's nodes for on-line version.
 
 - Faster loading of date values in dataset.
 
@@ -604,7 +604,7 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 
 - The on-line version of Amnesia is restricted to 3 minutes of processing time per anonymization task.
 
-- Fixed bug with characher encoding on several Linux distributions.
+- Fixed bug with character encoding on several Linux distributions.
 
 **version: 1.1.0**
 
@@ -656,7 +656,7 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 
 **version: 1.0.1**
 
-- Better inteface in pie graph.
+- Better interface in pie graph.
 
 - Changes in suppressing.
 

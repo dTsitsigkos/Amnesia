@@ -430,7 +430,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
             
             int counter = 1;
 
-            //write parents - childen to file
+            //write parents - children to file
             for(int curLevel = height - 2; curLevel >= 0; curLevel--){
                 System.out.println("curLevel = " + curLevel);
                 for (RangeDate curParent : this.allParents.get(curLevel)){
@@ -1090,7 +1090,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
 
             String []temp = null;
             temp = nodeInput.split("-");
-//            System.out.println("Lenght "+temp.length);
+//            System.out.println("Length "+temp.length);
             if(temp.length == 2){
                 try {        
                     if (!nodeInput.equals("(null)")){
