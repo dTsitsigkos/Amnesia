@@ -16,7 +16,7 @@ The backend of Amnesia is implemented in Java using the Spring framework. Its co
     3.   Go to controller/AppCon.java and set the variable "os" with desired operation system ("windows" or "linux")
     4.   Build the project
     5.   Take the .jar from the "scr/target" directory. 
-    6.   Download https://amnesia.openaire.eu/countryDistributionZip.set and put it in the same folder where Amnesia's jar file will be executed. 
+    6.   Download https://amnesia.openaire.eu/countryDistributionZip.ser and put it in the same folder where Amnesia's jar file will be executed. 
     7.   Run via terminal java -Xms1024m -Xmx4096m -Dorg.eclipse.jetty.server.Request.maxFormKeys=1000000 -Dorg.eclipse.jetty.server.Request.maxFormContentSize=1000000 -jar "path_to_jar_file" --server.port=8181
 ⋅⋅⋅Then you can use the Amnesia’s API as in the following steps.
 
