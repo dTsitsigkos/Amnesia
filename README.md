@@ -475,6 +475,13 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 
 
 ## Version History
+**version 1.3.3 (release date: 25/09/2023)**
+- Fixed phrasal expressions.
+- Fixed bug in Information Loss.
+- Fixed bug in dataset loading procedure.
+- Changed programming code in Flash algorithm.
+- Save and Load Hierarchies with JSON files.
+
 **version 1.3.2 (release date: 10/04/2022)**
 - Bugs fixed in Parallel k-Anonymization.
 - Bug fixed in statistics on solution graph.
