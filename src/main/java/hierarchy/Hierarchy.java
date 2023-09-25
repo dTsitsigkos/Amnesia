@@ -36,7 +36,7 @@ import java.util.Date;
  */
 public interface Hierarchy <T> {
     public int online_limit = 1000;
-    public String online_version = "onlineds";
+    public String online_version = "onlinedq";
     public int[][] getHierarchy();
     public void setHierarchy();
     public void setDictionaryData(DictionaryString dict);
@@ -44,6 +44,7 @@ public interface Hierarchy <T> {
     public void print();
     
     public void load() throws LimitException;
+    public void loadJson() throws LimitException;
     public List<T> getChildren(T parent);
     public Integer getLevel(T node);
     public Integer getLevel(double nodeId);
@@ -58,6 +59,7 @@ public interface Hierarchy <T> {
     public String getName();
     public Map<Integer, ArrayList<T>> getAllParents();
     public void export(String file);
+    public void exportJson(String file);
     public void findAllParents();
     public boolean contains(T o);
 

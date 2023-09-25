@@ -55,7 +55,7 @@ public class Clusters {
     private int threshold = 8000;
     private int computedSmallSize = 0;
     private boolean withSplits;
-    private double recordsProportion = 0.1;
+    private double recordsProportion = 0.3;
     
     public Clusters(String urlDatabase, int maxclusters, int k){
         this.urlDb = urlDatabase;
@@ -294,7 +294,7 @@ public class Clusters {
                 this.counterDeletions -= counterDelete;
             }
         }catch(Exception e){
-            System.err.println("Error : cluster execute batch "+e.getMessage());
+            System.err.println("Error : cluster excute batch "+e.getMessage());
             e.printStackTrace();
             try {
                 this.conn.rollback();
@@ -343,7 +343,7 @@ public class Clusters {
                 this.counterDeletions = 0;
             }
         }catch(Exception e){
-            System.err.println("Error : cluster execute batch "+e.getMessage());
+            System.err.println("Error : cluster excute batch "+e.getMessage());
             e.printStackTrace();
             try {
                 this.conn.rollback();
@@ -399,7 +399,7 @@ public class Clusters {
                 counterInserts -= counterUpdate;
             }
         }catch(Exception e){
-            System.err.println("Error : cluster execute batch "+e.getMessage());
+            System.err.println("Error : cluster excute batch "+e.getMessage());
             System.err.println(errMessage);
             e.printStackTrace();
             try {
@@ -503,7 +503,7 @@ public class Clusters {
                 counterInserts = 0;
             }
         }catch(Exception e){
-            System.err.println("Error : cluster execute batch "+e.getMessage());
+            System.err.println("Error : cluster excute batch "+e.getMessage());
             System.err.println(errMessage);
             e.printStackTrace();
             try {
@@ -692,7 +692,7 @@ public class Clusters {
             
         }catch(Exception e){
             e.printStackTrace();
-            System.err.println("Error getClusterDatasetRecs : "+e.getMessage()+" clusterId "+cluster+" length "+this.currentSizeCl.get(cluster));
+            System.err.println("Error getClusterDatasetRecs : "+e.getMessage()+" clusterId "+cluster+" lenght "+this.currentSizeCl.get(cluster));
         }finally{
             if(stm!=null){
                 try {

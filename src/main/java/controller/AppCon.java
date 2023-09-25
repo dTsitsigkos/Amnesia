@@ -4,8 +4,9 @@ package controller;
 import algorithms.Algorithm;
 import algorithms.clusterbased.ClusterBasedAlgorithm;
 import algorithms.demographics.DemographicAlgorithm;
+import algorithms.differentialprivacy.DifferentialPrivacyAlgorithm;
 import algorithms.flash.Flash;
-import algorithms.flash.LatticeNode;
+import algorithms.flash.GridNode;
 import algorithms.kmanonymity.Apriori;
 import algorithms.mixedkmanonymity.MixedApriori;
 import algorithms.parallelflash.ParallelFlash;
@@ -122,6 +123,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.system.ApplicationHome;
 import org.springframework.boot.SpringApplication;
@@ -174,7 +176,7 @@ import zenodo.ZenodoFilesToJson;
 @SpringBootApplication
 public class AppCon extends SpringBootServletInitializer {
     private static Class<AppCon> applicationClass = AppCon.class;
-    public static String os = "linux";
+    public static String os = "windows";
     public static String rootPath = System.getProperty("catalina.home");
     public static String parentDir; 
 
@@ -681,7 +683,7 @@ class AppController {
         DataInputStream in = null;
         BufferedReader br = null;
         String strLine = null;
-        String delimiter = null;
+        String delimeter = null;
         String result = null;
         Map<String,Hierarchy> hierarchies = null;
         DictionaryString dict = null;
@@ -726,10 +728,10 @@ class AppController {
         else if (datatype.equals("tabular")){
 
             if ( del == null ){
-                delimiter = ",";
+                delimeter = ",";
             }
             else{
-                delimiter = del;
+                delimeter = del;
             }
             
             System.out.println("del "+del);
@@ -740,16 +742,16 @@ class AppController {
             
             if(!fullPath.toLowerCase().endsWith(".xml")){
                 while ((strLine = br.readLine()) != null){
-                    if ( strLine.contains(delimiter)){
-                        data = new TXTData(fullPath,delimiter,dict);
+                    if ( strLine.contains(delimeter)){
+                        data = new TXTData(fullPath,delimeter,dict);
                     }
                     else{
                         if ((strLine = br.readLine()) != null){
-                            if ( strLine.contains(delimiter)){
-                                //data = new SETData(fullPath,delimiter);
+                            if ( strLine.contains(delimeter)){
+                                //data = new SETData(fullPath,delimeter);
                             }
                             else{
-                                data = new TXTData(fullPath,delimiter,dict);
+                                data = new TXTData(fullPath,delimeter,dict);
                             }
                         }
                     }
@@ -1227,8 +1229,12 @@ class AppController {
             }
 
 
-
-            h.load();
+            if(fullPath.endsWith(".txt")){
+                h.load();
+            }
+            else{
+                h.loadJson();
+            }
             session.setAttribute("selectedhier", h.getName());
             hierarchies.put(h.getName(), h);
 
@@ -1258,10 +1264,11 @@ class AppController {
         String inputPath = (String)session.getAttribute("inputpath");
         this.createInputPath(inputPath, session);
         
-        File file = new File(inputPath + File.separator +hierName + ".txt");
+//        File file = new File(inputPath + File.separator +hierName + ".txt");
+        File file = new File(inputPath + File.separator + hierName+".json");
 
         
-        h.export(file.getAbsolutePath());
+        h.exportJson(file.getAbsolutePath());
         
         
         InputStream myStream = new FileInputStream(file);
@@ -1269,7 +1276,8 @@ class AppController {
 	// Set the content type and attachment header.
         if (h.getHierarchyType().equals("distinct")){
             response.addHeader("Content-disposition", "attachment;filename=distinct_hier_"+file.getName());
-            response.setContentType("txt/plain");
+//            response.setContentType("txt/plain");
+            response.setContentType("application/json");
         }
         else{
             response.addHeader("Content-disposition", "attachment;filename=range_hier_"+file.getName());
@@ -1663,6 +1671,11 @@ class AppController {
             algorithm = new DemographicAlgorithm();
             session.setAttribute("algorithm", "demographic");
         }
+        else if(algorithmSelected.equals("dp")){
+            args.put("k", k);
+            algorithm = new DifferentialPrivacyAlgorithm();
+            session.setAttribute("algorithm", "dp");
+        }
         else if(algorithmSelected.equals("kmAnonymity") || algorithmSelected.equals("apriori") ||
                 algorithmSelected.equals("AprioriShort") || algorithmSelected.equals("mixedapriori")){
                 args.put("k", k);
@@ -1698,6 +1711,7 @@ class AppController {
                 algorithm = new MixedApriori();
             }
             
+            
 
             session.setAttribute("algorithm", "apriori");
 
@@ -1706,8 +1720,8 @@ class AppController {
 
         algorithm.setDataset(data);
         algorithm.setHierarchies(quasiIdentifiers);
-
         algorithm.setArguments(args);
+     
 
 
 //        System.out.println("k = " + k + "\t m = " + m );
@@ -1787,8 +1801,11 @@ class AppController {
 //            System.out.println("result set = " + algorithm.getResultSet() );
         
             session.setAttribute("results", algorithm.getResultSet());
+//            String sol = this.InformationLoss(session);
+//            System.out.println("Solutions pFlash "+algorithm.getResultSet());
+//            System.out.println("Sol pFlash "+sol);
 //            System.out.println("algorithm : "+algorithmSelected);
-            if(!algorithmSelected.equals("apriori") && !algorithmSelected.equals("mixedapriori") && !algorithmSelected.equals("clustering") && !algorithmSelected.equals("demographic")){
+            if(!algorithmSelected.equals("dp") && !algorithmSelected.equals("apriori") && !algorithmSelected.equals("mixedapriori") && !algorithmSelected.equals("clustering") && !algorithmSelected.equals("demographic")){
                 Graph graph = algorithm.getLattice();
 
                 session.setAttribute("graph", graph);
@@ -1816,36 +1833,36 @@ class AppController {
     
     @RequestMapping(value="/action/informationloss", method = RequestMethod.GET) //method = RequestMethod.POST
     public @ResponseBody String InformationLoss ( HttpSession session) {
-        Set<LatticeNode> infoLossFirstStep = new HashSet<>();
-        Set<LatticeNode> infoLossSecondStep = new HashSet<>();
+        Set<GridNode> infoLossFirstStep = new HashSet<>();
+        Set<GridNode> infoLossSecondStep = new HashSet<>();
         int minSum = 0;
         int []minHierArray;
         int minHier;
-        LatticeNode solution = null;
+        GridNode solution = null;
         String solutionStr = null;
         
         boolean FLAG = false;
         
-        Set<LatticeNode> results = (Set<LatticeNode>) session.getAttribute("results");
+        Set<GridNode> results = (Set<GridNode>) session.getAttribute("results");
         /*for ( LatticeNode n : results){
             System.out.println("n = " + n + "\t level = " + n.getLevel() );
         }*/
         
         //first step, sum of levels
-        for ( LatticeNode n : results){
+        for ( GridNode n : results){
             if (FLAG == false){
-                minSum = n.getLevel();
+                minSum = n.getLayer();
                 FLAG = true;
             }
             else{
-                if ( minSum > n.getLevel()){
-                    minSum = n.getLevel();
+                if ( minSum > n.getLayer()){
+                    minSum = n.getLayer();
                 }
             }
         }
         
-        for ( LatticeNode n : results){
-            if ( minSum == n.getLevel()){
+        for ( GridNode n : results){
+            if ( minSum == n.getLayer()){
                 infoLossFirstStep.add(n);
             }         
         }
@@ -1853,7 +1870,7 @@ class AppController {
         //second step, min max hierarchy
         minHierArray = new int[infoLossFirstStep.size()];
         int counter = 0;
-        for ( LatticeNode n : infoLossFirstStep){
+        for ( GridNode n : infoLossFirstStep){
             int []temp = n.getArray();
             minHierArray[counter] = Ints.max(temp);
             counter++;
@@ -1861,7 +1878,7 @@ class AppController {
 //        System.out.println("Info loass "+Arrays.toString(minHierArray));
         minHier = Ints.min(minHierArray);
 
-        for ( LatticeNode n : infoLossFirstStep){
+        for ( GridNode n : infoLossFirstStep){
             int []temp = n.getArray();
             if (minHier == Ints.max(temp)){
                 infoLossSecondStep.add(n);
@@ -1869,7 +1886,7 @@ class AppController {
         }
  
         //third step, choose the first one
-        for ( LatticeNode n : infoLossSecondStep){
+        for ( GridNode n : infoLossSecondStep){
             solution = n;
             break;
         }
@@ -1891,12 +1908,13 @@ class AppController {
         AnonymizedDataset anonData = (AnonymizedDataset) session.getAttribute("anondata");
         Map<Integer, Hierarchy> quasiIdentifiers = (Map<Integer, Hierarchy>)session.getAttribute("quasiIdentifiers");
         Map<String, Map<String, String>> allRules = (Map<String, Map<String, String>>)session.getAttribute("anonrules");
-        if(anonData == null){
-            anonData = this.getAnonDataSet(0,10,session);
-        }
-        else{
-            anonData.setStart(0);
-        }
+        anonData = this.getAnonDataSet(0,10,session);
+//        if(anonData == null){
+//            anonData = this.getAnonDataSet(0,10,session);
+//        }
+//        else{
+//            anonData.setStart(0);
+//        }
         
         
         if(data instanceof TXTData || data instanceof DICOMData){
@@ -1947,7 +1965,7 @@ class AppController {
         }
         
         graph = (Graph) session.getAttribute("graph");
-        Set<LatticeNode> results = (Set<LatticeNode>) session.getAttribute("results");
+        Set<GridNode> results = (Set<GridNode>) session.getAttribute("results");
         
         
         
@@ -1968,6 +1986,7 @@ class AppController {
         Map<Integer, Hierarchy> quasiIdentifiers = (Map<Integer, Hierarchy>)session.getAttribute("quasiIdentifiers");
         Data data = (Data) session.getAttribute("data");
         Map<Integer, Set<String>> toSuppress = (Map<Integer, Set<String>>)session.getAttribute("tosuppress");
+        String algorithm = (String) session.getAttribute("algorithm");
         Map<String, Map<String, String>> allRules = (Map<String, Map<String, String>>)session.getAttribute("anonrules");
         
         Map<String, Set<String>> toSuppressJson = null;
@@ -1981,6 +2000,7 @@ class AppController {
         if ( allRules == null){
             //System.out.println("get anon dataset to suppress = " + toSuppress);
             if (toSuppress != null){
+                System.out.println("Suppression is cuclulate");
                 toSuppressJson = new HashMap<String, Set<String>>();
                 for (Map.Entry<Integer, Set<String>> entry : toSuppress.entrySet()) {
                     if ( entry.getKey().toString().equals("-1")){
@@ -2026,9 +2046,17 @@ class AppController {
                 //Map<String, Map<String, String>> allRules = (Map<String, Map<String, String>>)session.getAttribute("anonrules");
                 anonData = new AnonymizedDataset(data,start,length,selectedNode,quasiIdentifiers,toSuppress,selectedAttrNames,toSuppressJson,false);
 //                anonData.setDataOriginal(originalData);
-                if (!data.getClass().toString().contains("SET") && !data.getClass().toString().contains("RelSet") && !data.getClass().toString().contains("Disk")){
+                if(algorithm!=null && algorithm.equals("dp")){
+                    if(data instanceof TXTData){
+                        Object[][] anonymdata = (Object[][]) session.getAttribute("results");
+                        anonData.renderAnonymizeDifferential(anonymdata);
+                    }
+                    else{
+                        anonData.renderAnonymizeDifferentialDisk();
+                    }
+                }
+                else if (!data.getClass().toString().contains("SET") && !data.getClass().toString().contains("RelSet") && !data.getClass().toString().contains("Disk")){
                     System.out.println("action/getanondataset TXT ===========");
-                    String algorithm = (String) session.getAttribute("algorithm");
                     if ( allRules == null){
                         if(algorithm!=null && algorithm.equals("demographic")){
                             Map<Integer, Map<Integer,Object>> rules = (Map<Integer, Map<Integer,Object>>) session.getAttribute("results");
@@ -2187,7 +2215,7 @@ class AppController {
             
 
             byte[] outputByte = new byte[50000];
-            //copy binary context to output stream
+            //copy binary contect to output stream
             while(fileIn.read(outputByte, 0, 50000) != -1)
             {
                 out.write(outputByte, 0, 50000);
@@ -2244,10 +2272,17 @@ class AppController {
             }
         }
         else if(data.getClass().toGenericString().contains("Disk")){
+            String algorithm = (String) session.getAttribute("algorithm");
             System.out.println("Mpainei gia disk export");
             try{
-                exportData = anonData.exportDiskDataset(file.getAbsolutePath(),quasiIdentifiers);
+                if(algorithm!=null && algorithm.equals("dp")){
+                    exportData = anonData.exportDiskDatasetDifferential(file.getAbsolutePath(),quasiIdentifiers);
+                }
+                else{
+                    exportData = anonData.exportDiskDataset(file.getAbsolutePath(),quasiIdentifiers);
+                }
             }catch(Exception e){
+                e.printStackTrace();
                 anonData.setLength(data.getRecordsTotal());
                 anonData.anonymizeWithImportedRulesForDisk(allRules,file.getAbsolutePath());
             }
@@ -2257,6 +2292,10 @@ class AppController {
             if(algorithm!=null && algorithm.equals("demographic")){
                 Map<Integer, Map<Integer,Object>> rules = (Map<Integer, Map<Integer,Object>>) session.getAttribute("results");
                 anonData.exportDataset(file.getAbsolutePath(),rules);
+            }
+            else if(algorithm!=null && algorithm.equals("dp")){
+                Object[][] anonymdata = (Object[][]) session.getAttribute("results");
+                anonData.exportDatasetDifferential(file.getAbsolutePath(),anonymdata);
             }
             else{
                 try{
@@ -2884,7 +2923,7 @@ class AppController {
                 }
             }
             else{
-                //// TODO add check intdouble existence
+                //// TODO add check intdouble existance
                 if(newNode.equals("(null)")){
                     if(h.getParent(Double.NaN)!=null || h.getParent(2147483646.0)!=null){
                         return "The node exists in hierarchy";
@@ -3027,7 +3066,7 @@ class AppController {
                 }
             }
             else{ // distinct
-                //// TODO edit check intdouble existence 
+                //// TODO edit check intdouble existance 
                 h.edit(Double.parseDouble(oldNode), Double.parseDouble(newNode));
             }
         }
@@ -4175,10 +4214,11 @@ class AppController {
         Data data = (Data) session.getAttribute("data");
         Map<String, Hierarchy> hierarchies = (Map<String, Hierarchy>) session.getAttribute("hierarchies");
         
-        
-        for(Hierarchy h : hierarchies.values()){
-            if(h.getHierarchyType().contains("demographic")){
-                return "demographic";
+        if(hierarchies != null){
+            for(Hierarchy h : hierarchies.values()){
+                if(h.getHierarchyType().contains("demographic")){
+                    return "demographic";
+                }
             }
         }
         
@@ -4350,7 +4390,7 @@ class AppController {
             check.setOriginalExists("true");
             check.setAnonExists("noalgo");
         }
-        else if(data!=null && hierarchies!=null && algorithm!=null && (algorithm.equals("kmAnonymity") || algorithm.equals("apriori") || algorithm.equals("AprioriShort") || algorithm.equals("clustering")) || algorithm.equals("demographic") && selectednode==null){
+        else if(data!=null && hierarchies!=null && algorithm!=null && (algorithm.equals("kmAnonymity") || algorithm.equals("apriori") || algorithm.equals("AprioriShort") || algorithm.equals("clustering")) || algorithm.equals("demographic") || algorithm.equals("dp") && selectednode==null){
             check.setOriginalExists("true");
             check.setAnonExists("true");
         }
@@ -4614,7 +4654,7 @@ class AppController {
                 }
                 
             }
-            System.out.println("chackColumns "+Arrays.toString(checkColumns));
+            System.out.println("checkColumns "+Arrays.toString(checkColumns));
             this.loadDataset(vartypes, checkColumns, session);
         }catch(Exception e){
             e.printStackTrace();
@@ -4630,7 +4670,7 @@ class AppController {
         response.setStatus(HttpServletResponse.SC_OK);
         JSONObject jsonAnswer = new JSONObject();
         jsonAnswer.put("Status","Success");
-        jsonAnswer.put("Message","Dataset loaded successfully!");
+        jsonAnswer.put("Message","Dataset is  successfully loaded!");
         response.getOutputStream().print(jsonAnswer.toString());
     }
     
@@ -4648,6 +4688,7 @@ class AppController {
         //@RequestParam("step") double step, @RequestParam("sorting") String sorting, @RequestParam("hiername") String hiername, 
         //@RequestParam("fanout") int fanout, @RequestParam("limits") String limits, @RequestParam("months") int months, 
         //@RequestParam("days") int days, @RequestParam("years") int years,  @RequestParam("length") int length
+        
         
         try{
             Data data = (Data) session.getAttribute("data");
@@ -4676,6 +4717,19 @@ class AppController {
     @RequestMapping(value="/loadHierarchies",  method = RequestMethod.POST)
     public void loadHierarchies(@RequestParam("hierarchies") MultipartFile[] hierarchies, HttpSession session, HttpServletResponse response) throws IOException{
         try{
+            Map<String, Hierarchy> hierarchiesLoaded = (Map<String, Hierarchy>) session.getAttribute("hierarchies");
+            if(hierarchiesLoaded != null){
+                for(Map.Entry<String,Hierarchy> hierLoaded : hierarchiesLoaded.entrySet()){
+                    if(hierLoaded.getValue().getHierarchyType().contains("demographic")){
+                        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                        JSONObject jsonAnswer = new JSONObject();
+                        jsonAnswer.put("Status","Fail");
+                        jsonAnswer.put("Message","Failed to load custom hierarchies due to demographic hierarchies have already loaded, please remove demographic hierarchies and try again!");
+                        response.getOutputStream().print(jsonAnswer.toString());
+                        return;
+                    }
+                }
+            }
             for(int i=0; i<hierarchies.length; i++){
                 this.hierarchy(hierarchies[i], false, session);
             }
@@ -4701,7 +4755,13 @@ class AppController {
         System.out.println("session anonymization "+session.getId());
         try{
             Data data = (Data) session.getAttribute("data");
+            String hierType = "other";
             Map<String, Hierarchy> hierarchies = (Map<String, Hierarchy>) session.getAttribute("hierarchies");
+            for(Map.Entry<String,Hierarchy> hier : hierarchies.entrySet()){
+                if(hier.getValue().getHierarchyType().contains("demographic")){
+                    hierType = "demographic";
+                }
+            }
             Map<String,String> colNamesHier = this.jsonToMap(bind);
             Map<Integer, Hierarchy> quasiIdentifiers = new HashMap();
            
@@ -4729,10 +4789,15 @@ class AppController {
             
             Map<String, Integer> args = new HashMap<>();
             Algorithm algorithm = null;
-            if(data instanceof TXTData){
+            if(hierType.equals("demographic")){
                 args.put("k", k);
-                algorithm = new Flash();
-                session.setAttribute("algorithm", "flash");
+                algorithm = new DemographicAlgorithm();
+                session.setAttribute("algorithm", "demographic");
+            }
+            else if(data instanceof TXTData || data instanceof DICOMData){
+                args.put("k", k);
+                algorithm = new ParallelFlash();
+                session.setAttribute("algorithm", "pFlash");
             }
             else if(data instanceof SETData){
                 args.put("k", k);
@@ -4875,7 +4940,7 @@ class AppController {
 
                 session.setAttribute("results", algorithm.getResultSet());
     //            System.out.println("algorithm : "+algorithmSelected);
-                if(data instanceof TXTData){
+                if((data instanceof TXTData || data instanceof DICOMData) && !(hierType.equals("demographic"))){
                     Graph graph = algorithm.getLattice();
                     session.setAttribute("graph", graph);
                     JSONObject jsonAnswer = new JSONObject();
@@ -4883,7 +4948,7 @@ class AppController {
                     String idSol = "sol";
                     for(int i=0; i<nodesSol.size(); i++){
                         JSONObject levelRes = new JSONObject();
-                        levelRes.put("levels", nodesSol.get(i).getLabel());
+                        levelRes.put("levels", nodesSol.get(i).getLabel().replace(" ", ""));
                         levelRes.put("result", nodesSol.get(i).getColor().toLowerCase().contains("red") ? "unsafe" : "safe");
                         jsonAnswer.put(idSol+i,levelRes);
                     }
@@ -4957,7 +5022,7 @@ class AppController {
                 jsonAnswer.put("Message","To produce a k="+k+" anonymity solution, it must be suppressed by "+suppress+"%");
             }
             else{
-                jsonAnswer.put("Message","The solution: ["+sol+"] satisfies k="+k+" anonymity");
+                jsonAnswer.put("Message","The solution: ["+sol+"] statisfies k="+k+" anonymity");
             }
             response.getOutputStream().print(jsonAnswer.toString());
         }catch(Exception e){
@@ -5174,7 +5239,7 @@ class AppController {
             }
             
             if(suppressed){
-                if(!(data instanceof TXTData)){
+                if(!(data instanceof TXTData || data instanceof DICOMData)){
                     response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                     JSONObject jsonAnswer = new JSONObject();
                     jsonAnswer.put("Status","Fail");
@@ -5220,11 +5285,11 @@ class AppController {
                 }
             }
             else{
-                if(sol!=null && !(data instanceof TXTData)){
+                if(sol!=null && !(data instanceof TXTData || data instanceof DICOMData)){
                     response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                     JSONObject jsonAnswer = new JSONObject();
                     jsonAnswer.put("Status","Fail");
-                    jsonAnswer.put("Message","The \"sol\" field needs only for simple table data!");
+                    jsonAnswer.put("Message","The \"sol\" field needs only fot simple table data!");
                     response.getOutputStream().print(jsonAnswer.toString());
                 }
                 else if(sol!=null){
@@ -5268,6 +5333,8 @@ class AppController {
         }
     }
     
+    
+    
     @RequestMapping(value="/loadAnonRules",  method = RequestMethod.POST)
     public void loadAnonRules(@RequestParam("rules") MultipartFile file, HttpSession session, HttpServletResponse response) throws IOException {
         try{
@@ -5296,6 +5363,402 @@ class AppController {
             response.getOutputStream().print(jsonAnswer.toString());
         }
     }
+    
+    
+    @RequestMapping(value="/setMask",  method = RequestMethod.POST)
+    public void setMask(@RequestParam("col_idx") int  col_idx,@RequestParam("char") String character, @RequestParam("option") String maskOption, @RequestParam(value="positions",required = false) String positions,
+            @RequestParam(value="regexVal",required = false) String regex,HttpSession session, HttpServletResponse response) throws IOException {
+        try{
+            Data data = (Data) session.getAttribute("data");
+            if(!data.getColNamesType().get(col_idx).equals("string")){
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                JSONObject jsonAnswer = new JSONObject();
+                jsonAnswer.put("Status","Fail");
+                jsonAnswer.put("Message","Column "+data.getColNamesPosition().get(col_idx)+" is not a string data type");
+                response.getOutputStream().print(jsonAnswer.toString());
+                return;
+            }
+            
+            if(maskOption.trim().equals("suffix") || maskOption.trim().equals("prefix")){
+                this.saveMask(col_idx, positions, character, maskOption, session);
+            }
+            else if(maskOption.trim().equals("regex")){
+                this.saveRegex(col_idx, character, regex, session);
+            }
+            else{
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                JSONObject jsonAnswer = new JSONObject();
+                jsonAnswer.put("Status","Fail");
+                jsonAnswer.put("Message","No acceptable option, option's value: suffix, prefix, regex");
+                response.getOutputStream().print(jsonAnswer.toString());
+                return;
+            }
+            
+            this.saveDataset(null, session, response);
+            
+            
+            
+        }catch(Exception e){
+            e.printStackTrace();
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            JSONObject jsonAnswer = new JSONObject();
+            jsonAnswer.put("Status","Fail");
+            jsonAnswer.put("Message","Unable to set masking rule, please try again!");
+            response.getOutputStream().print(jsonAnswer.toString());
+        }
+    }
+    
+    @RequestMapping(value="/loadDICOM",  method = RequestMethod.POST)
+    public void loadDicoms(@RequestParam("dicoms") MultipartFile[] files, @RequestParam("datasetType") String datasetType, HttpSession session, HttpServletResponse response) throws IOException {
+        try{
+            for(MultipartFile file : files){
+                this.upload(file, true, session);
+            }
+            this.getSmallDataSet(null, datasetType,null, session);
+            Data data = (Data) session.getAttribute("data");
+            String[][] smallDataset = data.getSmallDataSet();
+            
+            String [][] types = data.getTypesOfVariables(smallDataset);
+            JSONObject jsonAnswer = new JSONObject();
+            JSONObject datatypes = new JSONObject();
+            String[] colnames = data.getColumnNames();
+            for(int i=0; i<colnames.length; i++){
+                JSONArray jsontypes = new JSONArray();
+                for(int j=0; j<types[i].length; j++){
+                    jsontypes.add(types[i][j]);
+                }
+                datatypes.put(colnames[i], jsontypes);
+            }
+            jsonAnswer.put("columnTypes", datatypes);
+            response.getOutputStream().print(jsonAnswer.toString());
+            return;
+        }catch(Exception e){
+            e.printStackTrace();
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            JSONObject jsonAnswer = new JSONObject();
+            jsonAnswer.put("Status","Fail");
+            jsonAnswer.put("Message","Unable to DICOM files, please try again!");
+            response.getOutputStream().print(jsonAnswer.toString());
+        }
+    }
+    
+    @RequestMapping(value="/bindDICOMDataTypes",  method = RequestMethod.POST)
+    public void bindData(@RequestParam("columnsType") String dataTypes, HttpSession session, HttpServletResponse response) throws IOException {
+        try{
+            Data data = (Data) session.getAttribute("data");
+            boolean[] checkColumns = new boolean[data.getSmallDataSet()[0].length];
+            String[] vartypes = new String[data.getSmallDataSet()[0].length];
+            Map<String,String> datatypesMap = jsonToMap(dataTypes);
+            for(int i=0; i<checkColumns.length; i++){
+                if(datatypesMap.containsKey(data.getColumnNames()[i])){
+                    checkColumns[i] = true;
+                    String type = datatypesMap.get(data.getColumnNames()[i]);
+                    if(type.equals("int") || type.equals("double") || type.equals("decimal") || type.equals("set") || type.equals("string") || type.equals("date")){
+                        vartypes[i] = datatypesMap.get(data.getColumnNames()[i]).replace("decimal", "double");
+                    }
+                    else{
+                        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                        JSONObject jsonAnswer = new JSONObject();
+                        jsonAnswer.put("Status","Fail");
+                        jsonAnswer.put("Message","Unsupported data type "+type);
+                        response.getOutputStream().print(jsonAnswer.toString());
+                        return;
+                    }
+                }
+                else{
+                    checkColumns[i] = false;
+                    vartypes[i] = null;
+                }
+                
+            }
+            this.loadDataset(vartypes, checkColumns, session);
+        }catch(Exception e){
+            e.printStackTrace();
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            JSONObject jsonAnswer = new JSONObject();
+            jsonAnswer.put("Status","Fail");
+            jsonAnswer.put("Message","Unable to bind columns' types in DICOM dataset, please try again!");
+            response.getOutputStream().print(jsonAnswer.toString());
+            return;
+        }
+        
+        response.setStatus(HttpServletResponse.SC_OK);
+        JSONObject jsonAnswer = new JSONObject();
+        jsonAnswer.put("Status","Success");
+        jsonAnswer.put("Message","DICOM Dataset is successfully loaded!");
+        response.getOutputStream().print(jsonAnswer.toString());
+    }
+    
+    @RequestMapping(value="/getDemographicDistributions",  method = RequestMethod.POST)
+    public void getDemographicDistribution(HttpSession session, HttpServletResponse response) throws IOException {
+        try{
+            Map<String,ArrayList<String>> info = this.getDemographicInfo(session);
+
+            Map<String,Map<String,ArrayList<String>>> demographicInfo = new HashMap<>();
+            Set<String> distributions = info.keySet();
+            for(String distr : distributions){
+                Map<String,ArrayList<String>> datatypesCountries = new HashMap();
+                ArrayList<String> types = new ArrayList();
+                if(distr.toLowerCase().equals("age")){
+    //                h = new HierarchyImplRangeDemographicAge("demographic_age_"+country,nodeType, country);
+
+                    types.add("int");
+                    types.add("double");
+
+
+                }
+                else{
+    //                Data data = (Data) session.getAttribute("data");
+    //                h = new HierarchyImplDemographicZipCode("demographic_zip_"+country,"string", country,data.getDictionary());
+                    types.add("string");
+
+                }
+                datatypesCountries.put("dataTypes", types);
+                datatypesCountries.put("countries", info.get(distr));
+                demographicInfo.put(distr, datatypesCountries);
+            }
+
+            response.setStatus(HttpServletResponse.SC_OK);
+            JSONObject jsonAnswer = new JSONObject();
+            jsonAnswer.put("Status","Success");
+            jsonAnswer.put("demographic",demographicInfo);
+            response.getOutputStream().print(jsonAnswer.toString());
+        }catch(Exception e){
+            e.printStackTrace();
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            JSONObject jsonAnswer = new JSONObject();
+            jsonAnswer.put("Status","Fail");
+            jsonAnswer.put("Message","Unable to return demographic information, please try again!");
+            response.getOutputStream().print(jsonAnswer.toString());
+        }
+    }
+    
+    @RequestMapping(value="/generateAndLoadDemographicHierarchy",  method = RequestMethod.POST)
+    public void getDemographicDistribution(@RequestParam("hier_attr") String hier,@RequestParam("country") String country, @RequestParam("varType") String nodeType,HttpSession session, HttpServletResponse response) throws IOException {
+        try{
+            Map<String, Hierarchy> hierarchies = (Map<String, Hierarchy>) session.getAttribute("hierarchies");
+            Data data = (Data) session.getAttribute("data");
+            
+            if(data == null){
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                JSONObject jsonAnswer = new JSONObject();
+                jsonAnswer.put("Status","Fail");
+                jsonAnswer.put("Message","You must firstly load the dataset!");
+                response.getOutputStream().print(jsonAnswer.toString());
+                return;
+            }
+            
+            
+            if ( hierarchies == null ){
+                hierarchies = new HashMap<>();
+                session.setAttribute("hierarchies", hierarchies);
+            }
+            else{
+                for(Map.Entry<String,Hierarchy> hierLoad : hierarchies.entrySet()){
+                    if(!hierLoad.getValue().getHierarchyType().contains("demographic")){
+                        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                        JSONObject jsonAnswer = new JSONObject();
+                        jsonAnswer.put("Status","Fail");
+                        jsonAnswer.put("Message","Unable to generate demographic hierarchy due to they have already loaded custom hierarchies, please remove custom hierarchies and try again!");
+                        response.getOutputStream().print(jsonAnswer.toString());
+                        return;
+                    }
+                }
+            }
+
+            Hierarchy h;
+            if(hier.toLowerCase().equals("age")){
+                
+                h = new HierarchyImplRangeDemographicAge("demographic_age_"+country,nodeType, country);
+            }
+            else{
+                
+                h = new HierarchyImplDemographicZipCode("demographic_zip_"+country,"string", country,data.getDictionary());
+            }
+            h.load();
+            hierarchies.put(h.getName(), h);
+
+            if(os.equals("online")){
+                this.deleteFiles(session);
+            }
+            
+            response.setStatus(HttpServletResponse.SC_OK);
+            JSONObject jsonAnswer = new JSONObject();
+            jsonAnswer.put("Status","Success");
+            jsonAnswer.put("Message","The demographic \""+h.getName()+"\" hierarchy has been successfully generated and loaded!");
+            jsonAnswer.put("hierName",h.getName());
+            response.getOutputStream().print(jsonAnswer.toString());
+        
+        }catch(Exception e){
+            e.printStackTrace();
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            JSONObject jsonAnswer = new JSONObject();
+            jsonAnswer.put("Status","Fail");
+            jsonAnswer.put("Message","Unable to generate demographic hierarchy, please try again!");
+            response.getOutputStream().print(jsonAnswer.toString());
+        }
+        
+        
+    }
+    
+    @RequestMapping(value="/removeHierarchy",  method = RequestMethod.POST)
+    public void removeHier(@RequestParam("hierName") String hiername,HttpSession session, HttpServletResponse response) throws IOException {
+        try{
+            Map<String, Hierarchy> hierarchies = (Map<String, Hierarchy>) session.getAttribute("hierarchies");
+            if(hierarchies.get(hiername).getHierarchyType().contains("demographic")){
+                hierarchies.get(hiername).clear();
+            }
+            hierarchies.remove(hiername);
+            
+            response.setStatus(HttpServletResponse.SC_OK);
+            JSONObject jsonAnswer = new JSONObject();
+            jsonAnswer.put("Status","Success");
+            jsonAnswer.put("Message","The  \""+hiername+"\" hierarchy has been successfully removed!");
+            response.getOutputStream().print(jsonAnswer.toString());
+        }catch(Exception e){
+            e.printStackTrace();
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            JSONObject jsonAnswer = new JSONObject();
+            jsonAnswer.put("Status","Fail");
+            jsonAnswer.put("Message","Unable to remove \" \""+hiername+" please try again!");
+            response.getOutputStream().print(jsonAnswer.toString());
+        }
+    }
+    
+    @RequestMapping(value="/removeHierarchies",  method = RequestMethod.POST)
+    public void removeHiers(HttpSession session, HttpServletResponse response) throws IOException {
+        try{
+            Map<String, Hierarchy> hierarchies = (Map<String, Hierarchy>) session.getAttribute("hierarchies");
+            for(Map.Entry<String,Hierarchy> hier : hierarchies.entrySet()){
+                if(hier.getValue().getHierarchyType().contains("demographic")){
+                    hier.getValue().clear();
+                }
+                hierarchies.remove(hier.getKey());
+            }
+            session.setAttribute("hierarchies", null);
+            
+            response.setStatus(HttpServletResponse.SC_OK);
+            JSONObject jsonAnswer = new JSONObject();
+            jsonAnswer.put("Status","Success");
+            jsonAnswer.put("Message","All hierarchies have been successfully removed!");
+        }catch(Exception e){
+            e.printStackTrace();
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            JSONObject jsonAnswer = new JSONObject();
+            jsonAnswer.put("Status","Fail");
+            jsonAnswer.put("Message","Unable to remove hierarchies please try again!");
+            response.getOutputStream().print(jsonAnswer.toString());
+        }
+    }
+    
+    @RequestMapping(value="/informationLoss",  method = RequestMethod.POST)
+    public void informationLoss(@RequestParam(value="sol",required = false) String sol,@RequestParam(value="suppressed",required = false,defaultValue = "false")
+            boolean suppressed,HttpSession session, HttpServletResponse response) throws IOException {
+        
+        try{
+            Data data = (Data) session.getAttribute("data");
+            AnonymizedDataset anonData = (AnonymizedDataset) session.getAttribute("anondata");
+            String algo = (String) session.getAttribute("algorithm");
+
+
+            
+
+
+            if(data == null){
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                JSONObject jsonAnswer = new JSONObject();
+                jsonAnswer.put("Status","Fail");
+                jsonAnswer.put("Message","Dataset was not loaded!");
+                response.getOutputStream().print(jsonAnswer.toString());
+                return;
+            }
+
+
+            if((data instanceof TXTData || data instanceof DICOMData) && !algo.equals("demographic")){
+                if(sol==null){
+                    response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    JSONObject jsonAnswer = new JSONObject();
+                    jsonAnswer.put("Status","Fail");
+                    jsonAnswer.put("Message","Need to provide specific solution");
+                    response.getOutputStream().print(jsonAnswer.toString());
+                    return;
+                }
+                else{
+                    if(suppressed){
+                        this.deleteSuppress(session);
+                        String originalSol = sol;
+                        sol = sol.trim().replace("[", "").replace("]","");
+                        this.setSelectedNode(session, sol);
+                        int  k = (int) session.getAttribute("k");
+                        Map<Integer, Hierarchy> quasiIdentifiers = (Map<Integer, Hierarchy>) session.getAttribute("quasiIdentifiers");
+                        String attributes = "";
+                        for(Map.Entry<Integer,Hierarchy> quasi : quasiIdentifiers.entrySet()){
+                            attributes += data.getColumnByPosition(quasi.getKey())+" ";
+                        }
+                        attributes = attributes.substring(0, attributes.length() - 1); 
+                        Map<SolutionHeader, SolutionStatistics> solMap = (Map<SolutionHeader, SolutionStatistics>) session.getAttribute("solutionstatistics");
+                        this.findSolutionStatistics(session);
+                        SolutionsArrayList stats = this.getSolutionStatistics(attributes, session);
+                        response.setStatus(HttpServletResponse.SC_OK);
+                        double suppress = stats.getPercentangeSuppress();
+
+                        if(suppress!=0.0){
+                            this.setSelectedNode(session, sol);
+                            this.suppressValues(session);
+                            this.getAnonDataSet(0, 0, session);
+                        }
+                        else{
+                            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                            JSONObject jsonAnswer = new JSONObject();
+                            jsonAnswer.put("Status","Fail");
+                            jsonAnswer.put("Message","The solution "+originalSol+" satisfies "+k+"-anonymity so it can not be suppressed!");
+                            response.getOutputStream().print(jsonAnswer.toString());
+                        }
+                    }
+                    else{
+                        this.deleteSuppress(session);
+                        sol = sol.trim().replace("[", "").replace("]","");
+                        this.setSelectedNode(session, sol);
+                        this.getAnonDataSet(0, 0, session);
+                    }
+                }
+            }
+            else{
+                if(anonData == null){
+                    response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    JSONObject jsonAnswer = new JSONObject();
+                    jsonAnswer.put("Status","Fail");
+                    jsonAnswer.put("Message","There is no anonymized dataset!");
+                    response.getOutputStream().print(jsonAnswer.toString());
+                    return;
+                } 
+            }
+            
+            Map<String,Double> inLoss = this.lossMetrics(session);
+            response.setStatus(HttpServletResponse.SC_OK);
+            JSONObject jsonAnswer = new JSONObject();
+            jsonAnswer.put("Status","Success");
+            jsonAnswer.put("InLoss",inLoss);
+            response.getOutputStream().print(jsonAnswer.toString());
+        
+        }catch(Exception e){
+            e.printStackTrace();
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            JSONObject jsonAnswer = new JSONObject();
+            jsonAnswer.put("Status","Fail");
+            jsonAnswer.put("Message","Unable to produce information loss metrics, please try again!");
+            response.getOutputStream().print(jsonAnswer.toString());
+        }
+        
+        
+    }
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -5475,32 +5938,48 @@ class AppController {
         List<String> result = new ArrayList<>();
         BufferedReader br;
         String line;
-        try {
-            br = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8));
-            
-            while ((line = br.readLine()) != null) {
-//                System.out.println(line);
-                if(line.trim().isEmpty())
-                    break;
-                
-                //find if distinct or range hierarchy
-                if(line.trim().equalsIgnoreCase("distinct")){
-                    result.add("distinct");
-                    continue;
-                } else if (line.trim().equalsIgnoreCase("range")){
-                    result.add("range");
-                    continue;
+        if(file.endsWith(".txt")){
+            try {
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8));
+
+                while ((line = br.readLine()) != null) {
+    //                System.out.println(line);
+                    if(line.trim().isEmpty())
+                        break;
+
+                    //find if distinct or range hierarchy
+                    if(line.trim().equalsIgnoreCase("distinct")){
+                        result.add("distinct");
+                        continue;
+                    } else if (line.trim().equalsIgnoreCase("range")){
+                        result.add("range");
+                        continue;
+                    }
+
+                    //find if int, double or string
+                    String[] tokens = line.split(" ");
+                    if(tokens[0].equalsIgnoreCase("type")){
+                        result.add(tokens[1]);
+                    }
                 }
-                
-                //find if int, double or string
-                String[] tokens = line.split(" ");
-                if(tokens[0].equalsIgnoreCase("type")){
-                    result.add(tokens[1]);
-                }
+                br.close();
+            } catch (IOException ex) {
+                System.out.println("problem");
             }
-            br.close();
-        } catch (IOException ex) {
-            System.out.println("problem");
+        }
+        else if(file.endsWith(".json")){
+            JSONParser parser = new JSONParser();
+            try {
+                JSONObject  obj = (JSONObject) parser.parse(new FileReader(file));
+                result.add(((String) obj.get("hierType")).toLowerCase());
+                result.add(((String) obj.get("type")).toLowerCase());
+            } catch (FileNotFoundException ex) {
+                Logger.getLogger(AppCon.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(AppCon.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (org.json.simple.parser.ParseException ex) {
+                Logger.getLogger(AppCon.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
         
         return result;

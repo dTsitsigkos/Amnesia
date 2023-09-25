@@ -33,12 +33,14 @@ import hierarchy.Hierarchy;
 import static hierarchy.Hierarchy.online_limit;
 import static hierarchy.Hierarchy.online_version;
 import hierarchy.NodeStats;
+import hierarchy.ranges.HierarchyImplRangesNumbers;
 import hierarchy.ranges.RangeDouble;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -56,6 +58,10 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jsoninterface.View;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 
 /**
@@ -124,6 +130,71 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
     
     public void setNodesType(String nodesType) {
         this.nodesType = nodesType;
+    }
+    
+    
+    @Override
+    public void loadJson() throws LimitException {
+        try{
+            JSONParser parser = new JSONParser();
+            JSONObject  obj = (JSONObject) parser.parse(new FileReader(this.inputFile));
+            
+            /*Parse metadata*/
+            this.name = (String) obj.get("name");
+            this.nodesType = ((String)obj.get("type")).replace("decimal", "double");
+            this.height = ((Long) obj.get("height")).intValue();
+            this.hierarchyType = (String) obj.get("hierType");
+            
+            /*Load heiarchy's levels*/
+            String level = "level";
+            int level_count = 1;
+            
+            while(obj.containsKey(level+level_count)){
+                JSONObject levelValues = (JSONObject) obj.get(level+level_count);
+                for(Object node : levelValues.keySet()){
+                    Double pNode = Double.parseDouble(node.toString());
+                    
+                    this.stats.put(pNode, new NodeStats(level_count-1));
+                    if(level_count - 1 == 0){
+                        root = pNode;
+                        counterNodes ++;
+                        if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+                            throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+                        }
+                    }
+                    
+                    JSONArray children = (JSONArray) levelValues.get(node);
+                    List<Double> ch = new ArrayList<>();
+                    
+                    if(children!=null){
+                        for(Object child : children){
+                            Double cNode = Double.parseDouble(child.toString());
+                            ch.add(cNode);             
+                            this.stats.put(cNode, new NodeStats(level_count));
+
+                            counterNodes ++;
+                            if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+                                throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+                            }
+                            this.parents.put(cNode, pNode);
+                        }
+                        this.children.put(pNode, ch);
+                    }
+                    
+                }
+                level_count++;
+            }
+            
+            findAllParents();
+            
+            
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(HierarchyImplDouble.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(HierarchyImplDouble.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ParseException ex) {
+            Logger.getLogger(HierarchyImplRangesNumbers.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
    
     
@@ -361,6 +432,44 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
     public Map<Integer, ArrayList<Double>> getAllParents() {
         return allParents;
     }
+    
+    @Override
+    public void exportJson(String file) {
+        JSONObject exported_hier = new JSONObject();
+        exported_hier.put("hierType", "distinct");
+        exported_hier.put("name",this.name);
+        exported_hier.put("type", this.nodesType.replace("double", "decimal"));
+        exported_hier.put("height", this.height);
+        
+        String level_label = "level";
+        int level_count = 1;
+        
+        while(this.allParents.containsKey(level_count-1) && level_count < this.height){
+            List<Double> parents = this.allParents.get(level_count-1);
+            JSONObject jsonParents = new JSONObject();
+            for(Double curParent : parents){   
+                JSONArray children = new JSONArray();
+//                    jsonParents.put(curParent.toString(), (JSONArray) parser.parse(Arrays.deepToString(this.getChildren(curParent).toArray())));
+                    List<Double> childs = this.getChildren(curParent);
+                    if(childs != null && !childs.isEmpty()){
+                        for(Double child : childs){
+                            children.add(child);
+                        }
+                        jsonParents.put(curParent, children);
+                    }
+//                    StringUtils.join(myList);
+                
+            }
+            exported_hier.put(level_label+level_count,jsonParents);
+            level_count++;
+            
+        }
+        try (PrintWriter out = new PrintWriter(new FileWriter(file))) {
+            out.write(exported_hier.toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
 
     public void export(String file) {
@@ -374,7 +483,7 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
             
             int counter = 1;
 
-            //write parents - children to file
+            //write parents - childen to file
             for(int curLevel = height - 2; curLevel >= 0; curLevel--){
                 for (Double curParent : this.allParents.get(curLevel)){
                     if(this.getChildren(curParent) == null){
@@ -1753,6 +1862,10 @@ public class HierarchyImplDouble implements Hierarchy<Double> {
     public void createLevelsMap(){
         levelpFlash = Collections.synchronizedMap(new HashMap());
     }
+
+    
+
+    
 
     
 

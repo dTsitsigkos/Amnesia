@@ -60,7 +60,7 @@ public class RelSetData implements Data {
     private double setData[][] = null;
     private int sizeOfRows = 0;
     private int sizeOfCol = 0;
-    private String delimiter = null;
+    private String delimeter = null;
     @JsonView(View.GetDataTypes.class)
     private String delimeterSet = null;
     @JsonView(View.SmallDataSet.class)
@@ -123,10 +123,10 @@ public class RelSetData implements Data {
         
         this.inputFile = inputFile;
         if ( del == null ){
-            delimiter = ",";
+            delimeter = ",";
         }
         else{
-            delimiter = del;
+            delimeter = del;
         }
         
         delimeterSet = delSet;
@@ -313,7 +313,7 @@ public class RelSetData implements Data {
             Logger.getLogger(TXTData.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        System.out.println("done original data");
+        System.out.println("done orgiginal data");
     }
     
     public void setColumnNames(String[] columnNames) {
@@ -409,7 +409,7 @@ public class RelSetData implements Data {
                 
                 //do not read the fist line
                 if (FLAG == true){
-                    temp = strLine.split(delimiter,-1);
+                    temp = strLine.split(delimeter,-1);
                     for ( int i = 0 ; i < temp.length ; i ++){
                         if (checkColumns[i] == true){
                             temp[i] = temp[i].trim().replaceAll("\"", "").replaceAll("[\uFEFF-\uFFFF]", "").replace(".", "").replace("[","(").replace("]", ")");;
@@ -435,7 +435,7 @@ public class RelSetData implements Data {
                 }
                 else{
                     
-                    temp = strLine.split(delimiter,-1);
+                    temp = strLine.split(delimeter,-1);
                     counter1 = 0;
                     for (int i = 0; i < temp.length ; i ++ ){
                         if (checkColumns[i] == true){
@@ -720,6 +720,8 @@ public class RelSetData implements Data {
     public void computeInformationLossMetrics(Object[][] anonymizedTable, int[] qids, Map<Integer, Hierarchy> hierarchies, Map<Integer, Set<String>> suppressedValues) {
         double ncp = 0;
         double total = 0;
+        Map<Integer,Integer> globalLeaves = new HashMap();
+        Map<Integer,Map<Object,Integer>> innerLeaves = new HashMap();
         try {
             Object[] rowQIs = null;
             if(suppressedValues != null){
@@ -727,20 +729,6 @@ public class RelSetData implements Data {
             }
             
             for (int row = 0; row < anonymizedTable.length; row++){
-//                if(suppressedValues != null){
-//
-//
-//                    //get qids of this row
-//                    for(int i=0; i<qids.length; i++){
-//                        rowQIs[i] = anonymizedTable[row][qids[i]];
-//                    }
-//
-//
-//                    //check if row is suppressed
-//                    if(isSuppressed(rowQIs, qids, suppressedValues)){
-//                        continue;
-//                    }
-//                }
                 
                 for(int column = 0; column < anonymizedTable[0].length; column++){
                     if(hierarchies.containsKey(column) && !anonymizedTable[row][column].equals("(null)")){
@@ -757,11 +745,32 @@ public class RelSetData implements Data {
                                     if(anonymizedId == null){
                                         anonymizedId = HierarchyImplString.getWholeDictionary().getStringToId().get(anonymizedVal);
                                     }
-                                    int leafAnonymized = h.findAllChildren(anonymizedId.doubleValue(), 0,true);
+                                    int leafAnonymized = -1;
+                                    if(innerLeaves.containsKey(column)){
+                                        if(innerLeaves.get(column).containsKey(anonymizedTable[row][column])){
+                                            leafAnonymized = innerLeaves.get(column).get(anonymizedTable[row][column]);
+                                        }
+                                        else{
+                                            leafAnonymized = h.findAllChildren(anonymizedId.doubleValue(), 0,true);
+                                            innerLeaves.get(column).put(anonymizedTable[row][column], leafAnonymized);
+                                        }
+                                    }
+                                    else{
+                                        innerLeaves.put(column, new HashMap());
+                                        leafAnonymized = h.findAllChildren(anonymizedId.doubleValue(), 0,true);
+                                        innerLeaves.get(column).put(anonymizedTable[row][column], leafAnonymized);
+                                    }
                                     if(leafAnonymized == 1){
                                         continue;
                                     }
-                                    int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                    int allLeaves;
+                                    if(globalLeaves.containsKey(column)){
+                                        allLeaves = globalLeaves.get(column);
+                                    }
+                                    else{
+                                       allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                       globalLeaves.put(column, allLeaves);
+                                    }
 
                                     ncp += (leafAnonymized/((double)allLeaves))/anonymizedValues.length/hierarchies.size();
                                     total += h.getLevel(anonymizedId.doubleValue())/((double)h.getHeight()-1)/anonymizedValues.length/hierarchies.size();
@@ -778,11 +787,33 @@ public class RelSetData implements Data {
                                 }
                             }
                             else{
-                                int leafAnonymized = h.findAllChildren(((Integer)anonymizedTable[row][column]).doubleValue(), 0,true);
+                                int leafAnonymized = -1;
+                                if(innerLeaves.containsKey(column)){
+                                    if(innerLeaves.get(column).containsKey(anonymizedTable[row][column])){
+                                        leafAnonymized = innerLeaves.get(column).get(anonymizedTable[row][column]);
+                                    }
+                                    else{
+                                        leafAnonymized = h.findAllChildren(((Integer)anonymizedTable[row][column]).doubleValue(), 0,true);
+                                        innerLeaves.get(column).put(anonymizedTable[row][column], leafAnonymized);
+                                    }
+                                }
+                                else{
+                                    innerLeaves.put(column, new HashMap());
+                                    leafAnonymized = h.findAllChildren(((Integer)anonymizedTable[row][column]).doubleValue(), 0,true);
+                                    innerLeaves.get(column).put(anonymizedTable[row][column], leafAnonymized);
+                                }
                                 if(leafAnonymized == 1){
                                     continue;
                                 }
-                                int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                
+                                int allLeaves;
+                                if(globalLeaves.containsKey(column)){
+                                    allLeaves = globalLeaves.get(column);
+                                }
+                                else{
+                                   allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                   globalLeaves.put(column, allLeaves);
+                                }
                                 
                                 ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size();
                                 total += h.getLevel(((Integer)anonymizedTable[row][column]).doubleValue())/((double)h.getHeight()-1)/hierarchies.size();
@@ -798,11 +829,32 @@ public class RelSetData implements Data {
                                 }
                             }
                             else{
-                                int leafAnonymized = h.findAllChildren(anonymizedTable[row][column], 0,true);
+                                int leafAnonymized = -1;
+                                if(innerLeaves.containsKey(column)){
+                                    if(innerLeaves.get(column).containsKey(anonymizedTable[row][column])){
+                                        leafAnonymized = innerLeaves.get(column).get(anonymizedTable[row][column]);
+                                    }
+                                    else{
+                                        leafAnonymized = h.findAllChildren(((Integer)anonymizedTable[row][column]).doubleValue(), 0,true);
+                                        innerLeaves.get(column).put(anonymizedTable[row][column], leafAnonymized);
+                                    }
+                                }
+                                else{
+                                    innerLeaves.put(column, new HashMap());
+                                    leafAnonymized = h.findAllChildren(((Integer)anonymizedTable[row][column]).doubleValue(), 0,true);
+                                    innerLeaves.get(column).put(anonymizedTable[row][column], leafAnonymized);
+                                }
                                 if(leafAnonymized == 1){
                                     continue;
                                 }
-                                int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                int allLeaves;
+                                if(globalLeaves.containsKey(column)){
+                                    allLeaves = globalLeaves.get(column);
+                                }
+                                else{
+                                   allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                   globalLeaves.put(column, allLeaves);
+                                }
                                 
                                 ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size();  
                                 total += h.getLevel(((Double)anonymizedTable[row][column]).doubleValue())/((double)h.getHeight()-1)/hierarchies.size();
@@ -835,11 +887,32 @@ public class RelSetData implements Data {
                                 if(anonymizedId == null){
                                     anonymizedId = HierarchyImplString.getWholeDictionary().getStringToId().get(anonymizedValue);
                                 }
-                                int leafAnonymized = h.findAllChildren(anonymizedId.doubleValue(), 0,true);
+                                int leafAnonymized = -1;
+                                if(innerLeaves.containsKey(column)){
+                                    if(innerLeaves.get(column).containsKey(anonymizedTable[row][column])){
+                                        leafAnonymized = innerLeaves.get(column).get(anonymizedTable[row][column]);
+                                    }
+                                    else{
+                                        leafAnonymized = h.findAllChildren(anonymizedId.doubleValue(), 0,true);
+                                        innerLeaves.get(column).put(anonymizedTable[row][column], leafAnonymized);
+                                    }
+                                }
+                                else{
+                                    innerLeaves.put(column, new HashMap());
+                                    leafAnonymized = h.findAllChildren(anonymizedId.doubleValue(), 0,true);
+                                    innerLeaves.get(column).put(anonymizedTable[row][column], leafAnonymized);
+                                }
                                 if(leafAnonymized == 1){
                                     continue;
                                 }
-                                int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                int allLeaves;
+                                if(globalLeaves.containsKey(column)){
+                                    allLeaves = globalLeaves.get(column);
+                                }
+                                else{
+                                   allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                   globalLeaves.put(column, allLeaves);
+                                }
 
                                 ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size(); 
                                 total += h.getLevel(anonymizedId.doubleValue())/((double)h.getHeight()-1)/hierarchies.size();
@@ -977,7 +1050,7 @@ public class RelSetData implements Data {
             
             while ((strLine = br.readLine()) != null)   {
                 if (firstLineNames == true){
-                    colNames = strLine.split(delimiter,-1);
+                    colNames = strLine.split(delimeter,-1);
                     for ( int i = 0 ; i < colNames.length ; i ++){
                         if ( checkColumns[i] == true){
                             colNamesType.put(counter,null);
@@ -1066,7 +1139,7 @@ public class RelSetData implements Data {
             br = new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
             while ((strLine = br.readLine()) != null)   {
                 if(firstLine){
-                    temp = strLine.split(delimiter,-1);
+                    temp = strLine.split(delimeter,-1);
                     columnNames = new String[temp.length];
                     smallDataSet = new String[6][temp.length];
                     this.formatsDate = new String[temp.length];
@@ -1083,7 +1156,7 @@ public class RelSetData implements Data {
                     firstLine = false;
                 }
                 else{
-                    temp = strLine.split(delimiter,-1);
+                    temp = strLine.split(delimeter,-1);
                     
                     if( temp.length != columnNames.length){
                         System.out.println("columnNames = " + columnNames.length +"\t temp = " + temp.length );
@@ -1442,7 +1515,7 @@ public class RelSetData implements Data {
     public void setMask(int column, int[] positions, char character, String option) {
         int stringCount;
         if(dictionary.isEmpty() && dictHier.isEmpty()){
-            System.out.println("Both empty load data");
+            System.out.println("Both empy load data");
             stringCount = 1;
         }
         else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
@@ -1606,7 +1679,7 @@ public class RelSetData implements Data {
     public void setRegex(int column, char character, String regex) {
         int stringCount;
         if(dictionary.isEmpty() && dictHier.isEmpty()){
-            System.out.println("Both empty load data");
+            System.out.println("Both empy load data");
             stringCount = 1;
         }
         else if(!dictionary.isEmpty() && !dictHier.isEmpty()){

@@ -6,7 +6,7 @@
 package algorithms.demographics;
 
 import algorithms.Algorithm;
-import algorithms.flash.LatticeNode;
+import algorithms.flash.GridNode;
 import data.Data;
 import data.DiskData;
 import data.Pair;
@@ -155,7 +155,7 @@ public class DemographicAlgorithm implements Algorithm {
     }
 
     @Override
-    public boolean isAnonymousResult(LatticeNode node) {
+    public boolean isAnonymousResult(GridNode node) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     

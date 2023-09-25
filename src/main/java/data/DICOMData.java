@@ -224,7 +224,7 @@ public class DICOMData implements Data {
         
         try{
             if(dictionary.isEmpty() && dictHier.isEmpty()){
-                System.out.println("Both empty load data");
+                System.out.println("Both empy load data");
                 stringCount = 1;
             }
             else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
@@ -270,11 +270,11 @@ public class DICOMData implements Data {
                                 dataSet[counter][i] = Integer.parseInt(value);
                             } catch (java.lang.NumberFormatException exc) {
                                 //ErrorWindow.showErrorWindow("Column : " + colNames[i] + " is chosen as integer and you have double values");
-                                exc.printStackTrace();
+//                                exc.printStackTrace();
                                 try {
                                     dataSet[counter][i] = new Double(value).intValue();
                                 } catch (Exception exc1) {
-                                    exc1.printStackTrace();
+//                                    exc1.printStackTrace();
 //                                        System.out.println("Column : " + colNames[i] + " is chosen as integer and you have double values");
                                     throw new NotFoundValueException("Value \""+value+"\" is not an integer, \""+ this.columnNames[i]+ "\" is an integer column");
                                 }
@@ -467,6 +467,9 @@ public class DICOMData implements Data {
     public void computeInformationLossMetrics(Object[][] anonymizedTable, int[] qids, Map<Integer, Hierarchy> hierarchies, Map<Integer, Set<String>> suppressedValues) {
         double ncp = 0;
         double total = 0;
+        int suppresedRows = 0;
+        Map<Integer,Integer> globalLeaves = new HashMap();
+        Map<Integer,Map<Object,Integer>> innerLeaves = new HashMap();
         try {
             Object[] rowQIs = null;
             if(suppressedValues != null){
@@ -485,6 +488,7 @@ public class DICOMData implements Data {
 
                     //check if row is suppressed
                     if(isSuppressed(rowQIs, qids, suppressedValues)){
+                        suppresedRows++;
                         continue;
                     }
                 }
@@ -503,11 +507,32 @@ public class DICOMData implements Data {
                                 }
                             }
                             else{
-                                int leafAnonymized = h.findAllChildren(((Integer)anonymizedTable[row][column]).doubleValue(), 0,true);
+                                int leafAnonymized = -1;
+                                if(innerLeaves.containsKey(column)){
+                                    if(innerLeaves.get(column).containsKey(anonymizedTable[row][column])){
+                                        leafAnonymized = innerLeaves.get(column).get(anonymizedTable[row][column]);
+                                    }
+                                    else{
+                                        leafAnonymized = h.findAllChildren(((Integer)anonymizedTable[row][column]).doubleValue(), 0,true);
+                                        innerLeaves.get(column).put(anonymizedTable[row][column], leafAnonymized);
+                                    }
+                                }
+                                else{
+                                    innerLeaves.put(column, new HashMap());
+                                    leafAnonymized = h.findAllChildren(((Integer)anonymizedTable[row][column]).doubleValue(), 0,true);
+                                    innerLeaves.get(column).put(anonymizedTable[row][column], leafAnonymized);
+                                }
                                 if(leafAnonymized == 1){
                                     continue;
                                 }
-                                int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                int allLeaves;
+                                if(globalLeaves.containsKey(column)){
+                                    allLeaves = globalLeaves.get(column);
+                                }
+                                else{
+                                   allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                   globalLeaves.put(column, allLeaves);
+                                }
                                 
                                 ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size();
                                 total += h.getLevel(((Integer)anonymizedTable[row][column]).doubleValue())/((double)h.getHeight()-1)/hierarchies.size();
@@ -523,11 +548,32 @@ public class DICOMData implements Data {
                                 }
                             }
                             else{
-                                int leafAnonymized = h.findAllChildren(anonymizedTable[row][column], 0,true);
+                                int leafAnonymized = -1;
+                                if(innerLeaves.containsKey(column)){
+                                    if(innerLeaves.get(column).containsKey(anonymizedTable[row][column])){
+                                        leafAnonymized = innerLeaves.get(column).get(anonymizedTable[row][column]);
+                                    }
+                                    else{
+                                        leafAnonymized = h.findAllChildren(((Integer)anonymizedTable[row][column]).doubleValue(), 0,true);
+                                        innerLeaves.get(column).put(anonymizedTable[row][column], leafAnonymized);
+                                    }
+                                }
+                                else{
+                                    innerLeaves.put(column, new HashMap());
+                                    leafAnonymized = h.findAllChildren(((Integer)anonymizedTable[row][column]).doubleValue(), 0,true);
+                                    innerLeaves.get(column).put(anonymizedTable[row][column], leafAnonymized);
+                                }
                                 if(leafAnonymized == 1){
                                     continue;
                                 }
-                                int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                int allLeaves;
+                                if(globalLeaves.containsKey(column)){
+                                    allLeaves = globalLeaves.get(column);
+                                }
+                                else{
+                                   allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                   globalLeaves.put(column, allLeaves);
+                                }
                                 
                                 ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size(); 
                                 total += h.getLevel(((Double)anonymizedTable[row][column]).doubleValue())/((double)h.getHeight()-1)/hierarchies.size();
@@ -560,11 +606,32 @@ public class DICOMData implements Data {
                                 if(anonymizedId == null){
                                     anonymizedId = HierarchyImplString.getWholeDictionary().getStringToId().get(anonymizedValue);
                                 }
-                                int leafAnonymized = h.findAllChildren(anonymizedId.doubleValue(), 0,true);
+                                int leafAnonymized = -1;
+                                if(innerLeaves.containsKey(column)){
+                                    if(innerLeaves.get(column).containsKey(anonymizedTable[row][column])){
+                                        leafAnonymized = innerLeaves.get(column).get(anonymizedTable[row][column]);
+                                    }
+                                    else{
+                                        leafAnonymized = h.findAllChildren(anonymizedId.doubleValue(), 0,true);
+                                        innerLeaves.get(column).put(anonymizedTable[row][column], leafAnonymized);
+                                    }
+                                }
+                                else{
+                                    innerLeaves.put(column, new HashMap());
+                                    leafAnonymized = h.findAllChildren(anonymizedId.doubleValue(), 0,true);
+                                    innerLeaves.get(column).put(anonymizedTable[row][column], leafAnonymized);
+                                }
                                 if(leafAnonymized == 1){
                                     continue;
                                 }
-                                int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                int allLeaves;
+                                if(globalLeaves.containsKey(column)){
+                                    allLeaves = globalLeaves.get(column);
+                                }
+                                else{
+                                   allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                   globalLeaves.put(column, allLeaves);
+                                }
 
                                 ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size(); 
                                 total += h.getLevel(anonymizedId.doubleValue())/((double)h.getHeight()-1)/hierarchies.size();
@@ -576,8 +643,8 @@ public class DICOMData implements Data {
                 
             }
             
-            ncp = ncp/this.recordsTotal;
-            total = total/this.recordsTotal;
+            ncp = ncp/(this.recordsTotal-suppresedRows);
+            total = total/(this.recordsTotal-suppresedRows);
             this.informationLoss.put("NCP", ncp);
             this.informationLoss.put("Total", total);
             
@@ -977,7 +1044,7 @@ public class DICOMData implements Data {
     public void setMask(int column, int[] positions, char character, String option) {
         int stringCount;
         if(dictionary.isEmpty() && dictHier.isEmpty()){
-            System.out.println("Both empty load data");
+            System.out.println("Both empy load data");
             stringCount = 1;
         }
         else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
@@ -1079,7 +1146,7 @@ public class DICOMData implements Data {
     public void setRegex(int column, char character, String regex) {
         int stringCount;
         if(dictionary.isEmpty() && dictHier.isEmpty()){
-            System.out.println("Both empty load data");
+            System.out.println("Both empy load data");
             stringCount = 1;
         }
         else if(!dictionary.isEmpty() && !dictHier.isEmpty()){

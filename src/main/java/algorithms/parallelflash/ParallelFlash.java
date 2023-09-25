@@ -28,9 +28,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
 import algorithms.Algorithm;
-import algorithms.flash.Lattice;
-import algorithms.flash.LatticeBuilder;
-import algorithms.flash.LatticeNode;
+import algorithms.flash.Grid;
+import algorithms.flash.GridBuilder;
+import algorithms.flash.GridNode;
 import data.Data;
 import graph.Edge;
 import graph.Graph;
@@ -45,11 +45,11 @@ public class ParallelFlash implements Algorithm{
     Data dataset = null;
     Map<Integer, Hierarchy> hierarchies = null;
     Integer k = null;
-    LatticeBuilder builder = null;
-    Lattice lattice = null;
+    GridBuilder builder = null;
+    Grid lattice = null;
     int hierarchiesNum = -1;
     HistoryBuffers buffers = new HistoryBuffers(10);   
-    Set<LatticeNode> resultset = new HashSet<>();
+    Set<GridNode> resultset = new HashSet<>();
     ForkJoinPool pool = null;
     int parallelism = -1;
     
@@ -103,23 +103,23 @@ public class ParallelFlash implements Algorithm{
         }
                 
         //build lattice
-        builder = new LatticeBuilder(qidColumns, minLevels, maxLevels);
-        lattice = builder.build();
+        builder = new GridBuilder(qidColumns, minLevels, maxLevels);
+        lattice = builder.construct();
         Heap heap = new Heap(maxLevels, distinctValues);
         Sorting sorter = new Sorting(maxLevels, distinctValues);
         
         //outer loop of Flash algorithm
         for(int level = 0; level <= lattice.getHeight()-1; level++){
-            for(LatticeNode node : sorter.sort(lattice.getLevels()[level])){
+            for(GridNode node : sorter.sort(lattice.getLayers()[level])){
                 if(!node.isTagged()){
-                    LatticeNode[] path = findPath(node, maxLevels, distinctValues);
-                    checkPath(path, heap);
+                    GridNode[] path = detectPath(node, maxLevels, distinctValues);
+                    examinePath(path, heap);
                     while(!heap.isEmpty()){
                         node = heap.extractMin();
-                        for(LatticeNode successor : sorter.sort(node.getSuccessors())){
+                        for(GridNode successor : sorter.sort(node.getTopNodes())){
                             if(!successor.isTagged()){
-                                path = findPath(successor, maxLevels,distinctValues);
-                                checkPath(path, heap);
+                                path = detectPath(successor, maxLevels,distinctValues);
+                                examinePath(path, heap);
                             }
                         }
                     }
@@ -129,7 +129,7 @@ public class ParallelFlash implements Algorithm{
 //        System.out.println("Results : " + this.resultset);
     }
     
-    public void checkPath(LatticeNode[] path, Heap heap){
+    public void examinePath(GridNode[] path, Heap heap){
         int low = 0;
         int high = path.length-1;
         
@@ -138,8 +138,8 @@ public class ParallelFlash implements Algorithm{
             if((low + high) % 2 > 0)
                 mid++;
             
-            LatticeNode midNode = path[mid];
-            if(checkAndTag(midNode)){
+            GridNode midNode = path[mid];
+            if(examineAndIdentify(midNode)){
                 high = mid - 1;
             }
             else{
@@ -149,18 +149,18 @@ public class ParallelFlash implements Algorithm{
         }
     }
     
-    public LatticeNode[] findPath(LatticeNode node, int[] maxLevels, int[][] distinctValues){
-        List<LatticeNode> path = new ArrayList<>();
+    public GridNode[] detectPath(GridNode node, int[] maxLevels, int[][] distinctValues){
+        List<GridNode> path = new ArrayList<>();
         Sorting sorter = new Sorting(maxLevels, distinctValues);
         
         while(true){
-             LatticeNode headNode = head(path);
+             GridNode headNode = head(path);
              if(headNode != null && headNode == node)
                  break;
 
             path.add(node);
 
-            for(LatticeNode upNode : sorter.sort(node.getSuccessors())){
+            for(GridNode upNode : sorter.sort(node.getTopNodes())){
                 if(!upNode.isTagged()){
                     node = upNode;
                     break;
@@ -168,19 +168,19 @@ public class ParallelFlash implements Algorithm{
             }
         }
         
-        return path.toArray(new LatticeNode[path.size()]);
+        return path.toArray(new GridNode[path.size()]);
     }
     
-    private LatticeNode head(List<LatticeNode> path){
+    private GridNode head(List<GridNode> path){
         if(path.size() > 0)
             return path.get(path.size()-1);
         return null;
     }
     
-    public boolean checkAndTag(LatticeNode node){
+    public boolean examineAndIdentify(GridNode node){
         Buffer curBuffer = null;
 
-        LatticeNode bestNode = this.buffers.findClosestNode(node);
+        GridNode bestNode = this.buffers.findClosestNode(node);
         
         if (bestNode != null){
             Buffer bestNodeBuffer = this.buffers.get(bestNode);
@@ -232,18 +232,18 @@ public class ParallelFlash implements Algorithm{
     }
     
     @Override
-    public Set<LatticeNode> getResultSet() {
+    public Set<GridNode> getResultSet() {
         return this.resultset;
     }
 
     @Override
-    public boolean isAnonymousResult(LatticeNode node) {
+    public boolean isAnonymousResult(GridNode node) {
         return this.resultset.contains(node);
     }
 
     @Override
     public Graph getLattice() {
-        LatticeNode[][] nodesArray = this.lattice.getLevels();
+        GridNode[][] nodesArray = this.lattice.getLayers();
         int k = 0;
         String[] attrNames = new String[hierarchies.size()];
         for (Map.Entry<Integer, Hierarchy> entry : hierarchies.entrySet()) {
@@ -257,9 +257,9 @@ public class ParallelFlash implements Algorithm{
         for(int i=0; i<nodesArray.length; i++){
         
             //sort nodes of level
-            Arrays.sort(nodesArray[i], new Comparator<LatticeNode>() {
+            Arrays.sort(nodesArray[i], new Comparator<GridNode>() {
                 @Override
-                public int compare(LatticeNode node1, LatticeNode node2) {
+                public int compare(GridNode node1, GridNode node2) {
                     int[] transformation1 = node1.getTransformation();
                     int[] transformation2 = node2.getTransformation();
                     
@@ -278,7 +278,7 @@ public class ParallelFlash implements Algorithm{
             
             for(int j=0; j<nodesArray[i].length; j++){
                 
-                LatticeNode curNode = nodesArray[i][j];
+                GridNode curNode = nodesArray[i][j];
                 char []nodesArr = nodesArray[i][j].toString().toCharArray();
                 ArrayList<String> arrLevel = new ArrayList<String>();
                 for ( k = 1; k < nodesArr.length ; k = k + 3){
@@ -323,10 +323,10 @@ public class ParallelFlash implements Algorithm{
                     }
                 }
                 
-                LatticeNode[] successors = curNode.getSuccessors();
-                Arrays.sort(successors, new Comparator<LatticeNode>() {
+                GridNode[] successors = curNode.getTopNodes();
+                Arrays.sort(successors, new Comparator<GridNode>() {
                     @Override
-                    public int compare(LatticeNode node1, LatticeNode node2) {
+                    public int compare(GridNode node1, GridNode node2) {
                         int[] transformation1 = node1.getTransformation();
                         int[] transformation2 = node2.getTransformation();
 
@@ -342,7 +342,7 @@ public class ParallelFlash implements Algorithm{
                     }
 
                 });
-                for(LatticeNode suc : successors){
+                for(GridNode suc : successors){
                     graph.setEdge(new Edge(curNode.toString(), suc.toString()));
                     edgeNum++;
                 }

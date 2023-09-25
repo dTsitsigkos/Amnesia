@@ -19,7 +19,7 @@
 package algorithms.kmanonymity;
 
 import algorithms.Algorithm;
-import algorithms.flash.LatticeNode;
+import algorithms.flash.GridNode;
 import data.Data;
 import dictionary.DictionaryString;
 import graph.Graph;
@@ -107,7 +107,7 @@ public class Apriori implements Algorithm {
         for (Map.Entry<Integer,String> entry : dict.idToString.entrySet()) {
             System.out.println(entry.getKey()+" : "+entry.getValue());
         }*/
-        System.out.println("try construct start for m="+size);
+        System.out.println("trie construct start for m="+size);
         
         while((transaction = getNextTransaction()) != null){
 //            System.out.println("transaction = ");
@@ -157,7 +157,7 @@ public class Apriori implements Algorithm {
             //System.out.println("i am hereeeeeee");
         }
         
-        System.out.println("tried construct for m="+size);
+        System.out.println("trie constrcted for m="+size);
         
         //System.out.println("Trieeeeeeeeeeeee "  );
         //trie.printTree(trie.getRoot());
@@ -331,7 +331,7 @@ public class Apriori implements Algorithm {
     }
     
     @Override
-    public boolean isAnonymousResult(LatticeNode node) {
+    public boolean isAnonymousResult(GridNode node) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     

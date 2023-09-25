@@ -34,20 +34,20 @@ public class Sorting {
         this.distinctValues = distinctValues;
     }
     
-    public LatticeNode[] sort(LatticeNode[] nodes){
+    public GridNode[] sort(GridNode[] nodes){
         if ( nodes.length > 1){
             Arrays.sort(nodes, new LatticeNodeComparator());
         }
         return nodes;  
     }
     
-    class LatticeNodeComparator implements Comparator<LatticeNode>{
+    class LatticeNodeComparator implements Comparator<GridNode>{
         @Override
-        public int compare(LatticeNode n1, LatticeNode n2) {
-            if(n1.getLevel() < n2.getLevel()){
+        public int compare(GridNode n1, GridNode n2) {
+            if(n1.getLayer() < n2.getLayer()){
                 return -1;
             }
-            else if(n1.getLevel() > n2.getLevel()){
+            else if(n1.getLayer() > n2.getLayer()){
                 return 1;
             }
             else{

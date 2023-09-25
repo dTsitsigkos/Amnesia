@@ -24,6 +24,7 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -46,6 +47,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.springframework.util.StringUtils;
 
 /**
@@ -114,6 +118,96 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     @Override
     public void print() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    @Override
+    public void loadJson() throws LimitException {
+        try {
+            JSONParser parser = new JSONParser();
+            JSONObject  obj = (JSONObject) parser.parse(new FileReader(this.inputFile));
+
+            /*Parse metadata*/
+            this.name = (String) obj.get("name");
+            this.nodesType = ((String)obj.get("type")).replace("decimal", "double");
+            this.height = ((Long) obj.get("height")).intValue();
+            this.hierarchyType = (String) obj.get("hierType");
+            
+            /*Load heiarchy's levels*/
+            String level = "level";
+            int level_count = 1;
+            
+            while(obj.containsKey(level+level_count)){
+                JSONObject levelValues = (JSONObject) obj.get(level+level_count);
+                for(Object node : levelValues.keySet()){
+                    RangeDate pDate = new RangeDate();
+                    String bounds[] = node.toString().split("-");
+                    
+                    if(bounds.length == 2){
+                        pDate.lowerBound = this.getDateFromString(bounds[0], true);
+                        pDate.upperBound = this.getDateFromString(bounds[1], false);
+                    }
+                    else{
+                       pDate.lowerBound = this.getDateFromString(node.toString(), true);
+                       pDate.upperBound = this.getDateFromString(node.toString(), false); 
+                    }
+                    
+                    this.stats.put(pDate, new NodeStats(level_count-1));
+                    if(level_count - 1 == 0){
+                        root = pDate;
+                        counterNodes ++;
+                        if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+                            throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+                        }
+                    }
+                    
+                    JSONArray children = (JSONArray) levelValues.get(node);
+                    List<RangeDate> ch = new ArrayList<>();
+                    
+                    if(children!=null){
+                        for(Object child : children){
+                            RangeDate newDate = null;
+                            bounds = child.toString().split("-");
+                            if (!bounds[0].equals("null")){
+                                newDate = new RangeDate();
+                                if(bounds.length == 2){
+                                    newDate.lowerBound = this.getDateFromString(bounds[0], true);
+                                    newDate.upperBound = this.getDateFromString(bounds[1], false);
+                                }
+                                else{
+                                    newDate.lowerBound = this.getDateFromString(child.toString(), true);
+                                    newDate.upperBound = this.getDateFromString(child.toString(), false);
+                                }
+                            }
+                            else{
+                                newDate = new RangeDate(null,null);
+                            }
+                            
+                            
+                            ch.add(newDate);             
+                            this.stats.put(newDate, new NodeStats(level_count));
+
+                            counterNodes ++;
+                            if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+                                throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+                            }
+                            this.parents.put(newDate, pDate);
+                        }
+                        this.children.put(pDate, ch);
+                    }
+                    
+                }
+                level_count++;
+            }
+            
+            findAllParents();
+            
+        } catch (IOException ex) {
+            Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (org.json.simple.parser.ParseException ex) {
+            Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ParseException ex) {
+            Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     @Override
@@ -418,6 +512,46 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     public Map<Integer, ArrayList<RangeDate>> getAllParents() {
         return this.allParents;
     }
+    
+    @Override
+    public void exportJson(String file) {
+        JSONObject exported_hier = new JSONObject();
+        exported_hier.put("hierType", "range");
+        exported_hier.put("name",this.name);
+        exported_hier.put("type", this.nodesType);
+        exported_hier.put("height", this.height);
+        
+        String level_label = "level";
+        int level_count = 1;
+        
+        
+        while(this.allParents.containsKey(level_count-1) && level_count < this.height){
+            List<RangeDate> parents = this.allParents.get(level_count-1);
+            JSONObject jsonParents = new JSONObject();
+            for(RangeDate curParent : parents){   
+                JSONArray children = new JSONArray();
+//                    jsonParents.put(curParent.toString(), (JSONArray) parser.parse(Arrays.deepToString(this.getChildren(curParent).toArray())));
+                    List<RangeDate> childs = this.getChildren(curParent);
+                    if(childs != null && !childs.isEmpty()){
+                        for(RangeDate child : childs){
+                            children.add(((RangeDate)child).dateToExportHierString(translateDateViaLevel(level_count),"-"));
+                        }
+                        jsonParents.put(((RangeDate)curParent).dateToExportHierString(translateDateViaLevel(level_count-1),"-"), children);
+                    }
+                
+            }
+            exported_hier.put(level_label+level_count,jsonParents);
+            level_count++;
+            
+        }
+        try (PrintWriter out = new PrintWriter(new FileWriter(file))) {
+            out.write(exported_hier.toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        
+    }
 
     @Override
     public void export(String file) {
@@ -430,17 +564,17 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
             
             int counter = 1;
 
-            //write parents - children to file
+            //write parents - childen to file
             for(int curLevel = height - 2; curLevel >= 0; curLevel--){
                 System.out.println("curLevel = " + curLevel);
                 for (RangeDate curParent : this.allParents.get(curLevel)){
                     StringBuilder sb = new StringBuilder();
                     if (this.getChildren(curParent) != null){
                         for (RangeDate child : this.getChildren(curParent)){
-                            sb.append(((RangeDate)child).dateToExportHierString(translateDateViaLevel(curLevel + 1)));
+                            sb.append(((RangeDate)child).dateToExportHierString(translateDateViaLevel(curLevel + 1),","));
                             sb.append(" ");
                         } 
-                        writer.println(((RangeDate)curParent).dateToExportHierString(translateDateViaLevel(curLevel)) + " has " + sb.toString());
+                        writer.println(((RangeDate)curParent).dateToExportHierString(translateDateViaLevel(curLevel),",") + " has " + sb.toString());
                     }
                     
                 }
@@ -1090,7 +1224,7 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
 
             String []temp = null;
             temp = nodeInput.split("-");
-//            System.out.println("Length "+temp.length);
+//            System.out.println("Lenght "+temp.length);
             if(temp.length == 2){
                 try {        
                     if (!nodeInput.equals("(null)")){
@@ -1931,6 +2065,10 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
     public void createLevelsMap(){
         levelpFlash = Collections.synchronizedMap(new HashMap());
     }
+
+    
+
+    
 
 
     

@@ -83,7 +83,7 @@ public class TXTData implements Data,Serializable{
     private double dataSet[][] = null;
     private int sizeOfRows = 0;
     private int sizeOfCol = 0;
-    private String delimiter = null;
+    private String delimeter = null;
 //    private static int counterNamesType=0;
 //    private static int counterNamesPosition=0;
     
@@ -144,10 +144,10 @@ public class TXTData implements Data,Serializable{
         
         this.inputFile = inputFile;
         if ( del == null ){
-            delimiter = ",";
+            delimeter = ",";
         }
         else{
-            delimiter = del;
+            delimeter = del;
         }
              
     }
@@ -289,7 +289,7 @@ public class TXTData implements Data,Serializable{
         int counter = 0;
         int stringCount;
         if(dictionary.isEmpty() && dictHier.isEmpty()){
-            System.out.println("Both empty load data");
+            System.out.println("Both empy load data");
             stringCount = 1;
         }
         else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
@@ -321,7 +321,7 @@ public class TXTData implements Data,Serializable{
 //                System.out.println("Edw mpainei");
                 //do not read the fist line
                 if (FLAG == true){
-                    temp = strLine.split(delimiter,-1);
+                    temp = strLine.split(delimeter,-1);
                     for ( int i = 0 ; i < temp.length ; i ++){
                         if (checkColumns[i] == true){
                             temp[i] = temp[i].trim().replaceAll("\"", "").replaceAll("[\uFEFF-\uFFFF]", "").replace(".", "").replace("[","(").replace("]", ")");;
@@ -346,7 +346,7 @@ public class TXTData implements Data,Serializable{
                     continue;
                 }
                 else{
-                    temp = strLine.split(delimiter,-1);
+                    temp = strLine.split(delimeter,-1);
 //                    System.out.println("line "+strLine);
                     counter1 = 0;
                     for (int i = 0; i < temp.length ; i ++ ){
@@ -359,11 +359,11 @@ public class TXTData implements Data,Serializable{
                                         dataSet[counter][counter1] = Integer.parseInt(temp[i]);
                                     } catch (java.lang.NumberFormatException exc) {
                                         //ErrorWindow.showErrorWindow("Column : " + colNames[i] + " is chosen as integer and you have double values");
-                                        exc.printStackTrace();
+                                        
                                         try {
                                             dataSet[counter][counter1] = new Double(temp[i]).intValue();
                                         } catch (Exception exc1) {
-                                            exc1.printStackTrace();
+                                            
     //                                        System.out.println("Column : " + colNames[i] + " is chosen as integer and you have double values");
                                             throw new NotFoundValueException("Value \""+temp[i]+"\" is not an integer, \""+ colNames[i]+ "\" is an integer column");
                                         }
@@ -620,6 +620,9 @@ public class TXTData implements Data,Serializable{
         double ncp = 0;
         double total = 0;
         int allNodes = 0;
+        int suppressedRows = 0;
+        Map<Integer,Integer> globalLeaves = new HashMap();
+        Map<Integer,Map<Object,Integer>> innerLeaves = new HashMap();
         try {
             Object[] rowQIs = null;
             if(suppressedValues != null){
@@ -638,6 +641,7 @@ public class TXTData implements Data,Serializable{
 
                     //check if row is suppressed
                     if(isSuppressed(rowQIs, qids, suppressedValues)){
+                        suppressedRows++;
                         continue;
                     }
                 }
@@ -656,11 +660,34 @@ public class TXTData implements Data,Serializable{
                                 }
                             }
                             else{
-                                int leafAnonymized = h.findAllChildren(((Integer)anonymizedTable[row][column]).doubleValue(), 0,true);
+                                int leafAnonymized = -1;
+                                if(innerLeaves.containsKey(column)){
+                                    if(innerLeaves.get(column).containsKey(anonymizedTable[row][column])){
+                                        leafAnonymized = innerLeaves.get(column).get(anonymizedTable[row][column]);
+                                    }
+                                    else{
+                                        leafAnonymized = h.findAllChildren(((Integer)anonymizedTable[row][column]).doubleValue(), 0,true);
+                                        innerLeaves.get(column).put(anonymizedTable[row][column], leafAnonymized);
+                                    }
+                                }
+                                else{
+                                    innerLeaves.put(column, new HashMap());
+                                    leafAnonymized = h.findAllChildren(((Integer)anonymizedTable[row][column]).doubleValue(), 0,true);
+                                    innerLeaves.get(column).put(anonymizedTable[row][column], leafAnonymized);
+                                }
                                 if(leafAnonymized == 1){
                                     continue;
                                 }
-                                int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                
+                                int allLeaves;
+                                if(globalLeaves.containsKey(column)){
+                                    allLeaves = globalLeaves.get(column);
+                                }
+                                else{
+                                   allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                   globalLeaves.put(column, allLeaves);
+                                }
+//                                int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
                                 
                                 ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size();
                                 
@@ -678,11 +705,32 @@ public class TXTData implements Data,Serializable{
                                 }
                             }
                             else{
-                                int leafAnonymized = h.findAllChildren(anonymizedTable[row][column], 0,true);
+                                int leafAnonymized = -1;
+                                if(innerLeaves.containsKey(column)){
+                                    if(innerLeaves.get(column).containsKey(anonymizedTable[row][column])){
+                                        leafAnonymized = innerLeaves.get(column).get(anonymizedTable[row][column]);
+                                    }
+                                    else{
+                                        leafAnonymized = h.findAllChildren(((Integer)anonymizedTable[row][column]).doubleValue(), 0,true);
+                                        innerLeaves.get(column).put(anonymizedTable[row][column], leafAnonymized);
+                                    }
+                                }
+                                else{
+                                    innerLeaves.put(column, new HashMap());
+                                    leafAnonymized = h.findAllChildren(((Integer)anonymizedTable[row][column]).doubleValue(), 0,true);
+                                    innerLeaves.get(column).put(anonymizedTable[row][column], leafAnonymized);
+                                }
                                 if(leafAnonymized == 1){
                                     continue;
                                 }
-                                int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                int allLeaves;
+                                if(globalLeaves.containsKey(column)){
+                                    allLeaves = globalLeaves.get(column);
+                                }
+                                else{
+                                   allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                   globalLeaves.put(column, allLeaves);
+                                }
                                 
                                 ncp += (leafAnonymized/((double)allLeaves))/hierarchies.size();  
                                 total += h.getLevel(((Double)anonymizedTable[row][column]).doubleValue())/((double)h.getHeight()-1)/hierarchies.size();
@@ -715,12 +763,33 @@ public class TXTData implements Data,Serializable{
                                 if(anonymizedId == null){
                                     anonymizedId = HierarchyImplString.getWholeDictionary().getStringToId().get(anonymizedValue);
                                 }
-                                int leafAnonymized = h.findAllChildren(anonymizedId.doubleValue(), 0,true);
+                                int leafAnonymized = -1;
+                                if(innerLeaves.containsKey(column)){
+                                    if(innerLeaves.get(column).containsKey(anonymizedTable[row][column])){
+                                        leafAnonymized = innerLeaves.get(column).get(anonymizedTable[row][column]);
+                                    }
+                                    else{
+                                        leafAnonymized = h.findAllChildren(anonymizedId.doubleValue(), 0,true);
+                                        innerLeaves.get(column).put(anonymizedTable[row][column], leafAnonymized);
+                                    }
+                                }
+                                else{
+                                    innerLeaves.put(column, new HashMap());
+                                    leafAnonymized = h.findAllChildren(anonymizedId.doubleValue(), 0,true);
+                                    innerLeaves.get(column).put(anonymizedTable[row][column], leafAnonymized);
+                                }
                                 
                                 if(leafAnonymized == 1){
                                     continue;
                                 }
-                                int allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                int allLeaves;
+                                if(globalLeaves.containsKey(column)){
+                                    allLeaves = globalLeaves.get(column);
+                                }
+                                else{
+                                   allLeaves = h.findAllChildren(h.getRoot(), 0,true);
+                                   globalLeaves.put(column, allLeaves);
+                                }
                                 
                                 allNodes += leafAnonymized;
                                 
@@ -737,8 +806,11 @@ public class TXTData implements Data,Serializable{
 //                ncp = ncp/hierarchies.size();
                 
             }
-            ncp = ncp/this.recordsTotal;
-            total = total/this.recordsTotal;
+            System.out.println("Withput Suppressed Rows NCP" + ncp/this.recordsTotal);
+            System.out.println("Withput Suppressed Rows Total" + total/this.recordsTotal);
+            ncp = ncp/(this.recordsTotal-suppressedRows);
+            total = total/(this.recordsTotal-suppressedRows);
+            System.out.println("SuppressedRows "+suppressedRows);
             
             this.informationLoss.put("NCP", ncp);
             this.informationLoss.put("Total", total);
@@ -792,7 +864,7 @@ public class TXTData implements Data,Serializable{
                 }
                 
                 Random rand = new Random();
-                List<Integer> randomNumbers = rand.ints(0, this.sizeOfRows).distinct().limit(this.sizeOfRows).boxed().collect(Collectors.toList());
+                List<Integer> randomNumbers = rand.ints(0,temp.length).distinct().limit(temp.length).boxed().collect(Collectors.toList());
                 this.randomizedMap = new HashMap();
                 //write table data
                 for (int row = 0; row < temp.length; row++){
@@ -916,7 +988,7 @@ public class TXTData implements Data,Serializable{
                 
                 //save column names
                 if (FLAG == true){
-                    colNames = strLine.split(delimiter,-1);
+                    colNames = strLine.split(delimeter,-1);
                     for ( int i = 0 ; i < colNames.length ; i ++){
                         if ( checkColumns[i] == true){
                             colNamesType.put(counter,null);
@@ -997,7 +1069,7 @@ public class TXTData implements Data,Serializable{
             while ((strLine = br.readLine()) != null)   {
                 //escape first row
                 if (FLAG == true){
-                    temp = strLine.split(delimiter,-1);
+                    temp = strLine.split(delimeter,-1);
                     columnNames = new String[temp.length];
                     smallDataSet = new String[6][temp.length];
                     this.formatsDate = new String[temp.length];
@@ -1019,7 +1091,7 @@ public class TXTData implements Data,Serializable{
                 }
                 //save column types
                 else{
-                    temp = strLine.split(delimiter,-1);
+                    temp = strLine.split(delimeter,-1);
                     System.out.println("strLine = " + strLine);
                     /*for ( int i = 0 ; i < temp.length ; i ++){
                         System.out.println("tempp =" + temp[i]);
@@ -1494,7 +1566,7 @@ public class TXTData implements Data,Serializable{
         
         // out put file 
         
-        System.out.println("done original data");
+        System.out.println("done orgiginal data");
     }
 
     @Override
@@ -1511,7 +1583,7 @@ public class TXTData implements Data,Serializable{
     public void setMask(int column, int[] positions, char character,String option) {
         int stringCount;
         if(dictionary.isEmpty() && dictHier.isEmpty()){
-            System.out.println("Both empty load data");
+            System.out.println("Both empy load data");
             stringCount = 1;
         }
         else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
@@ -1614,7 +1686,7 @@ public class TXTData implements Data,Serializable{
     public void setRegex(int column, char character, String regex) {
         int stringCount;
         if(dictionary.isEmpty() && dictHier.isEmpty()){
-            System.out.println("Both empty load data");
+            System.out.println("Both empy load data");
             stringCount = 1;
         }
         else if(!dictionary.isEmpty() && !dictHier.isEmpty()){

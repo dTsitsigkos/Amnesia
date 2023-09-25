@@ -6,7 +6,7 @@
 package anonymizeddataset;
 
 import exceptions.NotFoundValueException;
-import algorithms.flash.LatticeNode;
+import algorithms.flash.GridNode;
 import anonymizationrules.AnonymizationRules;
 import data.Data;
 import data.DiskData;
@@ -304,6 +304,45 @@ public class AnonymizedDataset {
             dataAnon.add(linkedHashTemp);
         }
     }
+    
+    
+    public void renderAnonymizeDifferential(Object[][] anonymdata){
+        this.recordsTotal = anonymdata.length;
+        this.recordsFiltered = anonymdata.length;
+        int max;
+        
+        if ( start + length <= this.recordsTotal ){
+            max = start + length;
+        }
+        else{
+            max = anonymdata.length;
+            length = anonymdata.length-start;
+        }
+        
+        
+        Map <Integer,String> colNamesType = dataset.getColNamesType();
+        LinkedHashMap linkedHashTemp = null;
+        dataAnon = new ArrayList<LinkedHashMap>();
+        
+        for ( int i = start ; i < max ; i ++){
+            linkedHashTemp = new LinkedHashMap<>();
+            for (int j = 0 ; j < colNamesType.size() ; j ++){
+                if (colNamesType.get(j).equals("double")){
+                    linkedHashTemp.put(dataset.getColumnByPosition(j), anonymdata[i][j]);
+                }
+                else if (colNamesType.get(j).equals("int")){
+                    linkedHashTemp.put(dataset.getColumnByPosition(j), anonymdata[i][j]);
+                }
+                else{
+//                    DictionaryString dict = dataset.getDictionary().get(j);
+                    linkedHashTemp.put(dataset.getColumnByPosition(j), anonymdata[i][j]);
+
+                }
+            }
+
+            dataAnon.add(linkedHashTemp);
+        }
+    }
 
     /**
      * renders anonymized dataset
@@ -455,7 +494,14 @@ public class AnonymizedDataset {
                             Double num = (Double)columnData[line][column];
                             String originalValue = dataset.getDictionary().getIdToString().get(num.intValue());
                             if(originalValue == null){
-                                originalValue = HierarchyImplString.getWholeDictionary().getIdToString().get(num.intValue());
+                                if(this.dataset instanceof DiskData){
+                                    Date date = new Date(((Double)columnData[line][column]).longValue());
+                                    SimpleDateFormat df2 = new SimpleDateFormat("dd/MM/yyyy");
+                                    originalValue = df2.format(date);
+                                }
+                                else{
+                                    originalValue = HierarchyImplString.getWholeDictionary().getIdToString().get(num.intValue());
+                                }
                             }
                             columnData[line][column] = anonymizeValue(originalValue, hierarchy, level); 
                             if(columnData[line][column] == null){
@@ -491,17 +537,26 @@ public class AnonymizedDataset {
                         
                         //
                     }
-                    else if(!onlyAnonymTable){
+                    else {
                         
-                        Double num = (Double)columnData[line][column];
-                        columnData[line][column] = dataset.getDictionary().getIdToString().get(num.intValue());
-                        if(columnData[line][column] == null){
-                            
-                            columnData[line][column] = HierarchyImplString.getWholeDictionary().getIdToString().get(num.intValue());
+                        if(this.dataset instanceof DiskData && colNamesType.get(column).contains("date")){
+                            Date date = new Date(((Double)columnData[line][column]).longValue());
+                            SimpleDateFormat df2 = new SimpleDateFormat("dd/MM/yyyy");
+                            columnData[line][column] = df2.format(date);
                         }
-                        if ( ((String)columnData[line][column]).equals("NaN")){
-                            columnData[line][column] = "(null)";
+                        else{
+                            Double num = (Double)columnData[line][column];
+                            columnData[line][column] = dataset.getDictionary().getIdToString().get(num.intValue());
+                            if(columnData[line][column] == null){
+
+                                columnData[line][column] = HierarchyImplString.getWholeDictionary().getIdToString().get(num.intValue());
+                            }
+                            if ( ((String)columnData[line][column]).equals("NaN")){
+                                columnData[line][column] = "(null)";
+                            } 
                         }
+                        
+                        
                     }
                 }
             }
@@ -645,6 +700,50 @@ public class AnonymizedDataset {
         }
     }
     
+    
+    public void renderAnonymizeDifferentialDisk(){
+        DiskData diskData = (DiskData) this.dataset;
+        this.recordsTotal = diskData.getAnonymiRecDiff();
+        this.recordsFiltered = diskData.getAnonymiRecDiff();
+        int max;
+        Object[][] anonymizedData = null;
+        
+        if ( start + length <= this.recordsTotal ){
+            max = start + length;
+        }
+        else{
+            max = diskData.getAnonymiRecDiff();
+            length = diskData.getAnonymiRecDiff()-start;
+        }
+        
+        anonymizedData = diskData.getAnonymizedDataSet(start, max);
+        
+        
+        Map <Integer,String> colNamesType = dataset.getColNamesType();
+        LinkedHashMap linkedHashTemp = null;
+        dataAnon = new ArrayList<LinkedHashMap>();
+        System.out.println("Anonymized leght "+anonymizedData.length);
+        
+        for ( int i = 0 ; i < anonymizedData.length ; i ++){
+            linkedHashTemp = new LinkedHashMap<>();
+            for (int j = 0 ; j < colNamesType.size() ; j ++){
+                if (colNamesType.get(j).equals("double")){
+                    linkedHashTemp.put(dataset.getColumnByPosition(j), anonymizedData[i][j]);
+                }
+                else if (colNamesType.get(j).equals("int")){
+                    linkedHashTemp.put(dataset.getColumnByPosition(j), anonymizedData[i][j]);
+                }
+                else{
+//                    DictionaryString dict = dataset.getDictionary().get(j);
+                    linkedHashTemp.put(dataset.getColumnByPosition(j), anonymizedData[i][j]);
+
+                }
+            }
+
+            dataAnon.add(linkedHashTemp);
+        }
+    }
+    
     public void renderAnonymizedDiskTable(){
         LinkedHashMap linkedHashTemp = null;
         int max;
@@ -727,7 +826,7 @@ public class AnonymizedDataset {
                                     try{
                                        columnData[line][column] = ((Double)Double.parseDouble((String)columnData[line][column])).intValue();
                                     }catch(NumberFormatException e){
-//                                        e.printStackTrace();
+                                        e.printStackTrace();
                                         columnData[line][column] = hierarchy.getDictionary().getIdToString((int) anonymizedData[line][column]);
                                     }
                                 }
@@ -1175,6 +1274,33 @@ public class AnonymizedDataset {
         //relational
     }
     
+    public Object[][] exportDiskDatasetDifferential(String file, Map<Integer, Hierarchy> quasiIdentifiers){
+        DiskData data = (DiskData) this.dataset;
+        int start=0;
+        boolean printColumns = true;
+        int end = data.getAnonymiRecDiff()/4;
+        Object[][] anonymizedData = null;
+        
+        while(end<=data.getAnonymiRecDiff()){
+            anonymizedData = data.getAnonymizedDataSet(start, end);
+            data.export(file, null, anonymizedData, qids, quasiIdentifiers, suppressedValues,printColumns);
+            
+            printColumns = false;
+            if(end==data.getAnonymiRecDiff()){
+                break;
+            }
+            else{
+                start = end;
+                end += data.getAnonymiRecDiff()/4;
+                if(end > data.getAnonymiRecDiff()){
+                    end = data.getAnonymiRecDiff();
+                }
+            }
+        }
+        
+        return null;
+    }
+    
     public Object[][] exportDiskDataset(String file, Map<Integer, Hierarchy> quasiIdentifiers){
         DiskData data = (DiskData) this.dataset; 
         boolean printColumns = true;
@@ -1415,7 +1541,7 @@ public class AnonymizedDataset {
             }
             else{
                 start = end;
-                end += dataset.getRecordsTotal()/4;;
+                end += dataset.getRecordsTotal()/4;
                 if(end > data.getRecordsTotal()){
                     end = data.getRecordsTotal();
                 }
@@ -1990,94 +2116,12 @@ public class AnonymizedDataset {
         return columnData;
     }
     
+    public Object[][] exportDatasetDifferential(String file, Object[][] anonymdata){
+        this.dataset.export(file, null, anonymdata,qids, this.quasiIdentifiers, suppressedValues);
+        return anonymdata;
+    }
     
     
-//    public Map<String,Integer> computeInformationLoss() throws ParseException{
-//        double [][]dataSet = this.dataset.getDataSet();
-//        Object[][]columnData = null;
-//        Map <Integer,String> colNamesType = dataset.getColNamesType();
-//        DictionaryString dictionary = dataset.getDictionary();
-//        columnData = new Object[dataSet.length][dataSet[0].length];
-//        
-//        Integer ncp = 0;
-//        Map<String,Integer> informationLossMetrics = new HashMap();
-//        
-//        Map <Integer,String> colNamesPosition = null;
-//        Object columnName = null;
-//        colNamesType = dataset.getColNamesType();
-//        colNamesPosition = dataset.getColNamesPosition();
-//
-//        //compute data of first column with line numbers
-//        for(int i=0; i< dataSet.length; i++){
-//            for( int j = 0 ; j < colNamesType.size() ; j ++ ){
-//                columnData[i][j] = dataSet[start+i][j];
-//            }
-//        }
-//
-//        int count = 0;
-//
-//        //compute data of columns
-//        hierarchyLevel = new int[dataSet[0].length];
-//        for (int i = 0 ; i < hierarchyLevel.length ; i++){
-//            hierarchyLevel[i] = 0;
-//        }
-//        
-//        Object[] rowQIs = null;
-//        if(suppressedValues != null){
-//            rowQIs = new Object[qids.length];
-//        }
-//        
-//        for(int column=0; column<dataSet[0].length; column++){
-//            columnName = colNamesPosition.get(column);
-//            boolean anonymizeColumn = false;
-//            Hierarchy hierarchy = null;
-//            int level = 0;
-//
-//            if((count < qids.length) && (qids[count] == column)){
-//                anonymizeColumn = true;
-//                hierarchy = quasiIdentifiers.get(column);
-//                level = transformation[count];
-//                count++;
-//                hierarchyLevel [column] = level;
-//                hierarchy.setLevel(level);
-//            }
-//            
-//            if(colNamesType.get(column).contains("int")){
-//                for(int line=0; line<columnData.length; line++){
-//                    
-//                    
-//                    if(anonymizeColumn && level > 0){
-//                        columnData[line][column] = anonymizeValue(columnData[line][column], hierarchy, level);
-//                    }
-//                }
-//                
-//            }
-//            else if(colNamesType.get(column).contains("double")){
-//                for(int line=0; line<columnData.length; line++){
-//                    if(anonymizeColumn && level > 0){
-//                        columnData[line][column] = anonymizeValue(columnData[line][column], hierarchy, level);
-//                    }
-//                }
-//            }
-//            else{
-//                for(int line=0; line<columnData.length; line++){
-//                    if(anonymizeColumn && level > 0){
-//                        if(colNamesType.get(column).contains("date")){
-//                            columnData[line][column] = anonymizeValue(dataset.getDictionary().getIdToString(((Double)columnData[line][column]).intValue()), hierarchy, level);
-//                            /// dd/MM/yyyy Default data format for Amnesia
-//                        }
-//                        else{
-//                            Object value = anonymizeValue(columnData[line][column], hierarchy, level);
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//        
-////        this.dataset.export(file, null, columnData,qids, this.quasiIdentifiers, suppressedValues);
-//        
-//        return informationLossMetrics;
-//    }
     
     /**
      * export anonymized dataset to file
@@ -2249,7 +2293,7 @@ public class AnonymizedDataset {
      */
     private Object anonymizeValue(Object value, Hierarchy h, int level) throws ParseException{
         Object anonymizedValue = value;
-//        System.out.println("level "+level+" hierarchy "+h.getName()+"value "+value);
+//        System.out.println("level "+level+" heirarchy "+h.getName()+"value "+value);
         for(int i=0; i<level; i++){
             h.setLevel(i);
             if(h.getHierarchyType().equals("range")){

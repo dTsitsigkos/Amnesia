@@ -86,7 +86,7 @@ public class CheckVariables {
                     Date date = sdf.parse(s);
                     if (s.equals(sdf.format(date))){
                         this.lastFormat = parse;
-                        System.out.println("Printing the value of request parse " + parse);
+                        System.out.println("Printing the value of requst parse " + parse);
                         return true;
                     }
                     System.out.println("Printing the value of " + parse);

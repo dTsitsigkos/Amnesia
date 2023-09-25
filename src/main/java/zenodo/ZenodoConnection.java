@@ -178,7 +178,7 @@ public class ZenodoConnection {
                    JSONObject fileObj2 = (JSONObject)fileJson.get("links");
                    //JSONObject fileJson2 = (JSONObject)fileObj2;
                    String fileId = (String) fileObj2.get("download");
-                   //String fileId = (String)fileJson2.get("download");
+                   //String fileId = (String)fileJson2.get("donwload");
                  
                   //  System.out.println("title = " + title);
                    // System.out.println("filename = " + filename);
@@ -311,7 +311,7 @@ public class ZenodoConnection {
     }
     
     /**
-     * Downloads a file from Zenodo to the filesystem
+     * Donwloads a file from Zenodo to the filesystem
      * @param file file from Zenodo to download
      * @param filename path to store downloaded file
      * @throws MalformedURLException

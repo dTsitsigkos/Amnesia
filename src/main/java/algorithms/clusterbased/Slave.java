@@ -203,6 +203,7 @@ public class Slave extends Thread{
     public void splitClusters(){
         
         Map<Integer,Double[][]> records;
+        System.out.println("Thrad big "+this.slaveId+" "+this.bigClusters.size());
         synchronized(clusters){
             records = clusters.getClusterDatasetRecs(this.bigClusters,false);
         }
@@ -318,6 +319,7 @@ public class Slave extends Thread{
                     
                     
                     if(distTree == null){
+//                        System.out.println("Den Mapinei sto dist Tree slave "+this.slaveId);
                         for(int j=0; j<=clusters.getLastClusterId(); j++){
                             Centroid c = centroids[j];
                             if(c!=null){
@@ -339,16 +341,18 @@ public class Slave extends Thread{
                         }
 
 
-
-                        if(newCluster < 0){
-                            this.centroids[centroidCluster].update(record,true); 
-                        }
-                        else{
-                            this.centroids[centroidCluster] = cOld;
-                            this.centroids[newCluster] = cNew;
+                        if(centroidCluster>=0){
+                            if(newCluster < 0){
+                                this.centroids[centroidCluster].update(record,true); 
+                            }
+                            else{
+                                this.centroids[centroidCluster] = cOld;
+                                this.centroids[newCluster] = cNew;
+                            }
                         }
                     }
                     else{
+//                        System.out.println("Mapinei sto dist Tree slave "+this.slaveId);
                         RangeDouble rangeCentroids = distTree.findRange(record);
                         for(int j=rangeCentroids.getLowerBound().intValue(); j<=rangeCentroids.getUpperBound().intValue(); j++){
                             Centroid c = centroids[j];
@@ -361,16 +365,38 @@ public class Slave extends Thread{
                             }
                         }
                         
-                        
-                        synchronized(clusters){
-                            newCluster = this.clusters.put(centroidCluster,recordId,minDistance,null);
+                        while(centroidCluster<0){
+                            System.out.println("Record "+record+" not found range "+rangeCentroids+" thread "+this.slaveId);
+                            rangeCentroids = new RangeDouble(rangeCentroids.getUpperBound()+1,rangeCentroids.getUpperBound()+distTree.getChildren());
+                            for(int j=rangeCentroids.getLowerBound().intValue(); j<=rangeCentroids.getUpperBound().intValue(); j++){
+                                Centroid c = centroids[j];
+                                if(c!=null){
+                                    double distance = c.computeDistance(record,true);
+                                    if(distance < minDistance){
+                                        minDistance = distance;
+                                        centroidCluster = j;
+                                    }    
+                                }
+                            }
+                            
                         }
-                        this.centroids[centroidCluster].update(record,true); 
+                        
+                        if(centroidCluster>=0){
+                            synchronized(clusters){
+                                newCluster = this.clusters.put(centroidCluster,recordId,minDistance,null);
+                            }
+                        
+                            this.centroids[centroidCluster].update(record,true); 
+                        }
+                        else{
+                            System.out.println("Record "+record+" not found range "+rangeCentroids+" thread "+this.slaveId);
+                        }
                     }
                     
-                }else{
-                    break;
                 }
+//                else{
+//                    break;
+//                }
             }
             System.out.println("End find distance thread "+this.slaveId);
         }catch(Exception e){

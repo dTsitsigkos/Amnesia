@@ -22,8 +22,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.RecursiveTask;
-import algorithms.flash.LatticeNode;
+import algorithms.flash.GridNode;
 import data.Data;
+import data.DiskData;
+import data.TXTData;
 import dictionary.DictionaryString;
 import hierarchy.Hierarchy;
 import hierarchy.distinct.HierarchyImplString;
@@ -42,8 +44,8 @@ import java.util.logging.Logger;
 public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
     Data data = null;
     Map<Integer, Hierarchy> hierarchies = null;
-    LatticeNode node = null;
-    LatticeNode parentNode = null;
+    GridNode node = null;
+    GridNode parentNode = null;
     Buffer parentNodeBuffer = null;
     GeneralizedRow[] keysetArray = null;
     int[] qidColumns = null;
@@ -53,7 +55,7 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
     int worder_id = -1;
     public Worker nextJoin = null;
     
-    public Worker(Data data,Map<Integer, Hierarchy> hierarchies,LatticeNode node,LatticeNode parentNode,
+    public Worker(Data data,Map<Integer, Hierarchy> hierarchies,GridNode node,GridNode parentNode,
             Buffer parentNodeBuffer,GeneralizedRow[] keysetArray,int[] qidColumns,int start,
             int end,Worker nextJoin, int wi){
         this.data = data;
@@ -98,7 +100,7 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
      * @param row the row of the dataset to be generalized
      * @return the generalized QI columns of the row
      */
-    private GeneralizedRow project(LatticeNode node, int[] qidColumns, double[] row) throws ParseException{
+    private GeneralizedRow project(GridNode node, int[] qidColumns, double[] row) throws ParseException{
         DictionaryString dict = data.getDictionary();
         GeneralizedRow gRow = new GeneralizedRow(node.getTransformation().length);
         
@@ -119,9 +121,17 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
                 rowValue = row[qidColumns[k]];
             }
             else if( data.getColNamesType().get(qidColumns[k]).equals("date")){
-                rowValue = dict.getIdToString((int)row[qidColumns[k]]);
-                if(rowValue == null){
-                    rowValue = HierarchyImplString.getWholeDictionary().getIdToString((int)row[qidColumns[k]]);
+                if(data instanceof TXTData){
+                    rowValue = dict.getIdToString((int)row[qidColumns[k]]);
+                    if(rowValue == null){
+                        rowValue = HierarchyImplString.getWholeDictionary().getIdToString((int)row[qidColumns[k]]);
+                    }
+                    System.out.println("Row value "+rowValue);
+                }
+                else{
+                    SimpleDateFormat df2 = new SimpleDateFormat("dd/MM/yyyy");
+                    rowValue = df2.format(new Date((long)row[qidColumns[k]]));
+                    System.out.println("Row value "+rowValue);
                 }
             }
             else {
@@ -190,7 +200,7 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
                                 }
                                 else{
                                     //System.out.println("mpika3333");
-                                    //System.out.println("edwwwwwwwwwwwwwwwww = " + d.toString());
+                                    System.out.println("edwwwwwwwwwwwwwwwww = " + d.toString());
                                     rowValue = h.getParent(d);
                                 }    
                             }
@@ -221,7 +231,7 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
                                 }    
                             }
                             else{
-                                //System.out.println("mpika222222222222");
+                                System.out.println("mpika222222222222 "+rowValue);
                                 rowValue = h.getParent(rowValue,this.worder_id);
                             }
                         }
@@ -288,7 +298,15 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
     }
     
     private void computeFromRoot() throws ParseException{
-        double[][] dataset = data.getDataSet();
+        double[][] dataset;
+        dataset = data.getDataSet();
+//        if(data instanceof TXTData){
+//            dataset = data.getDataSet();
+//        }
+//        else{
+//            dataset = ((DiskData) data).getDataset(start, end-1);
+//        }
+        
         
         
         for(int i=start; i<end; i++){
@@ -358,8 +376,13 @@ public class Worker extends RecursiveTask<Map<GeneralizedRow, Integer>>{
                         else if (h.getNodesType().equals("date") ){
                             if(parentNodeTransf[i] == 0 && nodeTransf[i] > 0){
                                 SimpleDateFormat sf = new SimpleDateFormat("E MMM dd HH:mm:ss z yyyy" );
-                                Date doubleValue =  sf.parse(value.toString());
-                                parent = h.getParent(doubleValue);
+                                if(data instanceof TXTData){
+                                    Date doubleValue =  sf.parse(value.toString());
+                                    parent = h.getParent(doubleValue);
+                                }
+                                else{
+                                    parent = h.getParent(new Date((long)value));
+                                }
 
                                 for(int j=0; j<k-1; j++){
                                     h.setpLevel(this.worder_id,j+1);

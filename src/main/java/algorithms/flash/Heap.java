@@ -28,7 +28,7 @@ import java.util.PriorityQueue;
 public class Heap {
     private final int[] maxLevels;
     private final int[][] distinctValues;
-    PriorityQueue<LatticeNode> queue = new PriorityQueue<>(10, new LatticeNodeComparator());
+    PriorityQueue<GridNode> queue = new PriorityQueue<>(10, new LatticeNodeComparator());
     
     Heap(int[] maxLevels, int[][] distinctValues) {
         this.maxLevels = maxLevels;
@@ -39,22 +39,22 @@ public class Heap {
         return this.queue.isEmpty();
     }
 
-    public LatticeNode extractMin(){
+    public GridNode extractMin(){
         return this.queue.poll();
     }
     
-    public void add(LatticeNode node){
+    public void add(GridNode node){
         this.queue.add(node);
     }
     
-    class LatticeNodeComparator implements Comparator<LatticeNode>{
+    class LatticeNodeComparator implements Comparator<GridNode>{
 
         @Override
-        public int compare(LatticeNode n1, LatticeNode n2) {
-            if(n1.getLevel() < n2.getLevel()){
+        public int compare(GridNode n1, GridNode n2) {
+            if(n1.getLayer() < n2.getLayer()){
                 return -1;
             }
-            else if(n1.getLevel() > n2.getLevel()){
+            else if(n1.getLayer() > n2.getLayer()){
                 return 1;
             }
             else{

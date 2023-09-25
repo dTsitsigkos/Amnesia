@@ -33,17 +33,20 @@ import hierarchy.Hierarchy;
 import static hierarchy.Hierarchy.online_limit;
 import static hierarchy.Hierarchy.online_version;
 import hierarchy.NodeStats;
+import hierarchy.ranges.HierarchyImplRangesDate;
 import hierarchy.ranges.RangeDate;
 import hierarchy.ranges.RangeDouble;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,6 +62,9 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jsoninterface.View;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 
 /**
@@ -132,6 +138,136 @@ public class HierarchyImplString implements Hierarchy<Double> {
 
     public void setNodesType(String nodesType) {
         this.nodesType = nodesType;
+    }
+    
+    @Override
+    public void loadJson() throws LimitException {
+        try {
+            JSONParser parser = new JSONParser();
+            JSONObject  obj = (JSONObject) parser.parse(new FileReader(this.inputFile)); 
+            
+            /*Parse metadata*/
+            this.name = (String) obj.get("name");
+            this.nodesType = ((String)obj.get("type")).replace("decimal", "double");
+            this.height = ((Long) obj.get("height")).intValue();
+            this.hierarchyType = (String) obj.get("hierType");
+            
+            /*Initialise str dictionary */
+            int strCount;
+            if(dictData.isEmpty() && dict.isEmpty()){
+                System.out.println("Both empty");
+                strCount = 1;
+            }
+            else if(!dictData.isEmpty() && !dict.isEmpty()){
+                System.out.println("Both have values");
+                if(dictData.getMaxUsedId() > dict.getMaxUsedId()){
+                    strCount = dictData.getMaxUsedId()+1;
+                }
+                else{
+                    strCount = dict.getMaxUsedId()+1;
+                }
+            }
+            else if(dictData.isEmpty()){
+                System.out.println("Dict data empty");
+                strCount = dict.getMaxUsedId()+1;
+            }
+            else{
+                System.out.println("Dict hier empty");
+                strCount = dictData.getMaxUsedId()+1;
+            }
+            
+            /*Load heiarchy's levels*/
+            String level = "level";
+            int level_count = 1;
+            Double strId= -1.0;
+            
+            while(obj.containsKey(level+level_count)){
+                JSONObject levelValues = (JSONObject) obj.get(level+level_count);
+                for(Object node : levelValues.keySet()){
+                    String tkn = node.toString();
+                    
+                    if(dictData.containsString(tkn)){
+                        strId = dictData.getStringToId(tkn).doubleValue();
+
+                        dict.putIdToString(strId.intValue(), tkn);
+                        dict.putStringToId(tkn, strId.intValue());
+                    }
+                    else{
+
+                        if(!dict.containsString(tkn)){
+                            if(tkn.equals("NaN")){
+                                dict.putIdToString(2147483646, tkn);
+                                dict.putStringToId(tkn,2147483646);
+                            }
+                            else{
+                                dict.putIdToString(strCount, tkn);
+                                dict.putStringToId(tkn, strCount++);
+                            }
+
+                        }
+                        strId = dict.getStringToId(tkn).doubleValue();
+                    }
+                    this.stats.put(strId, new NodeStats(level_count-1));
+                    
+                    JSONArray children = (JSONArray) levelValues.get(node);
+                    List<Double> ch = new ArrayList<>();
+                    Double parent = strId.doubleValue();
+                    
+                    if(level_count - 1 == 0){
+                        root = parent.doubleValue();
+                        counterNodes ++;
+                        if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+                            throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+                        }
+                    }
+                    
+                    if(children!=null){
+                        for(Object child : children){
+                            String tknch = child.toString();
+                            if(dictData.containsString(tknch)){
+                                strId = dictData.getStringToId(tknch).doubleValue();
+
+                                dict.putIdToString(strId.intValue(), tknch);
+                                dict.putStringToId(tknch, strId.intValue());
+                            }
+                            else{
+
+                                if(!dict.containsString(tknch)){
+                                    if(tknch.equals("NaN")){
+                                        dict.putIdToString(2147483646, tknch);
+                                        dict.putStringToId(tknch,2147483646);
+                                    }
+                                    else{
+                                        dict.putIdToString(strCount, tknch);
+                                        dict.putStringToId(tknch, strCount++);
+                                    }
+
+                                }
+                                strId = dict.getStringToId(tknch).doubleValue();
+                            }
+                            
+                            this.stats.put(strId, new NodeStats(level_count));
+
+                            counterNodes ++;
+                            if(AppCon.os.equals(online_version) && counterNodes > online_limit){
+                                throw new LimitException("Hierarchy is too large, the limit is "+online_limit+" nodes, please download desktop version, the online version is only for simple execution.");
+                            }
+                            this.parents.put(strId, parent);
+                            ch.add(strId);
+                        }
+                        
+                    }
+                    this.children.put(parent,ch);
+                }
+                level_count++;
+                    
+            }
+            findAllParents();
+        } catch (IOException ex) {
+            Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (org.json.simple.parser.ParseException ex) {
+            Logger.getLogger(HierarchyImplRangesDate.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
     @Override
@@ -348,7 +484,6 @@ public class HierarchyImplString implements Hierarchy<Double> {
                 
                 
                 
-                //System.out.println(token + ": " + isChild + " "  + curLevel);
                 
             }
             
@@ -358,25 +493,10 @@ public class HierarchyImplString implements Hierarchy<Double> {
             else{
                 childrenLast.put(tokens[0], ch);
             }
-            //set siblings
-//            for(String child : ch){
-//                List<String> sib = new ArrayList<>(ch);
-//                sib.remove(child);
-//                this.siblings.put(child, sib);
-//            }
+
         }
         
-//        System.out.println("Data dict");
-//        for (Object objectName : dictData.idToString.keySet()) {
-//            System.out.print(objectName+" : ");
-//            System.out.println(dictData.idToString.get(objectName));
-//        }
-//        
-//        System.out.println("Hier dict");
-//         for (Object objectName : dict.idToString.keySet()) {
-//            System.out.println(objectName);
-//            System.out.println(dict.idToString.get(objectName));
-//        }
+
         System.out.println("Num Nodes "+this.counterNodes);
         
     }
@@ -488,7 +608,7 @@ public class HierarchyImplString implements Hierarchy<Double> {
         for (Map.Entry<Double, Double> entry : parents.entrySet()) {
             System.out.println(entry.getKey()+" : "+entry.getValue());
         }
-        System.out.println("children");
+        System.out.println("childrens");
         for (Map.Entry<Double, List<Double>> entry : children.entrySet()) {
             System.out.println(entry.getKey()+" : "+entry.getValue());
         }
@@ -558,6 +678,50 @@ public class HierarchyImplString implements Hierarchy<Double> {
         return allParents;
     }
     
+    @Override
+    public void exportJson(String file) {
+        JSONObject exported_hier = new JSONObject();
+        exported_hier.put("hierType", "distinct");
+        exported_hier.put("name",this.name);
+        exported_hier.put("type", this.nodesType);
+        exported_hier.put("height", this.height);
+        
+        String level_label = "level";
+        int level_count = 1;
+        
+        while(this.allParents.containsKey(level_count-1) && level_count < this.height){
+            List<Double> parents = this.allParents.get(level_count-1);
+            JSONObject jsonParents = new JSONObject();
+            
+            for(Double curParent : parents){
+                JSONArray children = new JSONArray();
+                List<Double> childs = this.getChildren(curParent);
+                if(childs != null && !childs.isEmpty()){
+                    for(Double child : childs){
+                        String childToken = dictData.getIdToString(child.intValue());
+                        if(childToken == null){
+                            childToken = dict.getIdToString(child.intValue());
+                        }
+                        children.add(childToken);
+                    }
+                    String parentVal = dict.getIdToString(curParent.intValue());
+                    if(parentVal == null){
+                        parentVal = dictData.getIdToString(curParent.intValue());
+                    }
+                    jsonParents.put(parentVal, children);
+                }
+            }
+            exported_hier.put(level_label+level_count,jsonParents);
+            level_count++;
+        }
+        
+        try (PrintWriter out = new PrintWriter(new FileWriter(file))) {
+            out.write(exported_hier.toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
     
     public void export(String file) {
         try (PrintWriter writer = new PrintWriter(file, "UTF-8")) {
@@ -568,7 +732,7 @@ public class HierarchyImplString implements Hierarchy<Double> {
             writer.println();
             int counter = 1;
             
-            //write parents - children to file
+            //write parents - childen to file
             for(int curLevel = height - 2; curLevel >= 0; curLevel--){
                 //System.out.println("i = " + curLevel + "\t children = " + this.allParents.get(curLevel).toString() );
                 //List<String> p = this.allParents.get(curLevel);
@@ -1449,7 +1613,7 @@ public class HierarchyImplString implements Hierarchy<Double> {
     public void buildDictionary(DictionaryString dictionary) {
 //        int id = dictionary.getMaxUsedId();
 //        
-//        //add values to dictionary bottom-up
+//        //add values to dictionnary bottom-up
 //        for(int curLevel = Collections.max(this.allParents.keySet()); curLevel != -1; curLevel--){
 //            for(String value : this.allParents.get(curLevel)){
 //                if(!dictionary.containsString(value)){
@@ -2286,6 +2450,10 @@ public class HierarchyImplString implements Hierarchy<Double> {
     public void createLevelsMap(){
         levelpFlash = Collections.synchronizedMap(new HashMap());
     }
+
+    
+
+    
 
     
 

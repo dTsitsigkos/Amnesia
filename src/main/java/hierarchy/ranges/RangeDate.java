@@ -364,7 +364,7 @@ public class RangeDate {
     
     
     
-    public String dateToExportHierString(int level){
+    public String dateToExportHierString(int level, String del){
         String str = null;
         Calendar calendar = Calendar.getInstance() ;
         if (lowerBound != null){
@@ -382,19 +382,19 @@ public class RangeDate {
                         str = Integer.toString(calendar.get(Calendar.YEAR));
                     }
                     else{
-                        str = calendar.get(Calendar.YEAR) + "," +calendar2.get(Calendar.YEAR);
+                        str = calendar.get(Calendar.YEAR) + del +calendar2.get(Calendar.YEAR);
                     }					
                     break;
                 case 1:
-                    str = (calendar.get(Calendar.MONTH) + 1) + "/" + calendar.get(Calendar.YEAR) + "," + (calendar2.get(Calendar.MONTH)  + 1) + "/" + calendar2.get(Calendar.YEAR);
+                    str = (calendar.get(Calendar.MONTH) + 1) + "/" + calendar.get(Calendar.YEAR) + del + (calendar2.get(Calendar.MONTH)  + 1) + "/" + calendar2.get(Calendar.YEAR);
                     break;
                 default:
-                    str = calendar.get(Calendar.DAY_OF_MONTH) + "/" + ( calendar.get(Calendar.MONTH) + 1) + "/" + calendar.get(Calendar.YEAR) + "," + calendar2.get(Calendar.DAY_OF_MONTH) + "/" + (calendar2.get(Calendar.MONTH) + 1) + "/" + calendar2.get(Calendar.YEAR);
+                    str = calendar.get(Calendar.DAY_OF_MONTH) + "/" + ( calendar.get(Calendar.MONTH) + 1) + "/" + calendar.get(Calendar.YEAR) + del + calendar2.get(Calendar.DAY_OF_MONTH) + "/" + (calendar2.get(Calendar.MONTH) + 1) + "/" + calendar2.get(Calendar.YEAR);
                     break;
             }
         }
         else{
-            str = "null,null";
+            str = "null"+del+"null";
         }
         
         return str;

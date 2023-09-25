@@ -21,7 +21,7 @@ package algorithms;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import algorithms.flash.LatticeNode;
+import algorithms.flash.GridNode;
 import data.Data;
 import graph.Graph;
 import hierarchy.Hierarchy;
@@ -38,6 +38,6 @@ public interface Algorithm {
     public void anonymize();
     public Object getResultSet();
     public Graph getLattice();
-    public boolean isAnonymousResult(LatticeNode node);
+    public boolean isAnonymousResult(GridNode node);
     
 }

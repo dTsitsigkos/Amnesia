@@ -52,7 +52,7 @@ public class Buffer {
      * @param node the node 
      * @param qidColumns 
      */
-    public void compute(LatticeNode node, int[] qidColumns) throws ParseException{
+    public void compute(GridNode node, int[] qidColumns) throws ParseException{
         double[][] dataset = data.getDataSet();
         
 //        System.out.println("node "+node.toString()+" nodeid "+node.id);
@@ -76,7 +76,7 @@ public class Buffer {
      * @param row the row of the dataset to be generalized
      * @return the generalized QI columns of the row
      */
-    private GeneralizedRow project(LatticeNode node, int[] qidColumns, double[] row) throws ParseException{
+    private GeneralizedRow project(GridNode node, int[] qidColumns, double[] row) throws ParseException{
         GeneralizedRow gRow = new GeneralizedRow(node.getTransformation().length);
 //        System.out.println("level "+node.getLevel());
         int j = 0;
@@ -244,7 +244,7 @@ public class Buffer {
      * @param parentNodeBuffer
      * @param qidColumns
      */
-    public void compute(LatticeNode node, LatticeNode parentNode, Buffer parentNodeBuffer, int[] qidColumns) throws ParseException {
+    public void compute(GridNode node, GridNode parentNode, Buffer parentNodeBuffer, int[] qidColumns) throws ParseException {
         
         int[] nodeTransf = node.getTransformation();
         int[] parentNodeTransf = parentNode.getTransformation();

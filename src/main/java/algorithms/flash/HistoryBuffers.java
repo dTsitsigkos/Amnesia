@@ -31,7 +31,7 @@ import java.util.Map.Entry;
  */
 public class HistoryBuffers{
     private static final float   hashTableLoadFactor = 0.75f;
-    private LinkedHashMap<LatticeNode, Buffer> map = null;
+    private LinkedHashMap<GridNode, Buffer> map = null;
     private int cacheSize = 0;
     
     /**
@@ -42,10 +42,10 @@ public class HistoryBuffers{
         this.cacheSize = cacheSize;
         int hashTableCapacity = (int)Math.ceil(cacheSize / hashTableLoadFactor) + 1;
         
-        map = new LinkedHashMap<LatticeNode, Buffer>(hashTableCapacity, hashTableLoadFactor, true) {
+        map = new LinkedHashMap<GridNode, Buffer>(hashTableCapacity, hashTableLoadFactor, true) {
             private static final long serialVersionUID = 1;
             @Override
-            protected boolean removeEldestEntry (Map.Entry<LatticeNode, Buffer> eldest) {
+            protected boolean removeEldestEntry (Map.Entry<GridNode, Buffer> eldest) {
                 return size() > HistoryBuffers.this.cacheSize;
             }
         };
@@ -57,7 +57,7 @@ public class HistoryBuffers{
      * @param key the key whose associated value is to be returned.
      * @return    the value associated to this key, or null if no value with this key exists in the cache.
      */
-    public synchronized Buffer get (LatticeNode key) {
+    public synchronized Buffer get (GridNode key) {
         return map.get(key);
     }
     
@@ -73,7 +73,7 @@ public class HistoryBuffers{
      * @param key    the key with which the specified value is to be associated.
      * @param value  a value to be associated with the specified key.
      */
-    public synchronized void put (LatticeNode key, Buffer value) {
+    public synchronized void put (GridNode key, Buffer value) {
         map.put (key, value);
     }
     
@@ -96,18 +96,18 @@ public class HistoryBuffers{
      * Returns a <code>Collection</code> that contains a copy of all cache entries.
      * @return a <code>Collection</code> with a copy of the cache content.
      */
-    public synchronized Collection<Map.Entry<LatticeNode, Buffer>> getAll() {
+    public synchronized Collection<Map.Entry<GridNode, Buffer>> getAll() {
         return new ArrayList<>(map.entrySet());
     }
     
-    public LatticeNode findClosestNode(LatticeNode node){
-        LatticeNode closestNode = null;
+    public GridNode findClosestNode(GridNode node){
+        GridNode closestNode = null;
         int bestSize = 0;
         int nodeLenght = node.getTransformation().length;
         int[] nodeTransf = node.getTransformation();
         
-        for(Entry<LatticeNode, Buffer> entry : this.map.entrySet()){         
-            LatticeNode hnode = entry.getKey();
+        for(Entry<GridNode, Buffer> entry : this.map.entrySet()){         
+            GridNode hnode = entry.getKey();
             int[] hnodeTrasnf = hnode.getTransformation();
             boolean isValid = true;
             

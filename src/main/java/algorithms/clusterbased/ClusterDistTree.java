@@ -61,7 +61,7 @@ public class ClusterDistTree {
             int counter=0;
             if(i==0){
                 System.out.println("Start lower level");
-                RangeDouble range = new RangeDouble(1.0,(double)childs);
+                RangeDouble range = new RangeDouble(0.0,(double)childs);
                 if(range.getUpperBound().intValue() > clusters){
                     range.setUpperBound((double)clusters);
                 }
@@ -204,5 +204,9 @@ public class ClusterDistTree {
     
     public int get_pointer_last(){
         return this.pointer_to_last;
+    }
+    
+    public int getChildren(){
+        return this.children;
     }
 }

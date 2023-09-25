@@ -5,7 +5,7 @@
  */
 package solutions;
 
-import algorithms.flash.LatticeNode;
+import algorithms.flash.GridNode;
 import com.fasterxml.jackson.annotation.JsonView;
 import data.Data;
 import dictionary.DictionaryString;

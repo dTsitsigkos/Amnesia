@@ -6,7 +6,7 @@
 package algorithms.clusterbased;
 
 import algorithms.Algorithm;
-import algorithms.flash.LatticeNode;
+import algorithms.flash.GridNode;
 import algorithms.mixedkmanonymity.MixedApriori;
 import data.Data;
 import data.DiskData;
@@ -52,7 +52,7 @@ public class ClusterBasedAlgorithm implements Algorithm {
     int numRecsSlave;
     ClusterDistTree cltree = null;
     int initialClusters;
-    double clustersProportion = 0.005;
+    double clustersProportion = 0.0005;
 
     public ClusterBasedAlgorithm(Data data) {
         this.diskData = (DiskData) data;
@@ -89,12 +89,12 @@ public class ClusterBasedAlgorithm implements Algorithm {
         long end;
         long start2;
         long start = System.currentTimeMillis();
-        for (Entry<Integer, Hierarchy> entryHier : this.hierarchies.entrySet()) {
-            Hierarchy hier = entryHier.getValue();
-            if (hier.getHierarchyType().equals("range")) {
-                hier.setDictionaryData(this.diskData.getDictionary());
-            }
-        }
+//        for (Entry<Integer, Hierarchy> entryHier : this.hierarchies.entrySet()) {
+//            Hierarchy hier = entryHier.getValue();
+//            if (hier.getHierarchyType().equals("range")) {
+//                hier.setDictionaryData(this.diskData.getDictionary());
+//            }
+//        }
         if (initialiseClusters()) {
             initialiseSlaves();
             fillClusters();
@@ -136,7 +136,7 @@ public class ClusterBasedAlgorithm implements Algorithm {
         List<Pair<Double[], List<Integer>>> smallClusters = this.diskData.getSmallRecordsClusters(k, this.hierarchies.keySet(), true);
         if (!smallClusters.isEmpty()) {
             this.diskClusters.createCluster();
-            this.numOfSlaves = new ForkJoinPool().getParallelism();
+            this.numOfSlaves = new ForkJoinPool().getParallelism() - 1;
             Pair<Double[], List<Integer>>[] smallClustersArr = new Pair[smallClusters.size()];
 
             if (smallClusters.size() < numOfSlaves) {
@@ -170,7 +170,7 @@ public class ClusterBasedAlgorithm implements Algorithm {
             this.diskClusters.setLastClusterId(this.diskClusters.getmaxIdCluster());
             Double[][] records = this.diskData.getSpecificDataset(0, this.diskData.getRecordsTotal(), false);
             this.initialClusters = smallClusters.size();
-            this.numOfSlaves = new ForkJoinPool().getParallelism();
+            this.numOfSlaves = new ForkJoinPool().getParallelism() - 1;
             slaves = new Slave[numOfSlaves];
             if (this.diskData.getRows() != 0) {
 
@@ -224,7 +224,6 @@ public class ClusterBasedAlgorithm implements Algorithm {
         int counterCluster = 0;
         int sumAnonymized = 0;
         int clusterSmallest = 0;
-        List<Integer> mergeSmall = new ArrayList();
         for (int i = 0; i < this.sizeRandomCluster; i++) {
 
             List<Integer> similarRecords = randomRecords[i].getValue();
@@ -237,7 +236,7 @@ public class ClusterBasedAlgorithm implements Algorithm {
 
         this.diskClusters.createCluster();
 
-        this.numOfSlaves = new ForkJoinPool().getParallelism();
+        this.numOfSlaves = new ForkJoinPool().getParallelism() - 1;
         int numRandomRecSl = (sizeRandomCluster + numOfSlaves - 1) / numOfSlaves;
         RangeDouble range = new RangeDouble(0.0, (double) numRandomRecSl - 1);
         Slave.setCase(2);
@@ -276,6 +275,7 @@ public class ClusterBasedAlgorithm implements Algorithm {
             this.diskClusters.setSplit(!very_small_k());
             int childsTree;
             if (((int) (this.diskClusters.getLastClusterId() * this.clustersProportion)) > 1) {
+                System.out.println("Edw mpainei cluster Tree");
                 childsTree = ((int) (this.diskClusters.getLastClusterId() * this.clustersProportion));
             } else {
                 childsTree = 30;
@@ -291,8 +291,8 @@ public class ClusterBasedAlgorithm implements Algorithm {
 
     private boolean very_small_k() {
 //        System.out.println("Very small "+(this.initialClusters * 0.01));
-//        return ((double) this.k / this.diskData.getRecordsTotal()) < 0.0001 && (this.initialClusters * 0.01) > 1 /*&& ((int)(this.initialClusters * this.clustersProportion)) > 1*/;
-        return false;
+        return ((double) this.k / this.diskData.getRecordsTotal()) < 0.001 && (this.initialClusters * 0.01) > 1 /*&& ((int)(this.initialClusters * this.clustersProportion)) > 1*/;
+//        return false;
     }
 
     private void initialiseSlaves() {
@@ -471,7 +471,7 @@ public class ClusterBasedAlgorithm implements Algorithm {
 //                else{
 //                   childsTree = 30; 
 //                }
-                if (this.diskClusters.getmaxIdCluster() > 100) {
+                if (this.diskClusters.numOfClusters() > 10000) {
                     this.cltree = new ClusterDistTree(this.clustersCentroids, ((int) (this.diskClusters.getmaxIdCluster() * this.clustersProportion)), this.diskClusters.getmaxIdCluster());
                     this.cltree.print();
                 } else {
@@ -501,6 +501,7 @@ public class ClusterBasedAlgorithm implements Algorithm {
                     }
                 }
                 this.diskClusters.executeBatch();
+                System.out.println("Total Size remove unique " + this.diskClusters.totalSize());
 
                 System.out.println("Start split");
                 int slaveBig = this.numOfSlaves;
@@ -538,6 +539,7 @@ public class ClusterBasedAlgorithm implements Algorithm {
                     this.diskClusters.executeUpdateBatch();
                     this.diskClusters.setLastClusterId(this.diskClusters.getmaxIdCluster());
                     System.out.println("End split");
+                    System.out.println("Total Size after split big " + this.diskClusters.totalSize());
                 }
 
                 System.out.println("Total Size " + this.diskClusters.totalSize());
@@ -547,7 +549,7 @@ public class ClusterBasedAlgorithm implements Algorithm {
 
             Slave.setCase(1);
             Slave.setCentroids(clustersCentroids);
-            this.numOfSlaves = new ForkJoinPool().getParallelism();
+            this.numOfSlaves = new ForkJoinPool().getParallelism() - 1;
             this.slaves = new Slave[numOfSlaves];
             boolean exit = false;
             while (!smallClustersId.isEmpty()) {
@@ -651,11 +653,7 @@ public class ClusterBasedAlgorithm implements Algorithm {
     }
 
     private void anonymization() {
-        if (this.very_small_k()) {
-            this.treeChildClusters = (int) (this.diskClusters.numOfClusters() * 0.01);
-        } else {
-            this.treeChildClusters = (int) (this.diskClusters.numOfClusters() * 0.2);
-        }
+        this.treeChildClusters = (int) (this.diskClusters.numOfClusters() * 0.25);
         long recordSize = this.treeChildClusters * 2 * (this.k - 1) * Double.BYTES;    //// records from clusters which will come in the main memory 
         long heapFreeSize = Runtime.getRuntime().maxMemory() - (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
         if (recordSize > heapFreeSize) {
@@ -751,7 +749,7 @@ public class ClusterBasedAlgorithm implements Algorithm {
     }
 
     @Override
-    public boolean isAnonymousResult(LatticeNode node) {
+    public boolean isAnonymousResult(GridNode node) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

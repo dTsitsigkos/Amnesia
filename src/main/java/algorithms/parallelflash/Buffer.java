@@ -49,7 +49,7 @@ public class Buffer {
      * @param pool
      * @param parallelism
      */
-    public void compute(LatticeNode node, int[] qidColumns, ForkJoinPool pool, int parallelism){
+    public void compute(GridNode node, int[] qidColumns, ForkJoinPool pool, int parallelism){
         int datasetLength = data.getDataLenght();
         int numberOfThreads = (datasetLength < parallelism) ? datasetLength : parallelism;
         int splitSize = (datasetLength % numberOfThreads == 0) ? datasetLength / numberOfThreads : datasetLength / numberOfThreads + 1;
@@ -111,7 +111,7 @@ public class Buffer {
      * @param pool
      * @param parallelism
      */
-    public void compute(LatticeNode node, LatticeNode parentNode, Buffer parentNodeBuffer, int[] qidColumns, ForkJoinPool pool, int parallelism) {
+    public void compute(GridNode node, GridNode parentNode, Buffer parentNodeBuffer, int[] qidColumns, ForkJoinPool pool, int parallelism) {
         long computeStartTime = System.currentTimeMillis();
         GeneralizedRow[] keysetArray = convertKeyset(parentNodeBuffer);
         
