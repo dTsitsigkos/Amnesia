@@ -176,7 +176,7 @@ import zenodo.ZenodoFilesToJson;
 @SpringBootApplication
 public class AppCon extends SpringBootServletInitializer {
     private static Class<AppCon> applicationClass = AppCon.class;
-    public static String os = "windows";
+    public static String os = "linux";
     public static String rootPath = System.getProperty("catalina.home");
     public static String parentDir; 
 
@@ -1734,7 +1734,7 @@ class AppController {
         Future<String> future = null;
         System.out.println("Algorithm starts");
         try {
-            if(os.equals("")){
+            if(os.equals("online")){
                 ExecutorService executor = Executors.newCachedThreadPool();
                 final Algorithm temp = algorithm;
                 future = executor.submit( new Callable<String>() {
@@ -4405,6 +4405,36 @@ class AppController {
         
         return check;
     }
+    
+    @RequestMapping(value="/action/highlightsteps", method = RequestMethod.POST, produces = "application/json")//, method = RequestMethod.POST) //method = RequestMethod.POST
+    public @ResponseBody JSONObject checkGeneralExistance ( HttpSession session  ) throws FileNotFoundException, IOException {
+        JSONObject jdata = new JSONObject();
+        try{
+            Data data = (Data) session.getAttribute("data");
+            Graph graph = (Graph) session.getAttribute("graph");
+            Map<String, Hierarchy> hierarchies = (Map<String, Hierarchy>) session.getAttribute("hierarchies");
+            String algorithm = (String) session.getAttribute("algorithm");
+            AnonymizedDataset anonData = (AnonymizedDataset)session.getAttribute("anondata");
+            
+            jdata.put("Status", "SUCCESS");
+            jdata.put("data", data!=null?1:0);
+            jdata.put("graph", graph!=null?1:0);
+            jdata.put("hier", hierarchies!=null?1:0);
+            jdata.put("algo", algorithm!=null?1:0);
+            jdata.put("anonData", anonData!=null?1:0);
+        }catch(Exception e){
+            e.printStackTrace();
+            jdata.put("Status", "FAIL");
+            jdata.put("Response", "Problem with highlight steps' service");
+            
+        }
+        
+
+        
+        return jdata;
+    }
+    
+    
     
     
     /*@RequestMapping(value="/action/cleanusedata", produces = "application/json")//, method = RequestMethod.POST) //method = RequestMethod.POST
