@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Amnesia | Dataset </title>
+
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="font-awesome/css/font-awesome.css" rel="stylesheet">
+    <link href="css/animate.css" rel="stylesheet">
+    <link href="css/plugins/dataTables/datatables.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <link href="css/plugins/dropzone/dropzone.css" rel="stylesheet">
+    <link href="css/plugins/awesome-bootstrap-checkbox/awesome-bootstrap-checkbox.css" rel="stylesheet">
+    <link rel="shortcut icon" href="img/smallLogo.png">
+
+    <script type="text/javascript">
+            var _paq = _paq || [];
+            /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+            _paq.push(['trackPageView']);
+            _paq.push(['enableLinkTracking']);
+            (function() {
+                    var u="//analytics.openaire.eu/";
+                    _paq.push(['setTrackerUrl', u+'piwik.php']);
+                    _paq.push(['setSiteId', '77']);
+                    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+                    g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
+            })();
+    </script>
+
+    <img src="https://analytics.openaire.eu/piwik.php?idsite=77&rec=1" style="border:0; display: none;" alt="" />
+</head>
+
+<body class="fixed-navigation">
+    <div id="wrapper">
+    <nav class="navbar-default navbar-static-side" role="navigation">
+        <div class="sidebar-collapse">
+            <ul class="nav metismenu" id="side-menu">
+                 <li class="nav-header">
+                    <div class="dropdown profile-element"> 
+                        <span>
+                            <img alt="image" class="img-circle" src="img/logo1.jpg" />
+                        </span>
+                        <!--<a data-toggle="dropdown" class="dropdown-toggle" href="#">
+                            <span class="clear"> 
+                                <span class="block m-t-xs"> <strong class="font-bold">Amnesia</strong>
+                                <img src="img/test.png" alt="image" style="width:200px;height:130px;">    
+                                </span>  
+                            </span> 
+                        </a>-->
+                       
+                    </div>
+                  
+                </li>
+                <li>
+                    <a href="index.html"><i class="fa fa-home"></i> <span class="nav-label">Anonymization Wizard</span></a>
+                    
+                </li>
+                
+                
+                <!--//////////////////////////////////////////////////////////////////////////////////////////////-->
+                
+                <li>
+                    <!--<a href="#" onclick="restart();"><i class="fa fa-pie-chart"></i> <span class="nav-label">Restart</span>  </a> -->
+                    <a href="#" onclick="restart();"><i class="fa fa-refresh"></i> <span class="nav-label">Reset</span>  </a>
+                </li>
+
+                <li class="active">
+                    <a href="#"><i class="fa fa-database"></i> <span class="nav-label">Source</span><span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level collapse">
+                        <li >
+                            <a href="mydataset.html">Manage</a>
+                        </li> 
+                        <li style="position:relative;">                                         
+                            <a>
+                                <form>
+                                    Load From Local Disk
+                                    <input  type="file" name="file" id="datafile" onchange = 'uploadfile("datafile");'
+                                    style='position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";opacity:0;background-color:transparent;color:transparent;' name="file_source" size="40"
+                                    />
+                                </form>
+                            </a>       
+                        </li>
+
+                        <li>
+                            <a href="myzenodoloadwizard.html">Load From Zenodo</a>
+                        </li>
+                        
+                        <li>
+                            <a href="mydataverseloadwizard.html">Load From Dataverse Server</a>
+                        </li>
+                   </ul>
+                </li>
+
+                 <li>
+                    <a href="#"><i class="fa fa-database"></i> <span class="nav-label">Anonymized</span><span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level collapse">
+                        <li >
+                            <a href="myanonymizeddataset.html">Manage</a>
+                        </li> 
+                        <!--<li style="position:relative;">                                         
+                            <a>
+                                <form>
+                                    Load from Local
+                                    <input  type="file" name="file" id="datafile" onchange = 'uploadfile("datafile");'
+                                    style='position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";opacity:0;background-color:transparent;color:transparent;' name="file_source" size="40"
+                                    />
+                                </form>
+                            </a>       
+                        </li> --> 
+                   </ul>
+                </li>
+
+                <li>
+                    <a href="#"><i  class="fa fa-sitemap"></i> <span class="nav-label">Hierarchy</span><span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level collapse" >
+                        <li>
+                            <a href="myhier.html">Manage</a>
+                        </li> 
+                        <li style="position:relative;">                                       
+                            <a>
+                                <form>
+                                    Load from Local Disk
+                                <input  type="file"  name="file" id="hierarchy" onchange ='uploadfile("hierarchy");'
+                                                style='position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";opacity:0;background-color:transparent;color:transparent;' name="file_source" size="40"
+                                />
+                                </form>
+                            </a> 
+                        </li>
+                        
+                        <li>
+                           <a href="myhierarchywizard.html" >Auto Generate </a>
+                        </li> 
+                   </ul>
+                </li>
+
+                <li>
+                    <a href="myalgorithms.html"><i class="fa fa-lock"></i> <span class="nav-label">Algorithms</span>  </a>
+                </li>
+
+                <li>
+                    <a href="mysolutiongraph.html"><i class="fa fa-line-chart"></i> <span class="nav-label">Solution Graph</span></a>
+                </li>
+
+                <li>
+                    <a href="myresults.html"><i class="fa fa-laptop"></i> <span class="nav-label">Results</span></a>
+                </li>
+                
+                <!--<li>
+                    <a href="myabout.html"><i class="fa fa-info-circle"></i> <span class="nav-label">About</span></a>
+                </li>-->
+                
+                
+                <li id="about_attr">
+                    
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+        <div id="page-wrapper" class="gray-bg ">
+        <!--<div class="row border-bottom">
+        <nav class="navbar navbar-static-top white-bg" role="navigation" style="margin-bottom: 0">
+        <div class="navbar-header">
+            <a class="navbar-minimalize minimalize-styl-2 btn btn-primary " href="#"><i class="fa fa-bars"></i> </a>
+            <form role="search" class="navbar-form-custom" action="search_results.html">
+                <div class="form-group">
+                    <input type="text" placeholder="Search for something..." class="form-control" name="top-search" id="top-search">
+                </div>
+            </form>
+        </div>
+            <ul class="nav navbar-top-links navbar-right">
+                <li>
+                    <span class="m-r-sm text-muted welcome-message">Welcome to INSPINIA+ Admin Theme.</span>
+                </li>
+                <li class="dropdown">
+                    <a class="dropdown-toggle count-info" data-toggle="dropdown" href="#">
+                        <i class="fa fa-envelope"></i>  <span class="label label-warning">16</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-messages">
+                        <li>
+                            <div class="dropdown-messages-box">
+                                <a href="profile.html" class="pull-left">
+                                    <img alt="image" class="img-circle" src="img/a7.jpg">
+                                </a>
+                                <div>
+                                    <small class="pull-right">46h ago</small>
+                                    <strong>Mike Loreipsum</strong> started following <strong>Monica Smith</strong>. <br>
+                                    <small class="text-muted">3 days ago at 7:58 pm - 10.06.2014</small>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <div class="dropdown-messages-box">
+                                <a href="profile.html" class="pull-left">
+                                    <img alt="image" class="img-circle" src="img/a4.jpg">
+                                </a>
+                                <div>
+                                    <small class="pull-right text-navy">5h ago</small>
+                                    <strong>Chris Johnatan Overtunk</strong> started following <strong>Monica Smith</strong>. <br>
+                                    <small class="text-muted">Yesterday 1:21 pm - 11.06.2014</small>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <div class="dropdown-messages-box">
+                                <a href="profile.html" class="pull-left">
+                                    <img alt="image" class="img-circle" src="img/profile.jpg">
+                                </a>
+                                <div>
+                                    <small class="pull-right">23h ago</small>
+                                    <strong>Monica Smith</strong> love <strong>Kim Smith</strong>. <br>
+                                    <small class="text-muted">2 days ago at 2:30 am - 11.06.2014</small>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <div class="text-center link-block">
+                                <a href="mailbox.html">
+                                    <i class="fa fa-envelope"></i> <strong>Read All Messages</strong>
+                                </a>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a class="dropdown-toggle count-info" data-toggle="dropdown" href="#">
+                        <i class="fa fa-bell"></i>  <span class="label label-primary">8</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-alerts">
+                        <li>
+                            <a href="mailbox.html">
+                                <div>
+                                    <i class="fa fa-envelope fa-fw"></i> You have 16 messages
+                                    <span class="pull-right text-muted small">4 minutes ago</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <a href="profile.html">
+                                <div>
+                                    <i class="fa fa-twitter fa-fw"></i> 3 New Followers
+                                    <span class="pull-right text-muted small">12 minutes ago</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <a href="grid_options.html">
+                                <div>
+                                    <i class="fa fa-upload fa-fw"></i> Server Rebooted
+                                    <span class="pull-right text-muted small">4 minutes ago</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <div class="text-center link-block">
+                                <a href="notifications.html">
+                                    <strong>See All Alerts</strong>
+                                    <i class="fa fa-angle-right"></i>
+                                </a>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+
+
+                <li>
+                    <a href="login.html">
+                        <i class="fa fa-sign-out"></i> Log out
+                    </a>
+                </li>
+                <li>
+                    <a class="right-sidebar-toggle">
+                        <i class="fa fa-tasks"></i>
+                    </a>
+                </li>
+            </ul>
+
+        </nav>
+        </div>-->
+        <div class="row wrapper border-bottom white-bg page-heading">
+                <div class="col-lg-12">
+                    
+                    <h2><span class="text-navy">Amnesia Αnonymization Tool</span></h2><div id="version_noti"></div>
+                    <h3 style="text-align: center;  margin-top:1%;"> <span class="text-danger" id="online-warning"></span> </h3>
+                    <!--<ol class="breadcrumb">
+                        <li>
+                            <a href="index.html">Home</a>
+                        </li>
+                        <li>
+                            <a>Forms</a>
+                        </li>
+                        <li class="active">
+                            <strong>Wizard</strong>
+                        </li>
+                    </ol>-->
+                </div>
+            
+            
+                <div class="nav navbar-top-links navbar-right btn-top">
+                    
+                    <input type="file" name="file" id="xmlfile" style="display: none;" onchange='uploadfile("xmlfile");' />
+                    <button type="button" class="btn btn-w-m btn-primary" onclick="document.getElementById('xmlfile').click();">Load XML File <i class="fa fa-upload"></i></button>
+                    
+                    <input type="file" name="file" id="datafile" style="display: none;" onchange='uploadfile("datafile");' />
+                    <button type="button" class="btn btn-w-m btn-primary" onclick="document.getElementById('datafile').click();">Load New Dataset <i class="fa fa-upload"></i></button>
+
+                    <!--<li>
+                        <button type="button" class="btn btn-w-m btn-primary">
+                            <form>
+                                Load
+                                <input  type="file" name="file" id="datafile" onchange = 'uploadfile("datafile");'
+                                        style='position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";opacity:0;background-color:transparent;color:transparent;' name="file_source" size="40"
+                                />
+                            </form>
+                        </button>
+                    </li>-->
+                    
+                    <button type="button" class="btn btn-w-m btn-primary"  id="saveLocal" onclick="saveDataset();">Save To Local <i class="fa fa-save"></i> </button>
+                    <button type="button" class="btn btn-w-m btn-primary" id="saveZenodo" onclick="saveToZenodo('mydataset.html');">Save To Zenodo <i class="fa fa-save"></i> </button>
+                    <button type="button" class="btn btn-w-m btn-primary" id="saveDataverse" onclick="saveToDataverse('mydataset.html');">Save To Dataverse <i class="fa fa-save"></i> </button>
+                    <input type="file" name="anonrules" id="anonrules" style="display: none;" onchange='uploadfile("anonrules");' />
+                    <button type="button" class="btn btn-w-m btn-primary" id="anonrulesBtn" onclick="document.getElementById('anonrules').click();">Import Anonymization Rules <i class="fa fa-upload"></i></button>
+                </div>
+            </div>
+            
+            <div class="wrapper wrapper-content">
+                
+                <div class="row" >
+                    <div class="col-lg-12">
+                        <div class="ibox float-e-margins">
+                            <div class="ibox-title">
+                                <h5 id="datainputname">Pre-Anonymization Process</h5>
+
+                            </div>
+                            <div class="ibox-content" >
+                                <div class="table-responsive">
+
+                                     <table class="table table-striped table-bordered table-hover dataset" id="dataset"  >
+
+                                    </table> 
+                                      
+                                </div>
+                                
+                                <div id="spinner" style="display:none" class ="dim">
+                                    <div   class="sk-spinner sk-spinner-cube-grid">
+                                        <div class="sk-cube"></div>
+                                        <div class="sk-cube"></div>
+                                        <div class="sk-cube"></div>
+                                        <div class="sk-cube"></div>
+                                        <div class="sk-cube"></div>
+                                        <div class="sk-cube"></div>
+                                        <div class="sk-cube"></div>
+                                        <div class="sk-cube"></div>
+                                        <div class="sk-cube"></div>
+                                    </div>
+                                </div>
+                                <form id="my-awesome-dropzone" class="dropzone" style="min-height: 45em;" enctype="multipart/form-data" action="index.html">
+                                    <div class="dropzone-previews"></div>
+                                    <button type="submit" class="btn btn-primary pull-right">Upload <i class="fa fa-upload"></i></button>
+                                </form> 
+                            
+                               
+                            </div>
+                            <div class=" navbar-right btn-bottom">
+                                <button type="button" id="checkanonymization" class="btn btn-w-m btn-primary" data-target="#popup" data-toggle="modal" onclick="getColumnNamesModal();">Anonymization Check </button>
+                                <button type="button" id="gotohier" class="btn btn-w-m btn-primary" onclick="window.location.href = 'myhier.html'">Proceed to Hierarchies <i class="fa fa-arrow-circle-o-right"></i></button>
+                                </div>
+                           
+                        </div>
+                    </div>
+                     
+
+                 
+                    
+               
+            <div class="footer">
+                 <!--<div class="pull-right">
+                    <img src="img/OpenAIREplus_logo.png">
+                </div>-->
+                <div id="copyrights">
+                    <!--<strong>Copyright</strong> Example  &copy; 2014-2015-->
+                    
+                </div>
+            </div>
+                
+                
+                </div>
+
+            
+            
+
+            </div>
+        </div>
+        
+        <div class="modal inmodal fade" id="maskpopup" tabindex="-1" role="dialog"  aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                        <h4 class="modal-title">Create a Masking Configuration</h4>
+                    </div>
+                    <div class="modal-body" >
+                        <div class="row">
+                            <div class="form-group"><label class="col-sm-5  col-form-label text-right">Mask option:</label>
+                                <div class="col-sm-4 text-left">
+                                    <select name="masking_opt" id="masking_opt" onchange="changeMaskOpt(this);" class="form-control">
+                                        <option value="prefix">Prefix</option>
+                                        <option value="suffix">Suffix</option>
+                                        <option value="regex">Regular Expression</option>
+                                    </select>
+                                </div>
+
+                            </div>
+                            
+                        </div>
+                        <div id="regex_mask">
+                            <div class="row text-center" style="margin-top: 5%;">
+                                <div class="form-group"><label class="col-sm-5  col-form-label text-right">Set your regular expression:</label>
+                                    <div class="col-sm-4 text-left"><input  oninput="$('#regexwarning').hide();"  type="text" id="regexval" class="form-control required" ><p id="regexwarning" style="color: red;">Please give your regular expression!</p></div>
+
+                                </div>
+                            </div>
+                            
+                            <div class="row" style="margin-top: 5%;">
+                                <div class="form-group"><label class="col-sm-6  col-form-label text-right">Choose a mask character(e.g. *):</label>
+                                    <div class="col-sm-6 text-left"><input oninput="$('#maskwarningregex').hide();" style="width:20%;"  type="text" id="charmaskregex" class="form-control required" maxlength="1" ><p id="maskwarningregex" style="color: red;">Please give a character!</p></div>
+
+                                </div>
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="simple_mask">
+                            <div class="row" style="margin-top: 5%;">
+                                <div class="form-group"><label class="col-sm-6  col-form-label text-right">Choose a mask character(e.g. *):</label>
+                                    <div class="col-sm-6 text-left"><input oninput="$('#maskwarning').hide();" style="width:20%;"  type="text" id="charmask" class="form-control required" maxlength="1" ><p id="maskwarning" style="color: red;">Please give a character!</p></div>
+
+                                </div>
+                            </div>
+
+                            <div class="row text-center" style="margin-top: 5%;">
+                                <h5>Select positions to hide</h5>
+                            </div>
+
+                            <div class="row text-center" style="margin-top: 2%;" id="positions">
+                                <input type="text" id="charmask" class="form-control input-digit required">
+                                <input type="text" id="charmask" class="form-control input-digit required">
+                                <input type="text" id="charmask" class="form-control input-digit required">
+                                <input type="text" id="charmask" class="form-control input-digit required">
+                                <input type="text" id="charmask" class="form-control input-digit required">
+                                <input type="text" id="charmask" class="form-control input-digit required">
+                                <input type="text" id="charmask" class="form-control input-digit required">
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer" id="modal-buttons">
+                        <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-w-m btn-primary" data-dismiss="modal" data-toggle="modal" onclick="saveMask('Test',0);">Mask <i class="fa fa-server"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal inmodal fade" id="popup" tabindex="-1" role="dialog"  aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                        <h4 class="modal-title">Check if dataset is Anonymous</h4>
+                    </div>
+                    <div class="modal-body" >
+                        <div class="container">
+                            <div class="form-group"><label class="col-sm-2 control-label">Select attributes : <br/></label>
+
+                                <div class="col-sm-10" id="checkattributes" style="max-height: 500px; overflow-y: scroll; overflow-x: hidden; width:55%; margin-bottom: 2%;">
+                                   <!-- <div class="i-checks"><label> <input type="checkbox" value=""> <i></i> Option one </label></div>
+                                    <div class="i-checks"><label> <input type="checkbox" value="" > <i></i> Option two checked </label></div>
+                                    <div class="i-checks"><label> <input type="checkbox" value="" > <i></i> Option three checked and disabled </label></div>
+                                    <div class="i-checks"><label> <input type="checkbox" value="" > <i></i> Option four disabled </label></div>
+                                    -->
+                                </div>
+                        
+                            </div>
+                        </div>
+                        <div class="form-group"><label class="col-sm-2 control-label">Choose K for K-Anonymity Validation :</label>
+                            <div class="col-sm-10"><input type="text" id="Kcheck" class="form-control required"></div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-w-m btn-primary" data-dismiss="modal" data-toggle="modal"  onclick="getAttributesFromModal();">Check</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal inmodal fade" id="popupcheck" tabindex="-1" role="dialog"  aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" onclick="document.getElementById('Kcheck').value = '';deleteSuppress()" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                        <h4 class="modal-title">Check if dataset is Anonymous</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p id="ksourcedata"></p>
+                        <p id="percentagesource"></p>
+                        <p id="percentangeSuppress"></p>
+                        
+                        <div class="flot-chart" >
+                            <div class="flot-chart-pie-content" id="solutionsourcestatistics"></div>
+                           
+                        </div>
+                        
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-white" onclick="document.getElementById('Kcheck').value = '';deleteSuppress()" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="suppressValues('true')" id="suppressbutton">Suppress</button>
+                        <button type="button" class="btn btn-primary" onclick="window.location = 'myresults.html'" id="applysource">Apply</button>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+    </div>
+
+    <!-- Mainly scripts -->
+    <script src="js/jquery-2.1.1.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/plugins/metisMenu/jquery.metisMenu.js"></script>
+    <script src="js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+
+    <!-- Custom and plugin javascript -->
+    <script src="js/inspinia.js"></script>
+    <script src="js/plugins/pace/pace.min.js"></script>
+
+    <!-- jQuery UI -->
+    <script src="js/plugins/jquery-ui/jquery-ui.min.js"></script>
+
+    <script src="js/mine/uploadfile.js"></script>
+    <script src="js/plugins/jquery.fileDownload/jquery.fileDownload.js"></script>
+
+    <!--Datatable -->
+    <script src="js/plugins/dataTables/datatables.min.js"></script>
+     <!-- DROPZONE -->
+    <script src="js/plugins/dropzone/dropzone.js"></script>
+
+    
+     <!-- Flot -->
+    <script src="js/plugins/flot/jquery.flot.js"></script>
+    <script src="js/plugins/flot/jquery.flot.tooltip.min.js"></script>
+    <script src="js/plugins/flot/jquery.flot.resize.js"></script>
+    <script src="js/plugins/flot/jquery.flot.pie.js"></script>
+    <script src="js/plugins/flot/jquery.flot.time.js"></script>
+    
+    
+     <!-- Piwik -->
+     <!--<script type="text/javascript">
+      var _paq = _paq || [];
+      /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+      _paq.push(['trackPageView']);
+      _paq.push(['enableLinkTracking']);
+      (function() {
+        var u="//analytics.openaire.eu/";
+        _paq.push(['setTrackerUrl', u+'piwik.php']);
+        _paq.push(['setSiteId', '77']);
+        var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+        g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
+      })();
+    </script>
+    <!-- End Piwik Code -->
+
+    <!-- Piwik Image Tracker-->
+      <!--<img src="https://analytics.openaire.eu/piwik.php?idsite=77&rec=1" style="border:0" alt="" />
+    <!-- End Piwik -->
+
+
+    <script> 
+        /*window.onbeforeunload = function() {
+             cleanUserData();
+        };*/
+        
+        $(document).ready(function() {
+            $('#saveDataverse').hide();
+            $('#saveZenodo').hide();
+            $('#saveLocal').hide();
+            $('#maskwarning').hide();
+            $('#regexwarning').hide();
+            $('#maskwarningregex').hide();
+            loadhtml();
+//            $('#about_attr').load('about_menu.html',function(){});
+//            $('#version_noti').load('version_title.html',function(){});
+//            $('#online-warning').load('myonline-warning.html',function(){});
+//            $('#copyrights').load('copyrights.html',function(){});
+             /*$('a[rel!=ext]').click(function() { window.onbeforeunload = null; });
+             $('button[rel!=ext]').click(function() { window.onbeforeunload = null; });*/
+            /*window.onbeforeunload = function(eventObject) { 
+                console.log(eventObject);
+                cleanUserData();
+            }*/
+            
+            var scripts = document.getElementsByTagName("script"),
+            src = scripts[scripts.length-1].src;
+
+            Dropzone.options.myAwesomeDropzone = {
+                url:"/action/uploadf",
+                autoProcessQueue: false,
+                uploadMultiple: true,
+                parallelUploads: 100,
+                maxFiles: 100,
+                maxFilesize: 500000,
+
+                // Dropzone settings
+                init: function() {
+                    var myDropzone = this;
+
+                    this.element.querySelector("button[type=submit]").addEventListener("click", function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        myDropzone.processQueue();
+                    });
+                    this.on("sendingmultiple", function() {
+
+                    });
+                    this.on("successmultiple", function(files, response) {
+
+                        window.location.href ="mywizard.html";
+                    });
+                    this.on("errormultiple", function(files, response) {
+                        
+                    });
+                }
+
+            }
+           
+            getdataset();
+            deleteSuppress();
+            
+        } );
+    </script>
+</body>
+</html>
