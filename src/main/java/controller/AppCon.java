@@ -118,6 +118,7 @@ import javax.servlet.http.HttpSession;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import jsoninterface.View;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -156,6 +157,11 @@ import zenodo.ZenodoConnection;
 import zenodo.ZenodoFile;
 import zenodo.ZenodoFilesToJson;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -193,12 +199,31 @@ public class AppCon extends SpringBootServletInitializer {
     protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
         return application.sources(applicationClass);
     }
-
-    
-    
 }
 
-
+@Configuration
+class WebConfig implements WebMvcConfigurer {
+    
+    @Value("${cors.allowed-origins}")
+    private String allowedOrigins;
+    
+    @Value("${cors.allowed-methods}")
+    private String allowedMethods;
+    
+    @Value("${cors.allowed-headers}")
+    private String allowedHeaders;
+    
+    @Value("${cors.mapping}")
+    private String mapping;
+    
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {        
+        registry.addMapping(mapping)
+                .allowedOrigins(allowedOrigins.split(","))
+                .allowedMethods(allowedMethods.split(","))
+                .allowedHeaders(allowedHeaders.split(","));
+    }
+}
 
 @RestController
 //@RequestMapping("/greeting")
@@ -208,12 +233,12 @@ class AppController {
     private static String rootPath = AppCon.rootPath;
 
     
+    /*
     @RequestMapping(value = "/")
     public String welcome(HttpSession session) {
         return "/index.html";
     }
-    
-    
+    */
     
     /*@RequestMapping(value = "/action/getsessionid")
     public String getSessionId(HttpSession session) {
@@ -919,7 +944,12 @@ class AppController {
         String filename = (String)session.getAttribute("filename");
         int counter = 0;
         
-        if(filename.endsWith(".dcm")){
+        System.out.println("inputpath: "+ session.getAttribute("inputpath"));
+        System.out.println("filename: "+ session.getAttribute("filename"));
+
+        
+
+        if(filename != null && filename.endsWith(".dcm")){
             return new String[] {"DICOM"};
         }
         else{
