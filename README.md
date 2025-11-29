@@ -475,7 +475,11 @@ $ curl  -X POST -H "Cookie: JSESSIONID=D6DF59C4A03432B79BC61961F1671EDB"   http:
 
 
 ## Version History
-**version 1.3.4 (release date: 30/09/2025)**
+**version 1.3.5 (release date: 28/11/2025)**
+- Enhanced DICOM handling
+- Improvements to the user friendliness of the masking operations
+
+**version 1.3.4**
 - Highlight User Roadmap
 - Secondary DICOM Load Button
 
