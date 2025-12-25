@@ -110,6 +110,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -716,12 +717,13 @@ class AppController {
         
         if(datatype.equals("dicomfile")){
             data = new DICOMData(rootPath,dict);
+            data.setTemplate((Map<String,String>)session.getAttribute("template"));
             result = data.findColumnTypes();
             
             if(result.equals("1")){
                 return data;
             }
-            
+            ////Need changes here 
             String[][] smallDataset = data.getSmallDataSet();
             data.getTypesOfVariables(smallDataset);
         }
@@ -1301,6 +1303,40 @@ class AppController {
     }
     
     
+    @RequestMapping(value="/action/savetemplate") //method = RequestMethod.POST
+    public @ResponseBody String saveTemplate ( HttpServletResponse response, HttpSession session) throws FileNotFoundException, IOException  {
+        String inputPath = (String)session.getAttribute("inputpath");
+        Data data = (Data)session.getAttribute("data");
+        this.createInputPath(inputPath, session);
+        
+        File file = new File(inputPath + File.separator + "DICOM_anonymization_template.json");
+        file.createNewFile();
+        
+        data.exportTemplate(file.getAbsolutePath());
+        
+        
+        InputStream myStream = new FileInputStream(file);
+
+	response.addHeader("Content-disposition", "attachment;filename="+file.getName());
+        response.setContentType("application/json");
+
+	// Copy the stream to the response's output stream.
+	IOUtils.copy(myStream, response.getOutputStream());
+	response.flushBuffer();
+        
+        
+        if(os.equals("online")){
+            this.deleteFiles(session);
+        }
+        
+        
+        
+
+
+        return null;
+    }
+    
+    
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @RequestMapping(value="/action/autogeneratehierarchy", method = RequestMethod.POST) //method = RequestMethod.POST
     public @ResponseBody String autogeneratehierarchy (@RequestParam("typehier") String typehier, @RequestParam("vartype") String vartype,@RequestParam("onattribute") int onattribute,@RequestParam("step") double step, @RequestParam("sorting") String sorting, @RequestParam("hiername") String hiername, @RequestParam("fanout") int fanout, @RequestParam("limits") String limits, @RequestParam("months") int months, @RequestParam("days") int days, @RequestParam("years") int years,  @RequestParam("length") int length, HttpSession session) throws LimitException  {
@@ -1532,6 +1568,8 @@ class AppController {
         return data;
         
     }
+    
+    
     
     
     @RequestMapping(value="/action/gethiertypes", method = RequestMethod.POST) //method = RequestMethod.POST
@@ -4261,7 +4299,7 @@ class AppController {
         String filename = (String)session.getAttribute("filename");
         
         if(filename.endsWith(".dcm")){
-            filename = "anonymized_rules_dicom_files.txt";
+            filename = "dicom_files.txt";
         }
         String inputPath = (String)session.getAttribute("inputpath");
 //        System.out.println("Filename :"+filename+" "+filename.endsWith("xml") +" "+(filename.endsWith("xml") ? filename.replace("xml", "txt") : filename));
@@ -4361,6 +4399,20 @@ class AppController {
         }catch(Exception e){
             return "Problem with loading anonymization rules "+e.getMessage();
         }
+    }
+    
+    @RequestMapping(value="/action/loadtemplate", method = RequestMethod.POST) //method = RequestMethod.POST
+    public @ResponseBody String loadTemplate ( HttpSession session , String filename) throws FileNotFoundException, IOException {
+        String rootPath = (String)session.getAttribute("inputpath");
+        this.createInputPath(rootPath, session);
+        File dir = new File(rootPath);
+
+
+        String fullPath = dir + File.separator + filename;
+        
+        session.setAttribute("template", readColumnNameAndType(fullPath));
+        
+        return "OK";
     }
     
     //@JsonView(View.DatasetsExists.class)
@@ -5962,6 +6014,27 @@ class AppController {
     ///////////////action/anondataexists/////////////////////other functions//////////////////////////////////
     
     
+    private Map<String,String> readColumnNameAndType(String file){
+        JSONObject  obj;
+        try{
+            JSONParser parser = new JSONParser();
+            try (FileReader reader = new FileReader(file)) {
+                obj = (JSONObject) parser.parse(reader);
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+            Logger.getLogger(AppCon.class.getName()).log(Level.SEVERE, null, e);
+            return null;
+        }
+        return (Map<String, String>) obj.keySet()
+               .stream()
+               .collect(Collectors.toMap(
+                   key -> key.toString(),
+                   key -> (obj.get(key)).toString(),
+                   (v1, v2) -> v1    // merge function (not really needed)
+                         // ensures HashMap
+               ));
+    }
     
     
     private List<String> findHierarchyType(String file){

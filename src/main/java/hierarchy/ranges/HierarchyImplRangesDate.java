@@ -546,6 +546,8 @@ public class HierarchyImplRangesDate implements Hierarchy<RangeDate>{
         }
         try (PrintWriter out = new PrintWriter(new FileWriter(file))) {
             out.write(exported_hier.toString());
+            out.flush();
+            out.close();
         } catch (Exception e) {
             e.printStackTrace();
         }

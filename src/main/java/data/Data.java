@@ -71,5 +71,8 @@ public interface Data {
     public void setRegex(int column,  char character, String regex);
     public void computeInformationLossMetrics(Object[][] anonymizedTable, int[] qids, Map<Integer, Hierarchy> hierarchies, Map<Integer, Set<String>> suppressedValues);
     public Map<String,Double> getInformationLoss();
+    public Map<String,String> getColNamesTypesTemplate();
+    public void exportTemplate(String file_path);
+    public void setTemplate(Map<String,String> templ);
 
 }

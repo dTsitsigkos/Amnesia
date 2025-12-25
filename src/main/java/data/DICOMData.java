@@ -38,10 +38,15 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.text.ParseException;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.TreeMap;
+import static java.util.stream.Collectors.toMap;
+import java.util.stream.IntStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import org.json.simple.JSONObject;
 
 /**
  *
@@ -64,8 +69,7 @@ public class DICOMData implements Data {
     private Map <Integer,String> colNamesPosition = null;
     
     @JsonView(View.GetColumnNames.class)
-    private String []columnNames = {"PatientID","PatientName","PatientAge","Modality","PatientSex","PatientBirthDate","PhotometricInterpretation","BodyPartExamined",
-        "PatientOrientation","ViewPosition","ConversionType","SamplesPerPixel"};
+    private String []columnNames = DicomMetadata.columnNames;
     private AttributeTag []dcmAttributes = null;
     
     @JsonView(View.SmallDataSet.class)
@@ -74,6 +78,8 @@ public class DICOMData implements Data {
     private ArrayList<LinkedHashMap> data;
     @JsonView(View.SmallDataSet.class)
     private String[][] typeArr;
+    @JsonView(View.SmallDataSet.class)
+    private Boolean[] checkedTemplate=null;
     @JsonView(View.GetDataTypes.class)
     boolean pseudoanonymized = false;
     @JsonView(View.GetDataTypes.class)
@@ -88,6 +94,8 @@ public class DICOMData implements Data {
     private String []fileNames = null;
     
     private Map<String,Double> informationLoss;
+    
+    private Map<String,String> colNameTypeTemplate = null;
     
     public DICOMData(String ip, DictionaryString dict){
         this.inputpath = ip;
@@ -176,7 +184,6 @@ public class DICOMData implements Data {
                             str = this.dictHier.getIdToString((int)dataSet[i][j]);
                         }
                         if (str.equals("NaN")){
-                            System.out.println("Column "+this.columnNames[j]);
                             try{
                              this.dcmInfo[i].get(this.dcmAttributes[j]).setValue("");
                             }catch(Exception ex){
@@ -224,11 +231,9 @@ public class DICOMData implements Data {
         
         try{
             if(dictionary.isEmpty() && dictHier.isEmpty()){
-                System.out.println("Both empy load data");
                 stringCount = 1;
             }
             else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
-                System.out.println("Both have values");
                 if(dictionary.getMaxUsedId() > dictHier.getMaxUsedId()){
                     stringCount = dictionary.getMaxUsedId()+1;
                 }
@@ -237,11 +242,9 @@ public class DICOMData implements Data {
                 }
             }
             else if(dictionary.isEmpty()){
-                System.out.println("Dict data empty");
                 stringCount = dictHier.getMaxUsedId()+1;
             }
             else{
-                System.out.println("Dict hier empty");
                 stringCount = dictionary.getMaxUsedId()+1;
             }
 
@@ -396,7 +399,6 @@ public class DICOMData implements Data {
                     }
                 }
                 this.dcmInfo[counter] = list;
-                System.out.println("File name: "+df.getName());
                 this.fileNames[counter] = df.getName();
                 counter++;
             }
@@ -657,7 +659,6 @@ public class DICOMData implements Data {
 
     @Override
     public void export(String file, Object[][] initialTable, Object[][] anonymizedTable, int[] qids, Map<Integer, Hierarchy> hierarchies, Map<Integer, Set<String>> suppressedValues) {
-        System.out.println("Export dicom data...");
         
         Object[][] temp = null;
         if ( initialTable != null ){
@@ -742,7 +743,6 @@ public class DICOMData implements Data {
         
         for ( int i = 0 ; i < this.columnNames.length ; i ++){
             if ( checkColumns[i] == true){
-                System.out.println("Edww mpainei");
                 colNamesType.put(counter,null);
                 colNamesPosition.put(counter,this.columnNames[i]);
                 counter++;
@@ -770,7 +770,6 @@ public class DICOMData implements Data {
                     }
                 }
                 else{
-                    System.out.println("Edww mpainei2");
                     colNamesType.put(counter, "string");
                 }
 
@@ -796,6 +795,23 @@ public class DICOMData implements Data {
     @Override
     public String findColumnTypes() {
         
+//        DicomDictionary dict = DicomDictionary.StandardDictionary;
+//
+//        // Iterator over all AttributeTags
+//        Iterator<AttributeTag> tagIterator = dict.getTagIterator();
+//
+//        System.out.println("All keywords in PixelMed StandardDictionary:");
+//
+//        while (tagIterator.hasNext()) {
+//            AttributeTag tag = tagIterator.next();
+//            // Get the keyword (DICOM name)
+//            String keyword = dict.getNameFromTag(tag);
+//
+//            // Print tag in (gggg,eeee) format + keyword
+//            System.out.print(" "+ keyword+" ");
+//        }
+//        return "";
+        
         File folder = new File(this.inputpath);
         this.formatsDate = new String[this.columnNames.length];
         try{
@@ -807,7 +823,6 @@ public class DICOMData implements Data {
             smallDataSet = new String[sample][this.columnNames.length];
             for(int i=0; i<sample; i++){
                 AttributeList list = new AttributeList();
-                System.out.println("File "+dicomfiles[i].getAbsolutePath());
                 if(!dicomfiles[i].getName().endsWith(".dcm")){
                     continue;
                 }
@@ -815,7 +830,6 @@ public class DICOMData implements Data {
                 
                 for(int j=0; j<this.columnNames.length; j++){
                     String value = getTagInformation(list,this.dcmAttributes[j]).trim().replaceAll("[\uFEFF-\uFFFF]", "");
-                    System.out.println(this.columnNames[j]+": "+value);
                     if(i==0){
                         if ( !value.equals("")){
                             if (chVar.isInt(value)){
@@ -888,7 +902,6 @@ public class DICOMData implements Data {
     }
     
     private String getTagInformation(AttributeList list, AttributeTag attrTag) {
-        System.out.println(DicomDictionary.StandardDictionary.getNameFromTag(attrTag));
         return Attribute.getDelimitedStringValuesOrEmptyString(list, attrTag);
     }
 
@@ -971,11 +984,22 @@ public class DICOMData implements Data {
         this.smallDataSet = smallDataSet;
         String []str = null;
         String []columnTypes = null;
+        String tempType = null;
         typeArr = new String[smallDataSet[0].length][];
-    
         for ( int i = 0 ; i < 1 ; i ++){
             columnTypes = new String[smallDataSet[i].length];
             for ( int j = 0 ; j < smallDataSet[i].length ; j ++ ){
+                
+                if(this.colNameTypeTemplate!=null && this.colNameTypeTemplate.containsKey(this.columnNames[j])){
+                    if(checkedTemplate==null){
+                        this.checkedTemplate = new Boolean[this.columnNames.length];
+                        Arrays.fill(checkedTemplate, Boolean.FALSE);
+                    }
+                    checkedTemplate[j] = true;
+                    tempType = this.colNameTypeTemplate.get(this.columnNames[j]);
+                }
+                
+                
                 if ( smallDataSet[i][j] != null ){
                     if (smallDataSet[i][j].equals("string")){
                         str = new String[1];
@@ -1011,6 +1035,19 @@ public class DICOMData implements Data {
                     str[3] = "date";
                     columnTypes[j] = "string";
                 }
+                
+                
+                if(tempType!=null){
+                    str[0] = tempType;
+                    for(int k=1; k<str.length; k++){
+                        if(str[k].equals(tempType)){
+                            str[k] = columnTypes[j];
+                            break;
+                        }
+                    }
+                    columnTypes[j] = str[0];
+                    tempType=null;
+                }
                 typeArr[j] = str;
             }
             
@@ -1044,11 +1081,9 @@ public class DICOMData implements Data {
     public void setMask(int column, int[] positions, char character, String option) {
         int stringCount;
         if(dictionary.isEmpty() && dictHier.isEmpty()){
-            System.out.println("Both empy load data");
             stringCount = 1;
         }
         else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
-            System.out.println("Both have values");
             if(dictionary.getMaxUsedId() > dictHier.getMaxUsedId()){
                 stringCount = dictionary.getMaxUsedId()+1;
             }
@@ -1057,11 +1092,9 @@ public class DICOMData implements Data {
             }
         }
         else if(dictionary.isEmpty()){
-            System.out.println("Dict data empty");
             stringCount = dictHier.getMaxUsedId()+1;
         }
         else{
-            System.out.println("Dict hier empty");
             stringCount = dictionary.getMaxUsedId()+1;
         }
         
@@ -1146,11 +1179,9 @@ public class DICOMData implements Data {
     public void setRegex(int column, char character, String regex) {
         int stringCount;
         if(dictionary.isEmpty() && dictHier.isEmpty()){
-            System.out.println("Both empy load data");
             stringCount = 1;
         }
         else if(!dictionary.isEmpty() && !dictHier.isEmpty()){
-            System.out.println("Both have values");
             if(dictionary.getMaxUsedId() > dictHier.getMaxUsedId()){
                 stringCount = dictionary.getMaxUsedId()+1;
             }
@@ -1159,11 +1190,9 @@ public class DICOMData implements Data {
             }
         }
         else if(dictionary.isEmpty()){
-            System.out.println("Dict data empty");
             stringCount = dictHier.getMaxUsedId()+1;
         }
         else{
-            System.out.println("Dict hier empty");
             stringCount = dictionary.getMaxUsedId()+1;
         }
         
@@ -1214,6 +1243,40 @@ public class DICOMData implements Data {
         this.biggerSample.put(column, var);
         
         
+    }
+
+    @Override
+    public Map<String, String> getColNamesTypesTemplate() {
+        
+        
+        this.colNameTypeTemplate = IntStream.range(0, this.columnNames.length)
+         .boxed()
+         .collect(toMap(
+             i -> this.columnNames[i],
+             i -> this.colNamesType.get(i)
+         ));
+        
+        
+        return this.colNameTypeTemplate;
+    }
+
+    @Override
+    public void exportTemplate(String templ_path) {
+        try{
+            JSONObject jsonTemplate = new JSONObject(getColNamesTypesTemplate());
+            PrintWriter writer = new PrintWriter(templ_path,"UTF-8");
+            writer.write(jsonTemplate.toString());
+            writer.flush();   
+            writer.close();  
+        }catch(Exception e){
+            e.printStackTrace();
+            System.err.println("Error exportTemplate: "+e.getMessage());
+        }
+    }
+
+    @Override
+    public void setTemplate(Map<String,String> template) {
+        this.colNameTypeTemplate = template;
     }
     
 }
