@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Amnesia | Wizards</title>
+
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="font-awesome/css/font-awesome.css" rel="stylesheet">
+    <link href="css/plugins/iCheck/custom.css" rel="stylesheet">
+    <link href="css/plugins/steps/jquery.steps.css" rel="stylesheet">
+    <link href="css/animate.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <link href="css/plugins/dataTables/datatables.min.css" rel="stylesheet">
+    <link rel="shortcut icon" href="img/smallLogo.png">
+
+
+
+    <style>
+
+        /*.wizard > .content > .body  position: relative; }*/
+        table tbody tr:hover {
+            background-color:#1AB394 !important;
+            cursor: pointer;
+            color: white;
+        }
+
+    </style>
+    <script type="text/javascript">
+            var _paq = _paq || [];
+            /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+            _paq.push(['trackPageView']);
+            _paq.push(['enableLinkTracking']);
+            (function() {
+                    var u="//analytics.openaire.eu/";
+                    _paq.push(['setTrackerUrl', u+'piwik.php']);
+                    _paq.push(['setSiteId', '77']);
+                    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+                    g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
+            })();
+    </script>
+
+    <img src="https://analytics.openaire.eu/piwik.php?idsite=77&rec=1" style="border:0; display: none;" alt="" />
+</head>
+
+<body>
+
+    <div id="wrapper">
+
+    <nav class="navbar-default navbar-static-side" role="navigation">
+        <div class="sidebar-collapse">
+            <ul class="nav metismenu" id="side-menu">
+                <li class="nav-header">
+                    <div class="dropdown profile-element"> 
+                        <span>
+                            <img alt="image" class="img-circle" src="img/logo1.jpg" />
+                        </span>
+                        <!--<a data-toggle="dropdown" class="dropdown-toggle" href="#">
+                            <span class="clear"> 
+                                <span class="block m-t-xs"> <strong class="font-bold">Amnesia</strong>
+                                <img src="img/test.png" alt="image" style="width:200px;height:130px;">    
+                                </span>  
+                            </span> 
+                        </a>-->
+                       
+                    </div>
+                  
+                </li>
+                <li>
+                    <a href="index.html"><i class="fa fa-home"></i> <span class="nav-label">Anonymization Wizard</span></a>
+                    
+                </li>
+                
+                
+                <!--//////////////////////////////////////////////////////////////////////////////////////////////-->
+                
+                <li>
+                    <!--<a href="#" onclick="restart();"><i class="fa fa-pie-chart"></i> <span class="nav-label">Restart</span>  </a> -->
+                    <a href="#" onclick="restart();"><i class="fa fa-refresh"></i> <span class="nav-label">Reset</span>  </a>
+                </li>
+
+                <li class="active">
+                    <a href="#"><i class="fa fa-database"></i> <span class="nav-label">Source</span><span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level collapse">
+                        <li >
+                            <a href="mydataset.html">Manage</a>
+                        </li> 
+                        <li style="position:relative;">                                         
+                            <a>
+                                <form>
+                                    Load From Local Disk
+                                    <input  type="file" name="file" id="datafile" onchange = 'uploadfile("datafile");'
+                                    style='position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";opacity:0;background-color:transparent;color:transparent;' name="file_source" size="40"
+                                    />
+                                </form>
+                            </a>       
+                        </li>
+
+                        <li >
+                            <a href="myzenodoloadwizard.html">Load From Zenodo</a>
+                        </li>
+                        
+                        <li>
+                            <a href="mydataverseloadwizard.html">Load From Dataverse Server</a>
+                        </li>
+                   </ul>
+                </li>
+
+                 <li>
+                    <a href="#"><i class="fa fa-database"></i> <span class="nav-label">Anonymized</span><span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level collapse">
+                        <li >
+                            <a href="myanonymizeddataset.html">Manage</a>
+                        </li> 
+                        <!--<li style="position:relative;">                                         
+                            <a>
+                                <form>
+                                    Load from Local
+                                    <input  type="file" name="file" id="datafile" onchange = 'uploadfile("datafile");'
+                                    style='position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";opacity:0;background-color:transparent;color:transparent;' name="file_source" size="40"
+                                    />
+                                </form>
+                            </a>       
+                        </li> --> 
+                   </ul>
+                </li>
+
+                <li>
+                    <a href="#"><i  class="fa fa-sitemap"></i> <span class="nav-label">Hierarchy</span><span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level collapse" >
+                        <li>
+                            <a href="myhier.html">Manage</a>
+                        </li> 
+                        <li style="position:relative;">                                       
+                            <a>
+                                <form>
+                                    Load from Local Disk
+                                <input  type="file"  name="file" id="hierarchy" onchange ='uploadfile("hierarchy");'
+                                                style='position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";opacity:0;background-color:transparent;color:transparent;' name="file_source" size="40"
+                                />
+                                </form>
+                            </a> 
+                        </li>
+                        
+                        <li>
+                           <a href="myhierarchywizard.html" >Auto Generate </a>
+                        </li> 
+                   </ul>
+                </li>
+
+                <li>
+                    <a href="myalgorithms.html"><i class="fa fa-lock"></i> <span class="nav-label">Algorithms</span>  </a>
+                </li>
+
+                <li>
+                    <a href="mysolutiongraph.html"><i class="fa fa-line-chart"></i> <span class="nav-label">Solution Graph</span></a>
+                </li>
+
+                <li>
+                    <a href="myresults.html"><i class="fa fa-laptop"></i> <span class="nav-label">Results</span></a>
+                </li>
+                
+                <!--<li>
+                    <a href="myabout.html"><i class="fa fa-info-circle"></i> <span class="nav-label">About</span></a>
+                </li>-->
+                
+                <li id="about_attr">
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div id="page-wrapper" class="gray-bg">
+        <!--<div class="row border-bottom">
+        <nav class="navbar navbar-static-top" role="navigation" style="margin-bottom: 0">
+        <div class="navbar-header">
+            <a class="navbar-minimalize minimalize-styl-2 btn btn-primary " href="#"><i class="fa fa-bars"></i> </a>
+            <form role="search" class="navbar-form-custom" action="search_results.html">
+                <div class="form-group">
+                    <input type="text" placeholder="Search for something..." class="form-control" name="top-search" id="top-search">
+                </div>
+            </form>
+        </div>
+            <ul class="nav navbar-top-links navbar-right">
+                <li>
+                    <span class="m-r-sm text-muted welcome-message">Welcome to INSPINIA+ Admin Theme.</span>
+                </li>
+                <li class="dropdown">
+                    <a class="dropdown-toggle count-info" data-toggle="dropdown" href="#">
+                        <i class="fa fa-envelope"></i>  <span class="label label-warning">16</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-messages">
+                        <li>
+                            <div class="dropdown-messages-box">
+                                <a href="profile.html" class="pull-left">
+                                    <img alt="image" class="img-circle" src="img/a7.jpg">
+                                </a>
+                                <div class="media-body">
+                                    <small class="pull-right">46h ago</small>
+                                    <strong>Mike Loreipsum</strong> started following <strong>Monica Smith</strong>. <br>
+                                    <small class="text-muted">3 days ago at 7:58 pm - 10.06.2014</small>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <div class="dropdown-messages-box">
+                                <a href="profile.html" class="pull-left">
+                                    <img alt="image" class="img-circle" src="img/a4.jpg">
+                                </a>
+                                <div class="media-body ">
+                                    <small class="pull-right text-navy">5h ago</small>
+                                    <strong>Chris Johnatan Overtunk</strong> started following <strong>Monica Smith</strong>. <br>
+                                    <small class="text-muted">Yesterday 1:21 pm - 11.06.2014</small>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <div class="dropdown-messages-box">
+                                <a href="profile.html" class="pull-left">
+                                    <img alt="image" class="img-circle" src="img/profile.jpg">
+                                </a>
+                                <div class="media-body ">
+                                    <small class="pull-right">23h ago</small>
+                                    <strong>Monica Smith</strong> love <strong>Kim Smith</strong>. <br>
+                                    <small class="text-muted">2 days ago at 2:30 am - 11.06.2014</small>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <div class="text-center link-block">
+                                <a href="mailbox.html">
+                                    <i class="fa fa-envelope"></i> <strong>Read All Messages</strong>
+                                </a>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a class="dropdown-toggle count-info" data-toggle="dropdown" href="#">
+                        <i class="fa fa-bell"></i>  <span class="label label-primary">8</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-alerts">
+                        <li>
+                            <a href="mailbox.html">
+                                <div>
+                                    <i class="fa fa-envelope fa-fw"></i> You have 16 messages
+                                    <span class="pull-right text-muted small">4 minutes ago</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <a href="profile.html">
+                                <div>
+                                    <i class="fa fa-twitter fa-fw"></i> 3 New Followers
+                                    <span class="pull-right text-muted small">12 minutes ago</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <a href="grid_options.html">
+                                <div>
+                                    <i class="fa fa-upload fa-fw"></i> Server Rebooted
+                                    <span class="pull-right text-muted small">4 minutes ago</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <div class="text-center link-block">
+                                <a href="notifications.html">
+                                    <strong>See All Alerts</strong>
+                                    <i class="fa fa-angle-right"></i>
+                                </a>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+
+
+                <li>
+                    <a href="login.html">
+                        <i class="fa fa-sign-out"></i> Log out
+                    </a>
+                </li>
+            </ul>
+
+        </nav>
+        </div>-->
+            <div class="row wrapper border-bottom white-bg page-heading">
+                <div class="col-lg-12">
+                    
+                    <h2><span class="text-navy">Zenodo Wizard</span></h2><div id="version_noti"></div>
+                    <h3 style="text-align: center;  margin-top:1%;"> <span class="text-danger" id="online-warning"></span> </h3>
+                    
+                    <!--<ol class="breadcrumb">
+                        <li>
+                            <a href="index.html">Home</a>
+                        </li>
+                        <li>
+                            <a>Forms</a>
+                        </li>
+                        <li class="active">
+                            <strong>Wizard</strong>
+                        </li>
+                    </ol>-->
+                </div>
+<!--                <div class="col-lg-2">
+
+                </div>-->
+            </div>
+        <div class="wrapper wrapper-content animated fadeInRight">
+            
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="ibox">
+                        <div class="ibox-title">
+                            <h5>Zenodo Load File</h5>
+                            <!--<div class="ibox-tools">
+                                <a class="collapse-link">
+                                    <i class="fa fa-chevron-up"></i>
+                                </a>
+                                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                                    <i class="fa fa-wrench"></i>
+                                </a>
+                                <ul class="dropdown-menu dropdown-user">
+                                    <li><a href="#">Config option 1</a>
+                                    </li>
+                                    <li><a href="#">Config option 2</a>
+                                    </li>
+                                </ul>
+                                <a class="close-link">
+                                    <i class="fa fa-times"></i>
+                                </a>
+                            </div>-->
+                        </div>
+                        <div class="ibox-content">
+                            <div id="spinner" style="display:none" class ="dim">
+                                <div class="sk-spinner sk-spinner-cube-grid">
+                                    <div class="sk-cube"></div>
+                                    <div class="sk-cube"></div>
+                                    <div class="sk-cube"></div>
+                                    <div class="sk-cube"></div>
+                                    <div class="sk-cube"></div>
+                                    <div class="sk-cube"></div>
+                                    <div class="sk-cube"></div>
+                                    <div class="sk-cube"></div>
+                                    <div class="sk-cube"></div>
+                                </div>
+                            </div>
+
+                            <form id="form" action="#" class="wizard-big">
+                                <h1>User Token</h1>
+                               <fieldset>
+                                    <!--<h2>User token</h2>-->
+                                    <div class="row">
+                                        <div class="col-lg-8">
+                                            <div class="form-group">
+                                                <label>User Token</label>
+                                                <input id="usertoken" name="usertoken" type="text" class="form-control required">
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <div class="text-center">
+                                                <div style="margin-top: 20px">
+                                                    <i class="fa fa-sign-in" style="font-size: 180px;color: #e5e5e5 "></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </fieldset>
+                                <h1>Zenodo Datasets</h1>
+                                <fieldset>
+                                    <h2>Zenodo Datasets</h2>
+                                    <div class="ibox-content" >
+                                        
+                                        
+                                        
+                                        <table class="table hover" id="zenodofiles" cellspacing="0" width="100%">
+                                            
+                                            <thead>
+                                                <tr>
+                                                    <th>File Name</th>
+                                                    <th>title</th>
+                                                    <th>keywords</th>
+                                                    <th>created</th>
+                                                    <th>modified</th>
+                                                    <th>filesize</th>
+                                                    
+                                                </tr>
+                                            </thead>
+                                            
+                                        </table>
+
+                                    </div>
+                                </fieldset>
+       
+                            </form>
+                        </div>
+                    </div>
+                    </div>
+                    <div class="pull-left">
+                       <!-- <img src="img/OpenAIREplus_logo.png"> -->
+                    </div>
+                
+                     <div class="footer">
+                        <!--<div class="pull-right">
+                            10GB of <strong>250GB</strong> Free.
+                        </div>-->
+                        <div id="copyrights">
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+       
+
+        </div>
+        </div>
+
+
+
+    <!-- Mainly scripts -->
+    <script src="js/jquery-2.1.1.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/plugins/metisMenu/jquery.metisMenu.js"></script>
+    <script src="js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+
+    <!-- Custom and plugin javascript -->
+    <script src="js/inspinia.js"></script>
+    <script src="js/plugins/pace/pace.min.js"></script>
+
+    <!-- Steps -->
+    <script src="js/plugins/staps/jquery.steps.min.js"></script>
+
+    <!-- Jquery Validate -->
+    <script src="js/plugins/validate/jquery.validate.min.js"></script>
+
+    <script src="js/mine/uploadfile.js"></script>
+    
+     <!--Datatable -->
+    <script src="js/plugins/dataTables/datatables.min.js"></script>
+    
+    <!-- Piwik -->
+     <!--<script type="text/javascript">
+      var _paq = _paq || [];
+      /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+      _paq.push(['trackPageView']);
+      _paq.push(['enableLinkTracking']);
+      (function() {
+        var u="//analytics.openaire.eu/";
+        _paq.push(['setTrackerUrl', u+'piwik.php']);
+        _paq.push(['setSiteId', '77']);
+        var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+        g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
+      })();
+    </script>
+    <!-- End Piwik Code -->
+
+    <!-- Piwik Image Tracker-->
+      <!--<img src="https://analytics.openaire.eu/piwik.php?idsite=77&rec=1" style="border:0" alt="" />
+    <!-- End Piwik -->
+    
+
+    <script>
+        /*window.onbeforeunload = function() {
+             cleanUserData();
+        };*/
+    
+        $(document).on({
+            mouseenter: function (event) {
+              var table = $(event.target).parents('.dataTables_wrapper').find('table.dataTable');
+              trIndex = $(this).index() + 1;
+              table.find("tr:eq(" + trIndex + ")").addClass("hover");
+            },
+            mouseleave: function (event) {
+              var table = $(event.target).parents('.dataTables_wrapper').find('table.dataTable');
+              trIndex = $(this).index() + 1;
+              table.find("tr:eq(" + trIndex + ")").removeClass("hover");
+            }
+        }, ".dataTables_wrapper tbody tr");
+        
+        $(document).ready(function(){
+            loadhtml();
+//            $('#about_attr').load('about_menu.html',function(){});
+//            $('#version_noti').load('version_title.html',function(){});
+//            $('#online-warning').load('myonline-warning.html',function(){});
+//            $('#copyrights').load('copyrights.html',function(){});
+            
+            deleteSuppress();
+            console.log("111111");
+            $("#wizard").steps();
+            
+            $("#form").steps({
+                bodyTag: "fieldset",
+                enablePagination:true,
+                enableCancelButton:true,
+                onStepChanging: function (event, currentIndex, newIndex)
+                {
+                 
+                    if (currentIndex == 0){
+                        
+                        
+                    }
+                    
+
+                    // Always allow going backward even if the current step contains invalid fields!
+                    if (currentIndex > newIndex)
+                    {
+                        return true;
+                    }
+
+                    
+
+                    var form = $(this);
+
+                    // Clean up if user went backward before
+                    if (currentIndex < newIndex)
+                    {
+                        // To remove error styles
+                        $(".body:eq(" + newIndex + ") label.error", form).remove();
+                        $(".body:eq(" + newIndex + ") .error", form).removeClass("error");
+                    }
+                    
+
+                    // Disable validation on fields that are disabled or hidden.
+                    //form.validate().settings.ignore = ":disabled,:hidden";
+
+                    // Start validation; Prevent going forward if false
+                    
+                    return form.valid();
+                },
+                onStepChanged: function (event, currentIndex, priorIndex)
+                {
+                    
+                    getZenodoFiles(usertoken.value);
+                  
+                    
+                    //$("#form .actions a[href='#finish']").show();
+                    if (currentIndex === 2 )
+                    {
+                        $(this).steps("next");
+                    }
+                    //$("#form .actions a[href='#previous']").hide();
+
+                    // Suppress (skip) "Warning" step if the user is old enough and wants to the previous step.
+                    /*if (currentIndex === 2 && priorIndex === 3)
+                    {
+                        $(this).steps("previous");
+                    }*/
+                },
+                onCanceled: function(event,currentIndex){
+                   // $("#form .actions a[href='#previous']").hide();
+                    window.location = "mydataset.html";
+                },
+                onFinishing: function (event, currentIndex)
+                {
+                    //$("#form .actions a[href='#previous']").hide();
+                    console.log("444444");
+                    var form = $(this);
+                    
+                    // Disable validation on fields that are disabled.
+                    // At this point it's recommended to do an overall check (mean ignoring only disabled fields)
+                    form.validate().settings.ignore = ":disabled";
+
+                    // Start validation; Prevent form submission if false
+                    return form.valid();
+                },
+                onFinished: function (event, currentIndex)
+                {
+                    //$("#form .actions a[href='#previous']").hide();
+                    console.log("5555555");
+                    
+                    
+
+                    var form = $(this);
+
+                    // Submit form input
+                    form.submit();
+                    
+                }
+            }).validate({
+                errorPlacement: function (error, element)
+                {
+                    element.before(error);
+                },
+                rules: {
+                    confirm: {
+                        equalTo: "#password"
+                    }
+                }
+            });
+            /*$("#form .actions a[href='#finish']").hide();
+            $('a[rel!=ext]').click(function() { window.onbeforeunload = null; });
+            $('button[rel!=ext]').click(function() { window.onbeforeunload = null; });*/
+       });
+    </script>
+
+</body>
+
+</html>

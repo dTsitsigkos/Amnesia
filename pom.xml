@@ -64,7 +64,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jetty</artifactId>
         </dependency>
-		
+
 <!--        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -82,12 +82,19 @@
             <version>3.25.2</version>
         </dependency>
         
-        <!--You must download jar from http://www.dclunie.com/pixelmed/software/webstart/pixelmed.jar-->
+        <!--You must download jar from http://www.dclunie.com/pixelmed/software/webstart/pixelmed.jar-->        
+        <!-- Install
+            mvn install:install-file -Dfile=pixelmed.jar \
+                -DgroupId=com.pixelmed.dicom \
+                -DartifactId=pixelmed-java \
+                -Dversion=1.0 \
+                -Dpackaging=jar -->        
         <dependency> 
-            <groupId>pixelmed</groupId>
+            <groupId>com.pixelmed.dicom</groupId>
             <artifactId>pixelmed-java</artifactId>
             <version>1.0</version>
         </dependency>
+
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>

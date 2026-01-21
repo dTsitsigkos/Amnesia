@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Amnesia | Results</title>
+
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="font-awesome/css/font-awesome.css" rel="stylesheet">
+    <link href="css/plugins/dataTables/datatables.min.css" rel="stylesheet">
+    <link href="css/plugins/morris/morris-0.4.3.min.css" rel="stylesheet">
+    <link href="css/animate.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <link rel="shortcut icon" href="img/smallLogo.png">
+    <script type="text/javascript">
+            var _paq = _paq || [];
+            /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+            _paq.push(['trackPageView']);
+            _paq.push(['enableLinkTracking']);
+            (function() {
+                    var u="//analytics.openaire.eu/";
+                    _paq.push(['setTrackerUrl', u+'piwik.php']);
+                    _paq.push(['setSiteId', '77']);
+                    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+                    g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
+            })();
+    </script>
+    
+    <script src="js/jquery-2.1.1.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+
+    <img src="https://analytics.openaire.eu/piwik.php?idsite=77&rec=1" style="border:0; display: none;" alt="" />
+
+</head>
+
+<body class="">
+
+    <div id="wrapper">
+
+    <nav class="navbar-default navbar-static-side" role="navigation">
+        <div class="sidebar-collapse">
+            <ul class="nav metismenu" id="side-menu">
+                <li class="nav-header">
+                    <div class="dropdown profile-element"> 
+                        <span>
+                            <img alt="image" class="img-circle" src="img/logo1.jpg" />
+                        </span>
+                        <!--<a data-toggle="dropdown" class="dropdown-toggle" href="#">
+                            <span class="clear"> 
+                                <span class="block m-t-xs"> <strong class="font-bold">Amnesia</strong>
+                                <img src="img/test.png" alt="image" style="width:200px;height:130px;">    
+                                </span>  
+                            </span> 
+                        </a>-->
+                       
+                    </div>
+                  
+                </li>
+                <li >
+                    <a href="index.html"><i class="fa fa-home"></i> <span class="nav-label">Anonymization Wizard</span></a>
+                    
+                </li>
+                
+                
+                <!--//////////////////////////////////////////////////////////////////////////////////////////////-->
+                
+                <li>
+                    <!--<a href="#" onclick="restart();"><i class="fa fa-pie-chart"></i> <span class="nav-label">Restart</span>  </a> -->
+                    <a href="#" onclick="restart();"><i class="fa fa-refresh"></i> <span class="nav-label">Reset</span>  </a>
+                </li>
+
+                <li>
+                    <a href="#"><i class="fa fa-database"></i> <span class="nav-label">Source</span><span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level collapse">
+                        <li >
+                            <a href="mydataset.html">Manage</a>
+                        </li> 
+                        <li style="position:relative;">                                         
+                            <a>
+                                <form>
+                                    Load From Local Disk
+                                    <input  type="file" name="file" id="datafile" onchange = 'uploadfile("datafile");'
+                                    style='position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";opacity:0;background-color:transparent;color:transparent;' name="file_source" size="40"
+                                    />
+                                </form>
+                            </a>       
+                        </li>
+
+                        <li>
+                            <a href="myzenodoloadwizard.html">Load From Zenodo</a>
+                        </li>
+                        
+                        <li>
+                            <a href="mydataverseloadwizard.html">Load From Dataverse Server</a>
+                        </li>
+                   </ul>
+                </li>
+
+                 <li>
+                    <a href="#"><i class="fa fa-database"></i> <span class="nav-label">Anonymized</span><span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level collapse">
+                        <li >
+                            <a href="myanonymizeddataset.html">Manage</a>
+                        </li> 
+                        <!--<li style="position:relative;">                                         
+                            <a>
+                                <form>
+                                    Load from Local
+                                    <input  type="file" name="file" id="datafile" onchange = 'uploadfile("datafile");'
+                                    style='position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";opacity:0;background-color:transparent;color:transparent;' name="file_source" size="40"
+                                    />
+                                </form>
+                            </a>       
+                        </li> --> 
+                   </ul>
+                </li>
+
+                <li>
+                    <a href="#"><i  class="fa fa-sitemap"></i> <span class="nav-label">Hierarchy</span><span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level collapse" >
+                        <li>
+                            <a href="myhier.html">Manage</a>
+                        </li> 
+                        <li style="position:relative;">                                       
+                            <a>
+                                <form>
+                                    Load from Local Disk
+                                <input  type="file"  name="file" id="hierarchy" onchange ='uploadfile("hierarchy");'
+                                                style='position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";opacity:0;background-color:transparent;color:transparent;' name="file_source" size="40"
+                                />
+                                </form>
+                            </a> 
+                        </li>
+                        
+                        <li>
+                           <a href="myhierarchywizard.html" >Auto Generate</a>
+                        </li> 
+                   </ul>
+                </li>
+
+                <li>
+                    <a href="myalgorithms.html"><i class="fa fa-lock"></i> <span class="nav-label">Algorithms</span>  </a>
+                </li>
+
+                <li>
+                    <a href="mysolutiongraph.html"><i class="fa fa-line-chart"></i> <span class="nav-label">Solution Graph</span></a>
+                </li>
+
+                <li class="active">
+                    <a href="myresults.html"><i class="fa fa-laptop"></i> <span class="nav-label">Results</span></a>
+                </li>
+                
+                <!--<li>
+                    <a href="myabout.html"><i class="fa fa-info-circle"></i> <span class="nav-label">About</span></a>
+                </li>-->
+                
+                
+                <li id="about_attr">
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+        <div id="page-wrapper" class="gray-bg">
+            
+             <div id="spinner" style="display:none" class ="dim">
+            <div   class="sk-spinner sk-spinner-cube-grid">
+                <div class="sk-cube"></div>
+                <div class="sk-cube"></div>
+                <div class="sk-cube"></div>
+                <div class="sk-cube"></div>
+                <div class="sk-cube"></div>
+                <div class="sk-cube"></div>
+                <div class="sk-cube"></div>
+                <div class="sk-cube"></div>
+                <div class="sk-cube"></div>
+            </div>
+        </div>
+            <div class="row wrapper border-bottom white-bg page-heading">
+                <div class="col-sm-12">
+                    
+                    <h2><span class="text-navy">Amnesia Αnonymization Tool</span></h2><div id="version_noti"></div>
+                    <h3 style="text-align: center;  margin-top:1%;"> <span class="text-danger" id="online-warning"></span> </h3>
+                </div>
+                 <div class="nav navbar-top-links navbar-right btn-top">
+                    <button type="button" class="btn btn-w-m btn-primary" onclick="saveAnonymizeDataset();">Save To Local <i class="fa fa-save"></i> </button>     
+                    <button type="button" class="btn btn-w-m btn-primary" onclick="saveToZenodo('myresults.html')">Save To Zenodo <i class="fa fa-save"></i> </button>
+                    <button type="button" class="btn btn-w-m btn-primary" onclick="saveToDataverse('myresults.html')">Save To Dataverse <i class="fa fa-save"></i> </button>
+                    <button type="button" id ="rulesButton" class="btn btn-w-m btn-primary" onclick="saveAnonumizationRules();">Save Rules <i class="fa fa-save"></i> </button>
+                </div>
+            </div>
+
+            <div class="wrapper wrapper-content">
+                
+                <div class="row" id="onlyAnonym">
+                    
+                    <div class="col-lg-12">
+                        <div class="ibox float-e-margins">
+                            <div class="ibox-title">
+                                <h5>Anonymized Dataset</h5>
+
+                            </div>
+                            <div class="ibox-content" >
+                                <div class="table-responsive">
+
+                                    <table class="table table-striped table-bordered table-hover dataset" id="anondataset"  >
+
+                                    </table>  
+                                </div>  
+                            </div>
+                        </div>
+                        <div class=" navbar-right btn-bottom">
+                            <button type="button" class="btn btn-w-m btn-primary" data-target="#popup" data-toggle="modal" onclick="" disabled="true">Statistics </button>
+                            <!--<button type="button" class="btn btn-w-m btn-primary hidden" id="infoloss" onclick="getInfoLoss();">Information Loss</button>-->
+                        </div>
+                    </div>
+                    
+                    <div class="footer">
+                        <div>
+                            <p>&copy; 2022, All Rights Reserved.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row" id="bothData">
+                    <div class="col-lg-6">
+                        <div class="ibox float-e-margins">
+                            <div class="ibox-title">
+                                <h5>Sensitive dataset</h5>
+                                <div class="ibox-tools">
+                                </div>
+                            </div>
+                            <div class="ibox-content">
+                                <div class="table-responsive">
+
+                                    <table class="table table-striped table-bordered table-hover dataset" id="dataset1">  
+
+
+                                    </table>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="ibox float-e-margins">
+                            <div class="ibox-title">
+                                <h5>Anonymized dataset</h5>
+                                <div class="ibox-tools">
+                                </div>
+                            </div>
+                            <div class="ibox-content">
+                                <div class="table-responsive">
+                                    <br>
+                                    <br>
+
+                                    
+                                    <table class="table table-striped table-bordered table-hover dataset" id="anondataset2">  
+
+
+                                    </table>
+
+                                </div>
+
+                            </div>
+                            <div class=" navbar-right btn-bottom">
+                                <button type="button" class="btn btn-w-m btn-primary" data-target="#popup" data-toggle="modal" onclick="" disabled="true">Statistics </button>
+                                <button type="button" class="btn btn-w-m btn-primary hidden" id="infoloss" onclick="getInfoLoss();">Information Loss</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    
+                    
+         
+                    <div class="footer">
+                        <div id="copyrights">
+                        </div>
+                    </div>
+                    
+                </div> 
+            
+
+        </div>
+        
+        
+        <div class="modal inmodal fade" id="queries" tabindex="-1" role="dialog"  aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title">Queries</h4>
+                        <h5>Select the attributes that you want to query and restrict their values.</h5>
+                    </div>
+                    <div class="modal-body pre-scrollable" id ="queriesinput" >
+                        
+                     
+                   
+                       
+                      
+                        
+                        
+                         
+
+                            
+                             
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="var table = $('#smallanondataset').DataTable();table.destroy();">Close</button>
+                        <button type="button" href="#queriesbarchart" data-dismiss="modal" data-toggle="modal" class="btn btn-primary" onclick="getResultsStatisticsQueries();" >Apply</button>
+                                                <!--<button type="button" href="#queriesbarchart" data-dismiss="modal" data-toggle="modal" class="btn btn-primary" onclick="test();" >Apply</button>-->
+
+                    
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal inmodal fade" id="queriesbarchart" tabindex="-1" role="dialog"  aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title">Queries Bar Chart</h4> 
+                        
+                    </div>
+                    <div class="modal-body">
+                         
+                        
+       
+                    
+                            <div>
+                                <canvas id="barChart" height="140"></canvas>
+                            </div>
+                    
+                                   
+                            
+                             
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="">Close</button>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+         <div class="modal inmodal fade" id="popup" tabindex="-1" role="dialog"  aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                        <h4 class="modal-title">Statistics</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p><a href="#queries" data-dismiss="modal" data-toggle="modal" onclick="queriesStatistics();" >Explore the anonymized dataset properties with ad hoc queries.</a></p>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal inmodal fade" id="infoMetrics" tabindex="-1" role="dialog"  aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                        <h4 class="modal-title">Information Loss Metrics</h4>
+                    </div>
+                    <div class="modal-body">
+                       <ul class="nav nav-pills nav-justified">
+                        <li class="mypills active"><a data-toggle="pill" href="#ncp">NCP</a></li>
+                        <li class="mypills" ><a  data-toggle="pill" href="#total">Total</a></li>
+<!--                        <li class="mypills" ><a data-toggle="pill" href="#menu2">Menu 2</a></li>
+                        <li class="mypills" ><a data-toggle="pill" href="#menu3">Menu 3</a></li>-->
+                      </ul>
+                        
+                        <div class="tab-content" style="text-align: center; margin-top: 4%;">
+                            <div id="ncp" class="tab-pane fade in active">
+                                <h3 style="margin-top:2%;">NCP (Normalized Certainty Penalty)</h3>
+                                <p>For an original value <i>v</i> NCP calculates the number of leaves which are generalized in <i>v</i>.</p>
+                              <!--<p id="ncpVal"></p>-->
+<!--                                <div class="progress blue">
+                                    <span class="progress-left">
+                                        <span class="progress-bar"></span>
+                                    </span>
+                                    <span class="progress-right">
+                                        <span class="progress-bar"></span>
+                                    </span>
+                                    <div class="progress-value">30%</div>
+                                </div>-->
+                                <div id="loader">
+                                    <canvas id="circularLoader" width="200" height="200"></canvas>
+                                </div>
+<!--                                <div class="myprogress-bar" data-percent="80" data-duration="5000" ></div>-->
+                            </div>
+                            <div id="total" class="tab-pane fade in">
+                                <h3 style="margin-top:2%;">Total-IL</h3>
+                                <p><i>Total</i> takes into account the level of the generalized value in the hierarchy : it divides the height of the generalized value in the hierarchy by the height of the hierarchy minus 1.</p>
+                              <!--<p id="ncpVal"></p>-->
+<!--                                <div class="progress blue">
+                                    <span class="progress-left">
+                                        <span class="progress-bar"></span>
+                                    </span>
+                                    <span class="progress-right">
+                                        <span class="progress-bar"></span>
+                                    </span>
+                                    <div class="progress-value">30%</div>
+                                </div>-->
+                                <div id="loader-total">
+                                    <canvas id="circularLoaderTotal" width="200" height="200"></canvas>
+                                </div>
+<!--                                <div class="myprogress-bar" data-percent="80" data-duration="5000" ></div>-->
+                            </div>
+                            
+<!--                            <div id="menu1" class="tab-pane fade">
+                              <h3>Menu 1</h3>
+                              <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                            </div>
+                            <div id="menu2" class="tab-pane fade">
+                              <h3>Menu 2</h3>
+                              <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.</p>
+                            </div>
+                            <div id="menu3" class="tab-pane fade">
+                              <h3>Menu 3</h3>
+                              <p>Eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+                            </div>-->
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+        </div>
+
+    <!-- Mainly scripts -->
+    
+    <script src="js/plugins/metisMenu/jquery.metisMenu.js"></script>
+    <script src="js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+    <script src="js/plugins/progressbar/jQuery-plugin-progressbar.js"></script>
+
+    <!-- ChartJS-->
+    <script src="js/plugins/chartJs/Chart.min.js"></script>
+    
+    
+    <!-- Custom and plugin javascript -->
+    <script src="js/inspinia.js"></script>
+    <script src="js/plugins/pace/pace.min.js"></script>
+    
+     <!--Datatable -->
+    <script src="js/plugins/dataTables/datatables.min.js"></script>
+     <!-- DROPZONE -->
+    <script src="js/plugins/dropzone/dropzone.js"></script>
+    <!--mine-->
+    <script src="js/mine/uploadfile.js"></script>
+    
+    <script src="js/plugins/jquery.fileDownload/jquery.fileDownload.js"></script>
+    
+    
+     <!-- Piwik -->
+     <!--<script type="text/javascript">
+      var _paq = _paq || [];
+      /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+      _paq.push(['trackPageView']);
+      _paq.push(['enableLinkTracking']);
+      (function() {
+        var u="//analytics.openaire.eu/";
+        _paq.push(['setTrackerUrl', u+'piwik.php']);
+        _paq.push(['setSiteId', '77']);
+        var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+        g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
+      })();
+    </script>
+    <!-- End Piwik Code -->
+
+    <!-- Piwik Image Tracker-->
+      <!--<img src="https://analytics.openaire.eu/piwik.php?idsite=77&rec=1" style="border:0" alt="" />
+    <!-- End Piwik -->
+    
+    
+    <script>
+        /*window.onbeforeunload = function() {
+             cleanUserData();
+        };*/
+               
+        $(document).ready(function(){
+            loadhtml();
+//            $('#about_attr').load('about_menu.html',function(){});
+//            $('#version_noti').load('version_title.html',function(){});
+//            $('#online-warning').load('myonline-warning.html',function(){});
+//            $('#copyrights').load('copyrights.html',function(){});
+            /*$('a[rel!=ext]').click(function() { window.onbeforeunload = null; });
+            $('button[rel!=ext]').click(function() { window.onbeforeunload = null; });*/
+            
+            checkSuppression();
+            getAnonAndSourceDataset();
+       });
+    </script>
+
+</body>
+
+</html>

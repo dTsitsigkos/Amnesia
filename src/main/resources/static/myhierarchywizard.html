@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Amnesia | Autogenerate Wizard</title>
+    
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="font-awesome/css/font-awesome.css" rel="stylesheet">
+    <link href="css/plugins/iCheck/custom.css" rel="stylesheet">
+    <link href="css/plugins/steps/jquery.steps.css" rel="stylesheet">
+    <link href="css/animate.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <link href="css/plugins/dataTables/datatables.min.css" rel="stylesheet">
+    <link href="css/plugins/awesome-bootstrap-checkbox/awesome-bootstrap-checkbox.css" rel="stylesheet">
+    <link rel="shortcut icon" href="img/smallLogo.png">
+
+    <style>
+
+        .wizard > .content > .body  position: relative; }
+
+    </style>
+    <script type="text/javascript">
+            var _paq = _paq || [];
+            /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+            _paq.push(['trackPageView']);
+            _paq.push(['enableLinkTracking']);
+            (function() {
+                    var u="//analytics.openaire.eu/";
+                    _paq.push(['setTrackerUrl', u+'piwik.php']);
+                    _paq.push(['setSiteId', '77']);
+                    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+                    g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
+            })();
+    </script>
+
+    <img src="https://analytics.openaire.eu/piwik.php?idsite=77&rec=1" style="border:0; display: none;" alt="" />
+</head>
+
+<body>
+
+    <div id="wrapper">
+
+    <nav class="navbar-default navbar-static-side" role="navigation">
+        <div class="sidebar-collapse">
+            <ul class="nav metismenu" id="side-menu">
+                  <li class="nav-header">
+                    <div class="dropdown profile-element"> 
+                        <span>
+                            <img alt="image" class="img-circle" src="img/logo1.jpg" />
+                        </span>
+                        <!--<a data-toggle="dropdown" class="dropdown-toggle" href="#">
+                            <span class="clear"> 
+                                <span class="block m-t-xs"> <strong class="font-bold">Amnesia</strong>
+                                <img src="img/test.png" alt="image" style="width:200px;height:130px;">    
+                                </span>  
+                            </span> 
+                        </a>-->
+                       
+                    </div>
+                  
+                </li>
+                <li >
+                    <a href="index.html"><i class="fa fa-home"></i> <span class="nav-label">Anonymization Wizard</span></a>
+                    
+                </li>
+                
+                
+                <!--//////////////////////////////////////////////////////////////////////////////////////////////-->
+                
+                <li>
+                    <!--<a href="#" onclick="restart();"><i class="fa fa-pie-chart"></i> <span class="nav-label">Restart</span>  </a> -->
+                    <a href="#" onclick="restart();"><i class="fa fa-refresh"></i> <span class="nav-label">Reset</span>  </a>
+                </li>
+
+                <li>
+                    <a href="#"><i class="fa fa-database"></i> <span class="nav-label">Source</span><span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level collapse">
+                        <li >
+                            <a href="mydataset.html">Manage</a>
+                        </li> 
+                        <li style="position:relative;">                                         
+                            <a>
+                                <form>
+                                    Load From Local Disk
+                                    <input  type="file" name="file" id="datafile" onchange = 'uploadfile("datafile");'
+                                    style='position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";opacity:0;background-color:transparent;color:transparent;' name="file_source" size="40"
+                                    />
+                                </form>
+                            </a>       
+                        </li>
+
+                        <li>
+                            <a href="myzenodoloadwizard.html">Load From Zenodo</a>
+                        </li>
+                        
+                        <li>
+                            <a href="mydataverseloadwizard.html">Load From Dataverse Server</a>
+                        </li>
+                   </ul>
+                </li>
+
+                 <li>
+                    <a href="#"><i class="fa fa-database"></i> <span class="nav-label">Anonymized</span><span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level collapse">
+                        <li >
+                            <a href="myanonymizeddataset.html">Manage</a>
+                        </li> 
+                        <!--<li style="position:relative;">                                         
+                            <a>
+                                <form>
+                                    Load from Local
+                                    <input  type="file" name="file" id="datafile" onchange = 'uploadfile("datafile");'
+                                    style='position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";opacity:0;background-color:transparent;color:transparent;' name="file_source" size="40"
+                                    />
+                                </form>
+                            </a>       
+                        </li> --> 
+                   </ul>
+                </li>
+
+                <li class="active">
+                    <a href="#"><i  class="fa fa-sitemap"></i> <span class="nav-label">Hierarchy</span><span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level collapse" >
+                        <li>
+                            <a href="myhier.html">Manage</a>
+                        </li> 
+                        <li style="position:relative;">                                       
+                            <a>
+                                <form>
+                                    Load from Local Disk
+                                <input  type="file"  name="file" id="hierarchy" onchange ='uploadfile("hierarchy");'
+                                                style='position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";opacity:0;background-color:transparent;color:transparent;' name="file_source" size="40"
+                                />
+                                </form>
+                            </a> 
+                        </li>
+                        
+                        <li>
+                           <a href="myhierarchywizard.html" >Auto Generate </a>
+                        </li> 
+                   </ul>
+                </li>
+
+                <li>
+                    <a href="myalgorithms.html"><i class="fa fa-lock"></i> <span class="nav-label">Algorithms</span>  </a>
+                </li>
+
+                <li>
+                    <a href="mysolutiongraph.html"><i class="fa fa-line-chart"></i> <span class="nav-label">Solution Graph</span></a>
+                </li>
+
+                <li>
+                    <a href="myresults.html"><i class="fa fa-laptop"></i> <span class="nav-label">Results</span></a>
+                </li>
+                
+                <!--<li>
+                    <a href="myabout.html"><i class="fa fa-info-circle"></i> <span class="nav-label">About</span></a>
+                </li>-->
+                
+                
+                <li id="about_attr">
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+        <div id="page-wrapper" class="gray-bg">
+        <!--<div class="row border-bottom">
+        <nav class="navbar navbar-static-top" role="navigation" style="margin-bottom: 0">
+        <div class="navbar-header">
+            <a class="navbar-minimalize minimalize-styl-2 btn btn-primary " href="#"><i class="fa fa-bars"></i> </a>
+            <form role="search" class="navbar-form-custom" action="search_results.html">
+                <div class="form-group">
+                    <input type="text" placeholder="Search for something..." class="form-control" name="top-search" id="top-search">
+                </div>
+            </form>
+        </div>
+            <ul class="nav navbar-top-links navbar-right">
+                <li>
+                    <span class="m-r-sm text-muted welcome-message">Welcome to INSPINIA+ Admin Theme.</span>
+                </li>
+                <li class="dropdown">
+                    <a class="dropdown-toggle count-info" data-toggle="dropdown" href="#">
+                        <i class="fa fa-envelope"></i>  <span class="label label-warning">16</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-messages">
+                        <li>
+                            <div class="dropdown-messages-box">
+                                <a href="profile.html" class="pull-left">
+                                    <img alt="image" class="img-circle" src="img/a7.jpg">
+                                </a>
+                                <div class="media-body">
+                                    <small class="pull-right">46h ago</small>
+                                    <strong>Mike Loreipsum</strong> started following <strong>Monica Smith</strong>. <br>
+                                    <small class="text-muted">3 days ago at 7:58 pm - 10.06.2014</small>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <div class="dropdown-messages-box">
+                                <a href="profile.html" class="pull-left">
+                                    <img alt="image" class="img-circle" src="img/a4.jpg">
+                                </a>
+                                <div class="media-body ">
+                                    <small class="pull-right text-navy">5h ago</small>
+                                    <strong>Chris Johnatan Overtunk</strong> started following <strong>Monica Smith</strong>. <br>
+                                    <small class="text-muted">Yesterday 1:21 pm - 11.06.2014</small>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <div class="dropdown-messages-box">
+                                <a href="profile.html" class="pull-left">
+                                    <img alt="image" class="img-circle" src="img/profile.jpg">
+                                </a>
+                                <div class="media-body ">
+                                    <small class="pull-right">23h ago</small>
+                                    <strong>Monica Smith</strong> love <strong>Kim Smith</strong>. <br>
+                                    <small class="text-muted">2 days ago at 2:30 am - 11.06.2014</small>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <div class="text-center link-block">
+                                <a href="mailbox.html">
+                                    <i class="fa fa-envelope"></i> <strong>Read All Messages</strong>
+                                </a>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a class="dropdown-toggle count-info" data-toggle="dropdown" href="#">
+                        <i class="fa fa-bell"></i>  <span class="label label-primary">8</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-alerts">
+                        <li>
+                            <a href="mailbox.html">
+                                <div>
+                                    <i class="fa fa-envelope fa-fw"></i> You have 16 messages
+                                    <span class="pull-right text-muted small">4 minutes ago</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <a href="profile.html">
+                                <div>
+                                    <i class="fa fa-twitter fa-fw"></i> 3 New Followers
+                                    <span class="pull-right text-muted small">12 minutes ago</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <a href="grid_options.html">
+                                <div>
+                                    <i class="fa fa-upload fa-fw"></i> Server Rebooted
+                                    <span class="pull-right text-muted small">4 minutes ago</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <div class="text-center link-block">
+                                <a href="notifications.html">
+                                    <strong>See All Alerts</strong>
+                                    <i class="fa fa-angle-right"></i>
+                                </a>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+
+
+                <li>
+                    <a href="login.html">
+                        <i class="fa fa-sign-out"></i> Log out
+                    </a>
+                </li>
+            </ul>
+
+        </nav>
+        </div>-->
+            <div class="row wrapper border-bottom white-bg page-heading">
+                <div class="col-lg-12">
+                    
+                    <h2><span class="text-navy">Hierarchy Autogenerate Wizard</span></h2><div id="version_noti"></div>
+                    <h3 style="text-align: center;  margin-top:1%;"> <span class="text-danger" id="online-warning"></span> </h3>
+                    <!--<ol class="breadcrumb">
+                        <li>
+                            <a href="index.html">Home</a>
+                        </li>
+                        <li>
+                            <a>Forms</a>
+                        </li>
+                        <li class="active">
+                            <strong>Wizard</strong>
+                        </li>
+                    </ol>-->
+                </div>
+<!--                <div class="col-lg-2">
+
+                </div>-->
+            </div>
+        
+        <div id="spinner" style="display:none" class ="dim">
+            <div   class="sk-spinner sk-spinner-cube-grid">
+                <div class="sk-cube"></div>
+                <div class="sk-cube"></div>
+                <div class="sk-cube"></div>
+                <div class="sk-cube"></div>
+                <div class="sk-cube"></div>
+                <div class="sk-cube"></div>
+                <div class="sk-cube"></div>
+                <div class="sk-cube"></div>
+                <div class="sk-cube"></div>
+            </div>
+        </div>
+        <div class="wrapper wrapper-content animated fadeInRight">
+            
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="ibox">
+                        <div class="ibox-title">
+                            <h5>Autogenerate hierarchy</h5>
+                        </div>
+                        <div class="ibox-content">
+                            
+
+                            <form id="formhier" action="#" class="wizard-big">
+                                <h1>Select attribute and hierarchy type</h1>
+                                <fieldset>
+                                    <h2>select the quasi-identifier attributes and assign the type of hierarchy you would like to apply</h2>
+                                    <div class="row">
+                                        <div class="col-lg-8">
+                                            
+                                             <div class="form-group"><label class="col-sm-2 control-label">Attribute</label>
+                                                <div class="col-sm-10"><select id="onattribute" class="form-control m-b" name="onattribute">
+                                                </select>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="form-group"><label class="col-sm-2 control-label">Hierarchy type</label>
+                                                <div class="col-sm-10"><select id ="typehier" class="form-control m-b" name="typehier" id="typehier">
+                                                   <!-- <option>distinct</option>
+                                                    <option>ranges</option>-->
+                                                </select>
+
+                                                </div>
+                                            </div>
+
+                                            <div class="form-group"><label class="col-sm-2 control-label">Attribute type</label>
+                                                <div class="col-sm-10"><select id="vartype" class="form-control m-b" name="vartype">
+                                                    <!--<option value="String">String</option>
+                                                    <option value="Double">Double</option>
+                                                    <option value="Integer">Integer</option>-->
+                                                </select>
+                                                </div>
+                                            </div>
+
+                                           
+                                            
+                                        </div>
+<!--                                        <div class="col-lg-4">
+                                            <div class="text-center">
+                                                <div style="margin-top: 20px">
+                                                    <i class="fa fa-sign-in" style="font-size: 180px;color: #e5e5e5 "></i>
+                                                </div>
+                                            </div>
+                                        </div>-->
+                                    </div>
+
+                                </fieldset>
+                                <h1>Configuration</h1>
+                                
+                                 <fieldset>
+                                    <h2>Hierarchy Information</h2>
+                                    <div class="row">
+                                        
+                                             
+                                    <div class="form-group">
+
+                                    <div class="col-sm-10">
+                                        
+                                     
+                                     
+                                            
+                                            
+                                            
+                                           <div class="form-group" id ="stepsorting" >
+                                                
+                                            </div>
+                                        
+                                       
+                                          
+                                          
+                                           <div class="form-group "><label class="col-sm-2 control-label">Name</label>
+                                                <div class="col-sm-10 "><input id="hiername" name="savehiername" type="text" class="form-control required m-b" name="savehiername">
+                                                    <!--<option>String</option>
+                                                    <option>Double</option>
+                                                    <option>Integer</option>-->
+                                               
+                                                </div>
+                                            </div>
+                                        
+                                            <div class="form-group" id ="lengthmask" >
+                                                
+                                           </div>
+                                          
+                                            <div id ="startendlimits" title="Get the minimum and maximum values from the active domain of the attribute">
+                                            </div>
+                                            <!--<div class="form-group"><label class="col-sm-2 control-label">Start End limit</label>
+                                                <div class="col-sm-10"><input id="limits" name="limits" type="text" class="form-control m-b">
+                                                   <option>String</option>
+                                                    <option>Double</option>
+                                                    <option>Integer</option>
+                                                </input>
+                                                </div>
+                                            </div>-->
+                                          
+                                            
+                                            
+                                            <div class="form-group" id ="years" >
+                                                
+                                            </div>
+                                         
+                                            <div class="form-group" id ="months" >
+                                                
+                                            </div>
+                                            
+                                            <div class="form-group" id ="days" >
+                                                
+                                            </div>
+                                            
+                                            <div class="form-group" id ="fanout" >
+                                                
+                                            </div>
+                                            
+                            
+                                            <!--<div class="form-group">
+                                                <label class="col-sm-2 control-label">Name </label>
+                                                 <div class="col-sm-10"><input id="hiername" name="savehiername" type="text" class="form-control required"></div>
+                                            </div>
+                                        
+                                            <div class="form-group">
+                                                <label class="col-sm-2 control-label">Start End limit </label>
+                                                <div class="col-sm-10"><input id="limits" name="limits" type="text" class="form-control required"></div>
+                                             </div>    
+                                           
+                                            
+                                                <label class="col-sm-2 control-label">Fanout</label>
+                                                <div class="col-sm-10"><input id="fanout" name="fanout" type="text" class="form-control required"></div>
+                                            
+                                           
+                                            
+                                                <label class="col-sm-2 control-label">Dynamic Fanout </label>
+                                                <div class="col-sm-10"><input id="dynfanout" name="dynfanout" type="text" class="form-control required"></div>
+                                            -->
+                                           
+                                        </div>
+                                       
+                                    </div>
+                                </fieldset>
+       
+                            </form>
+                        </div>
+                    </div>
+                    </div>
+                    <div class="pull-left">
+                        <!-- <img src="img/OpenAIREplus_logo.png"> -->
+                    </div>
+                    <div class="footer">
+                        <!--<div class="pull-right">
+                            10GB of <strong>250GB</strong> Free.
+                        </div>-->
+                        <div id="copyrights">
+                            
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        
+
+        </div>
+        </div>
+
+
+
+    <!-- Mainly scripts -->
+    <script src="js/jquery-2.1.1.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/plugins/metisMenu/jquery.metisMenu.js"></script>
+    <script src="js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+
+    <!-- Custom and plugin javascript -->
+    <script src="js/inspinia.js"></script>
+    <script src="js/plugins/pace/pace.min.js"></script>
+
+    <!-- Steps -->
+    <script src="js/plugins/staps/jquery.steps.min.js"></script>
+
+    <!-- Jquery Validate -->
+    <script src="js/plugins/validate/jquery.validate.min.js"></script>
+
+    <script src="js/mine/uploadfile.js"></script>
+
+     <!-- Piwik -->
+     <!--<script type="text/javascript">
+      var _paq = _paq || [];
+      /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+      _paq.push(['trackPageView']);
+      _paq.push(['enableLinkTracking']);
+      (function() {
+        var u="//analytics.openaire.eu/";
+        _paq.push(['setTrackerUrl', u+'piwik.php']);
+        _paq.push(['setSiteId', '77']);
+        var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+        g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
+      })();
+    </script>
+    <!-- End Piwik Code -->
+
+    <!-- Piwik Image Tracker-->
+      <!--<img src="https://analytics.openaire.eu/piwik.php?idsite=77&rec=1" style="border:0" alt="" />
+    <!-- End Piwik -->
+    
+    
+    <script>
+        /*window.onbeforeunload = function() {
+             cleanUserData();
+        };*/
+        
+        
+        $(document).ready(function(){
+            loadhtml();
+//            $('#about_attr').load('about_menu.html',function(){});
+//            $('#version_noti').load('version_title.html',function(){});
+//            $('#online-warning').load('myonline-warning.html',function(){});
+//            $('#copyrights').load('copyrights.html',function(){});
+            
+            deleteSuppress();
+            $("#wizard").steps();
+             $.ajax({
+                url: "/action/getattrtypes",
+                type: "POST",
+                cache: false,
+                async: false,
+                success : function(result) {
+                    console.log("OK");
+
+                    var strString = "<option value=\"string\">String</option>";
+                    var strSet = "<option value=\"string\">Set</option>";
+                    var strInt = "<option value=\"int\">Integer</option>";
+                    var strDouble = "<option value=\"double\">Decimal</option>";
+                    var strRange = "<option value=\"distinct\">Distinct</option><option value=\"range\">Range</option>";
+                    var strDistinct = "<option value=\"distinct\">Distinct</option>";
+                    var strDistinctMask = "<option value=\"distinct\">Group Based</option><option value=\"mask\">Masking Based</option>"
+                    var strDate = "<option value=\"date\">Date</option>"; 
+                    var strRangeDate = "<option value=\"range\">Range</option>";
+                    
+                    if(result != null){
+                    
+                    for (  var i = 0 ; i < result.columnNames.length ; i ++){
+                        if ( i === 0){
+                            str =  "<option value=" + i + ">" + result.columnNames[i] + "</option>";
+                        }
+                        else{
+                            str = str + "<option value=" + i + ">" + result.columnNames[i] + "</option>";
+                        }
+                    }
+                    
+                    console.log("strrrrrrrr = " + str);
+                   
+                    document.getElementById("onattribute").innerHTML = str;
+                    
+                    if (result.colNamesType[0] === "string"){
+                        document.getElementById("vartype").innerHTML = strString;
+                        document.getElementById("typehier").innerHTML = strDistinctMask;
+                    }
+                    else if (result.colNamesType[0] === "int") {
+                        document.getElementById("vartype").innerHTML = strInt;
+                        document.getElementById("typehier").innerHTML = strRange;
+                    }
+                    else if (result.colNamesType[0] === "double") {
+                        document.getElementById("vartype").innerHTML = strDouble;
+                        document.getElementById("typehier").innerHTML = strRange;
+                    }
+                    else if (result.colNamesType[0] === "date") {
+                        document.getElementById("vartype").innerHTML = strDate;
+                        document.getElementById("typehier").innerHTML = strRangeDate;
+                    }
+                    else if(result.colNamesType[0] === "set"){
+                        document.getElementById("vartype").innerHTML = strString;
+                        document.getElementById("typehier").innerHTML = strDistinctMask;
+                    }
+                    
+                    
+                    $("#formhier").steps({
+                        bodyTag: "fieldset",
+                        enableCancelButton:true,
+                        showFinishButtonAlways:false,
+                        onStepChanging: function (event, currentIndex, newIndex)
+                        {
+                            // Always allow going backward even if the current step contains invalid fields!
+                            if (currentIndex > newIndex)
+                            {
+                                return true;
+                            }
+
+                            var form = $(this);
+
+                            
+                            // Disable validation on fields that are disabled or hidden.
+                            form.validate().settings.ignore = ":disabled,:hidden";
+
+                            // Start validation; Prevent going forward if false
+                            return form.valid();
+                        },
+                        onStepChanged: function (event, currentIndex, priorIndex)
+                        {
+                           
+                            var typehier = document.getElementById("typehier").value;
+                            var vartype = document.getElementById("vartype").value;
+                            
+                            if(typehier === "mask"){
+                                document.getElementById("months").innerHTML = "";
+                                document.getElementById("days").innerHTML = "";
+                                document.getElementById("fanout").innerHTML = "";
+                                document.getElementById("stepsorting").innerHTML = "";
+                                
+                                var str = "<label class=\"col-sm-2 control-label\">Length</label><div class=\"col-sm-10\"><input id=\"sizelength\" value=\"5\" name=\"length\" type=\"text\" class=\"form-control m-b\"></input></div>";
+                                document.getElementById("lengthmask").innerHTML = str;
+
+                                
+                                
+                            }                    
+                            else if (typehier === "distinct"){
+                                
+                                //var str = "<label>Sorting </label><input id=\"sorting\" name=\"sorting\" type=\"text\" class=\"form-control required\">";
+
+                                document.getElementById("months").innerHTML = "";
+                                document.getElementById("days").innerHTML = "";
+                                document.getElementById("lengthmask").innerHTML = "";
+
+                                document.getElementById("startendlimits").innerHTML = "";
+                                if (vartype === "string"){
+                                    var str = "<label class=\"col-sm-2 control-label\">Sorting</label><div class=\"col-sm-10\"><select id=\"sorting\" class=\"form-control m-b\" name=\"sorting\"><option value=alphabetical>alphabetical</option><option value=random>random</option></select></div>";
+                                    document.getElementById("stepsorting").innerHTML = str;
+                                }
+                                else{
+                                    var str = "<label class=\"col-sm-2 control-label\">Sorting</label><div class=\"col-sm-10\"><select id=\"sorting\" class=\"form-control m-b\" name=\"sorting\"><option value=numeric>numeric</option><option value=alphabetical>alphabetical</option><option value=random>random</option></select></div>";
+                                    document.getElementById("stepsorting").innerHTML = str;
+                                }
+                                
+                                var str = "<label class=\"col-sm-2 control-label\">Fanout</label><div class=\"col-sm-10\"><input id=\"numfanout\" value=\"10\" name=\"fanout\" type=\"text\" class=\"form-control m-b\"></input></div>";
+                                document.getElementById("fanout").innerHTML = str;
+                            }
+                            else{
+                                document.getElementById("lengthmask").innerHTML = "";
+                                if (vartype === "date"){
+                                    var str = "<label class=\"col-sm-2 control-label\">Range step in terms of months</label><div class=\"col-sm-10\"><input id=\"nummonths\" value=\"2\" name=\"months\" type=\"text\" class=\"form-control m-b\" title=\"Values must not be greater than 6\"></input></div>";
+                                    document.getElementById("months").innerHTML = str;
+                                    var str = "<label class=\"col-sm-2 control-label\">Range step in terms of days</label><div class=\"col-sm-10\"><input id=\"numdays\" value=\"7\" name=\"days\" type=\"text\" class=\"form-control m-b\" title=\"Values must not be greater than 15\"></input></div>";
+                                    document.getElementById("days").innerHTML = str;
+                                    var str = "<label class=\"col-sm-2 control-label\">Range step in terms of years</label><div class=\"col-sm-10\"><input id=\"numyears\" value=\"1\" name=\"years\" type=\"text\" class=\"form-control m-b\" title=\"Values must be greater than zero\"></input></div>";
+                                    document.getElementById("years").innerHTML = str;
+                                    var str = "<label class=\"col-sm-2 control-label\">Fanout of years nodes</label><div class=\"col-sm-10\"><input id=\"numfanout\" value=\"0\" name=\"fanout\" type=\"text\" class=\"form-control m-b\" title=\"Values must be greater than 1\" ></input></div>";
+                                    document.getElementById("fanout").innerHTML = str;
+                                    document.getElementById("stepsorting").innerHTML ="";
+                                }
+                                else{
+                                    var str = "<label class=\"col-sm-2 control-label\">Step </label><div class=\"col-sm-10\"><input id=\"step\" value=\"1000\" name=\"step\" type=\"text\" class=\"form-control m-b\"></div>";
+                                    document.getElementById("stepsorting").innerHTML = str;
+                                    
+                                    var str = "<label class=\"col-sm-2 control-label\">Fanout</label><div class=\"col-sm-10\"><input id=\"numfanout\" value=\"10\" name=\"fanout\" type=\"text\" class=\"form-control m-b\"></input></div>";
+                                    document.getElementById("fanout").innerHTML = str;
+                                    document.getElementById("months").innerHTML ="";
+                                    document.getElementById("days").innerHTML ="";
+                                    document.getElementById("years").innerHTML ="";
+                                }
+                                
+                                str = "<div class=\"form-group\"><label class=\"col-sm-2 control-label\">Domain start End limit</label><div class=\"col-sm-10\"><input id=\"limits\" name=\"limits\" type=\"text\" class=\"form-control m-b\">    </input>  </div> </div>";
+                                document.getElementById("startendlimits").innerHTML = str;
+                                var onattribute = document.getElementById("onattribute").value;
+                                var vartype = document.getElementById("vartype").value;
+                                console.log("vartype = " + vartype);
+                                $.ajax({
+                                    url: "/action/getpairranges",
+                                    type: "POST",
+                                    data: { columnAttr: onattribute,vartype:vartype },
+                                    success : function(result) { 
+                                        $('#limits').val(result.min +"-" +result.max);
+                                        if(typehier != "distinct" && vartype != "date"){
+                                            if(Number.isInteger(result.min) && Number.isInteger(result.max)){
+                                              $("#step").val(Math.floor(result.max/10.0));  
+                                            }
+                                            else{
+                                                var mathResult = result.max - result.min;
+                                                console.log(mathResult);
+                                                if(mathResult < 1){
+                                                    $("#step").val(parseFloat(mathResult/2).toFixed(5)); 
+                                                }
+                                                else{
+                                                    $("#step").val(parseFloat(result.max/10.0).toFixed(5));
+                                                }
+                                            }
+                                            
+                                            
+                                        }
+                                    },
+                                    error : function(result){
+                                        alert("myHierarchyWizard: Server problem");
+                                    }
+                                }); 
+                            }
+
+
+                            //form.validate().settings.ignore = ":disabled,:hidden";
+                            //return form.valid();    
+
+                        },
+                        onCanceled: function(event,currentIndex){
+                            deteleHierarchy();
+                        },
+                        onFinishing: function (event, currentIndex)
+                        {
+                            var form = $(this);
+
+                           return form.valid();
+                        },
+                        onFinished: function (event, currentIndex)
+                        {
+                            var typehier = document.getElementById("typehier").value;
+                            var vartype;
+                            var onattribute;
+                            var sorting = 0;
+                            var hiername;
+                            var fanout = 0;
+                            var limits = 0;
+                            var step = 0;
+                            var months = 0;
+                            var years = 0;
+                            var days = 0 ;
+                            var length = 0;
+                            var FLAG = true;
+
+                            if(typehier === "mask"){
+                                hiername = document.getElementById("hiername").value;
+                                length = document.getElementById("sizelength").value;
+                                vartype = document.getElementById("vartype").value;
+                                onattribute = document.getElementById("onattribute").value;
+                            }
+                            else if (typehier === "distinct"){
+                                vartype = document.getElementById("vartype").value;
+                                onattribute = document.getElementById("onattribute").value;
+                                sorting = document.getElementById("sorting").value;
+                                hiername = document.getElementById("hiername").value;
+                                fanout = document.getElementById("numfanout").value;
+                            }
+                            else {
+                                vartype = document.getElementById("vartype").value;
+                                onattribute = document.getElementById("onattribute").value;
+                                limits = document.getElementById("limits").value;
+                                hiername = document.getElementById("hiername").value;
+                                fanout = document.getElementById("numfanout").value;
+                                
+                                if (vartype === "date"){
+                                    months = document.getElementById("nummonths").value;
+                                    days = document.getElementById("numdays").value;
+                                    years = document.getElementById("numyears").value;
+                                    var attr = limits.toString().split('-');
+                                    var min = parseInt(attr[0]);
+                                    var max = parseInt(attr[1]);
+                                                                      
+                                    var div = days/30;
+                                    div = Math.floor(div);
+                                    
+                                    console.log("days = "  + days + "\t months = " + months);
+                                    
+                                    if ( days < 0 || months < 0 || years < 0 || fanout < 0){
+                                        alert("All values must be greater or equal than zero.");
+                                        FLAG = false; 
+                                    }
+                                    else if ( fanout == 1 ){
+                                        alert("Fanout value must be greater than 1.");
+                                        FLAG = false; 
+                                    }
+                                    else if ( years == 0 ){
+                                        alert("Year value must be greater than zero.");
+                                        FLAG = false; 
+                                    }
+                                    else if ( months == 0){
+                                        if ( days != 0){
+                                           alert("If months value is zero, then days value must be zero."); 
+                                           FLAG = false;
+                                        }
+                                        
+                                    }
+                                    else if ( days > 15 || months > 6){
+                                        alert("Days value must not be greater than 15 and months value must not be greater than 6.");
+                                        FLAG = false;
+                                    }
+                                    /*else if ( div > months){
+                                        alert("Months must be greater or equal than " + div);
+                                        FLAG = false;
+                                        
+                                    }*/
+                
+                
+                                    
+                                   
+                                    
+                                }
+                                else{
+                                    step = document.getElementById("step").value;
+                                    
+                                    
+                                    console.log("fanouttttttt = " + fanout);
+
+                                    var attr = limits.toString().split('-');
+
+                                    var min = parseInt(attr[0]);
+//                                    step = parseInt(step);
+                                    var max = parseInt(attr[1]);
+
+                                   var sum = (min + parseInt(step));
+                                   console.log("sum = " + sum + "\tmax = " + max)
+                                    if (sum > max){
+                                        alert("Step is so big for this column. You must decrease it.");
+                                        location.reload();
+                                        return;
+                                    }
+                                }
+                            }
+                            
+                            console.log("fanout = " + fanout);
+                            
+                            console.log (vartype + "," + onattribute + "," + hiername);
+                            
+                            if ( FLAG == true){
+                                autogenerate(typehier,vartype,onattribute,step,sorting,hiername, fanout, limits, months, days, years,length);  
+                            }
+                        }
+                    }).validate({
+                        errorPlacement: function (error, element)
+                        {
+                            element.before(error);
+                        },
+                        rules: {
+                            confirm: {
+                                equalTo: "#password"
+                            }
+                        }
+                    });
+                        /*$('a[rel!=ext]').click(function() { window.onbeforeunload = null; });
+                        $('button[rel!=ext]').click(function() { window.onbeforeunload = null; });
+                        $("#formhier .actions a[href='#finish']").hide();*/
+
+                        $("#onattribute").change(function() {
+                            var selected = $('#onattribute option:selected').val();
+                            if (result.colNamesType[selected] === "string"){
+
+                                document.getElementById("vartype").innerHTML = strString;
+                                document.getElementById("typehier").innerHTML = strDistinctMask;
+                            }
+                            else if (result.colNamesType[selected] === "int"){
+                                document.getElementById("vartype").innerHTML = strInt;
+                                 document.getElementById("typehier").innerHTML = strRange;
+                            }
+                            else if (result.colNamesType[selected] === "double"){
+                                document.getElementById("vartype").innerHTML = strDouble;
+                                document.getElementById("typehier").innerHTML = strRange;
+                            }
+                            else if (result.colNamesType[selected] === "date"){
+                                document.getElementById("vartype").innerHTML = strDate;
+                                document.getElementById("typehier").innerHTML = strRangeDate;
+                            }
+                            else if(result.colNamesType[selected] === "set"){
+                                document.getElementById("vartype").innerHTML = strString;
+                                document.getElementById("typehier").innerHTML = strDistinct;
+                            }
+                        });
+
+                    }
+                    else{
+                        alert("You must load a dataset");
+                        window.location="index.html";
+                    }
+                },
+                error : function(result){
+                    alert("Server problem");
+                }
+            });
+       });
+    </script>
+
+</body>
+
+</html>

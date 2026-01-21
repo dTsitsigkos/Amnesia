@@ -1,0 +1,163 @@
+                <li class="nav-header">
+                    <div class="dropdown profile-element"> 
+                        <!--<span>
+                            <img alt="image" class="img-circle" src="img/profile_small.jpg" />
+                        </span>-->
+                        <a data-toggle="dropdown" class="dropdown-toggle" href="#">
+                            <span class="clear"> 
+                                <span class="block m-t-xs"> <strong class="font-bold">Amnesia</strong>
+                                </span>  
+                            </span> 
+                        </a>
+                       
+                    </div>
+                </li>
+                <li class="active">
+                    <a href="index.html"><i class="fa fa-th-large"></i> <span class="nav-label">Anonymization Wizard</span></a>
+                    
+                </li>
+                
+                
+                <!--//////////////////////////////////////////////////////////////////////////////////////////////-->
+                     <li>
+                        <a href="#"><i class="fa fa-bar-chart-o"></i> <span class="nav-label">Source</span><span class="fa arrow"></span></a>
+                        <ul class="nav nav-second-level collapse">
+                            <li >
+                                <a href="mydataset.html">Manage</a>
+                            </li> 
+                            <li style="position:relative;">                                         
+                                <a>
+                                    <form>
+                                        Load From Local Disk
+                                        <input  type="file" name="file" id="datafile" onchange = 'uploadfile("datafile");'
+                                        style='position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";opacity:0;background-color:transparent;color:transparent;' name="file_source" size="40"
+                                        />
+                                    </form>
+                                </a>       
+                            </li>  
+                            <!--<li>
+                                <a href="#" onclick="exportDataset();" >Save</a>
+                            </li>
+                            <li>
+                                <a href="#" onclick="exportAnonymizeDataset();">Save Anonymized</a>
+                            </li> -->
+                            
+                           <!-- <li>
+                                <a href="mydataset.html">Source</a>
+                            </li> 
+
+                            <li>
+                                <a href="myanonymizedataset.html">Anonymized</a>
+                            </li>-->
+                            
+                            
+                       </ul>
+                    </li>
+                    
+                     <li>
+                        <a href="#"><i class="fa fa-bar-chart-o"></i> <span class="nav-label">Anonymized</span><span class="fa arrow"></span></a>
+                        <ul class="nav nav-second-level collapse">
+                            <li >
+                                <a href="myanonymizeddataset.html">Manage</a>
+                            </li> 
+                            <li style="position:relative;">                                         
+                                <a>
+                                    <form>
+                                        Load from Local Disk
+                                        <input  type="file" name="file" id="datafile" onchange = 'uploadfile("datafile");'
+                                        style='position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";opacity:0;background-color:transparent;color:transparent;' name="file_source" size="40"
+                                        />
+                                    </form>
+                                </a>       
+                            </li>  
+                            <!--<li>
+                                <a href="#" onclick="exportDataset();" >Save</a>
+                            </li>
+                            <li>
+                                <a href="#" onclick="exportAnonymizeDataset();">Save Anonymized</a>
+                            </li> -->
+                            
+                            <!--<li>
+                                <a href="mydataset.html">Source</a>
+                            </li> 
+
+                            <li>
+                                <a href="myanonymizedataset.html">Anonymized</a>
+                            </li>-->
+                            
+                            
+                       </ul>
+                    </li>
+                    
+                    
+                    <li>
+                        <a href="#"><i  class="fa fa-bar-chart-o"></i> <span class="nav-label">Hierarchy</span><span class="fa arrow"></span></a>
+                        <ul class="nav nav-second-level collapse" >
+                            <li>
+                                <a href="myhier.html">Manage</a>
+                            </li> 
+                            <li style="position:relative;">                                       
+                                <a>
+                                    <form>
+                                        Load from Local Disk
+                                    <input  type="file"  name="file" id="hierarchy" onchange ='uploadfile("hierarchy");'
+                                                    style='position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";opacity:0;background-color:transparent;color:transparent;' name="file_source" size="40"
+                                    />
+                                    </form>
+                                </a> 
+                            </li>
+                           
+                            
+                            
+                            <li>
+                               <a href="myhierarchywizard.html" >Auto Generate </a>
+                            </li> 
+                            <!--<li>
+                                <a href="#">Save </a>
+                            </li>
+                            
+                            <li style="position:relative;">                                       
+                                <a>
+                                    <form>
+                                        Load
+                                    <input  type="file"  name="file" id="hierarchy" onchange ='uploadfile("hierarchy");'
+                                                    style='position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";opacity:0;background-color:transparent;color:transparent;' name="file_source" size="40"
+                                    />
+                                    </form>
+                                </a> 
+                            </li>  
+                            
+                             <li>
+                               <a href="myhierarchywizard.html" >Auto Generate </a>
+                            </li>-->
+                            
+                       </ul>
+                    </li>
+                    
+                    
+                    <li>
+                        <a href="myalgorithms.html"><i class="fa fa-pie-chart"></i> <span class="nav-label">Algorithms</span>  </a>
+                    </li>
+                    
+                    <li>
+                        <a href="mysolutiongraph.html"><i class="fa fa-laptop"></i> <span class="nav-label">Solution Graph</span></a>
+                    </li>
+                    
+                    <li>
+                        <a href="myresults.html"><i class="fa fa-laptop"></i> <span class="nav-label">Results</span></a>
+                    </li>
+                    
+                    <li>
+                        <a href="#"><i class="fa fa-bar-chart-o"></i> <span class="nav-label">Zenodo</span><span class="fa arrow"></span></a>
+                        <ul class="nav nav-second-level collapse">
+                             <li>
+                                <a href="http://localhost:8084/amnesia/myzenodoloadwizard.html">Load</a>
+                            </li>
+                            <li>
+                                <a href="http://localhost:8084/amnesia/myzenodosavewizard.html">Save</a>
+                            </li>
+                            <li>
+                                <a href="http://localhost:8084/amnesia/myzenodosavewizard.html">Save Anonymized</a>
+                            </li>    
+                       </ul>
+                    </li>
