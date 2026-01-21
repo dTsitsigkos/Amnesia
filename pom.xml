@@ -79,7 +79,7 @@
         <dependency>
             <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
-            <version>3.25.2</version>
+            <version>3.41.2.2</version>
         </dependency>
         
         <!--You must download jar from http://www.dclunie.com/pixelmed/software/webstart/pixelmed.jar-->
